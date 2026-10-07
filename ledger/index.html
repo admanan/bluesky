@@ -139,7 +139,8 @@ function periodBar(extra){
     <div><label>ตั้งแต่วันที่</label><input type="date" value="${period.from}" onchange="period.from=this.value;render()"></div>
     <div><label>ถึงวันที่</label><input type="date" value="${period.to}" onchange="period.to=this.value;render()"></div>
     ${extra||''}
-    <div style="flex:0"><button class="btn sec" onclick="window.print()">🖨 พิมพ์</button></div></div>`;
+    <div style="flex:0"><button class="btn sec" onclick="window.print()">🖨 พิมพ์</button></div></div>
+    ${period.from&&period.to&&period.from>period.to?'<p class="bal bad noprint">⚠ วันที่เริ่มต้นอยู่หลังวันที่สิ้นสุด</p>':''}`;
 }
 function printHead(title){
   return `<div class="pt"><b>${esc(S.company||'')}</b><br>${title}<br>${fmtDate(period.from)} - ${fmtDate(period.to)}</div>`;
@@ -149,6 +150,7 @@ function printHead(title){
 const TABS = [['entry','✏️ บันทึกบัญชี'],['journal','📖 สมุดรายวัน'],['ledger','📚 แยกประเภท'],['tb','⚖️ งบทดลอง'],['fs','📊 งบการเงิน'],['set','⚙️ ตั้งค่า']];
 let tab='entry', editingId=null;
 function go(t){ if(tab==='entry'&&draft&&$('lines')){ try{ readLines(); }catch(e){} }
+  if(t==='entry'&&tab==='entry'&&editingId){ editingId=null; draft=null; toast('เริ่มรายการใหม่'); }
   tab=t; if(t!=='entry'&&editingId){ editingId=null; draft=null; } render(); window.scrollTo(0,0); }
 function render(){
   $('nav').innerHTML = TABS.map(([k,l],i)=>`<button class="${k===tab?'on':''}" title="Alt+${i+1}" onclick="go('${k}')">${l} <span class="mute">Alt+${i+1}</span></button>`).join('');
