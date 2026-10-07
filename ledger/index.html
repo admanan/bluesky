@@ -431,7 +431,7 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='Delete'||e.key==='d'){ const el=document.querySelectorAll('.entry')[jSel]; if(el){ const i=jSel; delEntry(el.dataset.id); if(document.querySelectorAll('.entry').length){ jSel=Math.min(i,document.querySelectorAll('.entry').length-1); selJ(0);} } }
   }
 });
-document.addEventListener('focusin',e=>{ if(e.target.closest&&e.target.closest('#lines')&&e.target.select) setTimeout(()=>e.target.select(),0); });
+document.addEventListener('focusin',e=>{ if(e.target.closest&&e.target.closest('#lines')&&e.target.select) e.target.select(); });
 
 render();
 </script>
