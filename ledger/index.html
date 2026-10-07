@@ -148,7 +148,8 @@ function printHead(title){
 /* ---------- แท็บ ---------- */
 const TABS = [['entry','✏️ บันทึกบัญชี'],['journal','📖 สมุดรายวัน'],['ledger','📚 แยกประเภท'],['tb','⚖️ งบทดลอง'],['fs','📊 งบการเงิน'],['set','⚙️ ตั้งค่า']];
 let tab='entry', editingId=null;
-function go(t){ tab=t; if(t!=='entry') editingId=null; render(); window.scrollTo(0,0); }
+function go(t){ if(tab==='entry'&&draft&&$('lines')){ try{ readLines(); }catch(e){} }
+  tab=t; if(t!=='entry'&&editingId){ editingId=null; draft=null; } render(); window.scrollTo(0,0); }
 function render(){
   $('nav').innerHTML = TABS.map(([k,l],i)=>`<button class="${k===tab?'on':''}" title="Alt+${i+1}" onclick="go('${k}')">${l} <span class="mute">Alt+${i+1}</span></button>`).join('');
   $('accts').innerHTML = [...S.accounts].sort((a,b)=>a.code.localeCompare(b.code)).map(a=>`<option value="${esc(a.code+' '+a.name)}">`).join('');
@@ -246,6 +247,7 @@ function saveEntry(){
   for(const l of draft.lines){
     if(!l.raw.trim() && !l.dr && !l.cr) continue;
     const code=parseAcc(l.raw); if(!code) return toast('ไม่พบบัญชี: '+(l.raw||'(ว่าง)'));
+    if(l.dr<0||l.cr<0) return toast('จำนวนเงินต้องไม่ติดลบ');
     if(!!l.dr===!!l.cr) return toast('แต่ละบรรทัดต้องมีเดบิตหรือเครดิตอย่างใดอย่างหนึ่ง');
     lines.push({code, note:l.note, dr:l.dr, cr:l.cr});
   }
@@ -298,7 +300,7 @@ function exportCSV(){
 let lAcc='';
 function rLedger(){
   const sel=`<div class="w2"><label>บัญชี</label><select onchange="lAcc=this.value;render()"><option value="">ทุกบัญชี</option>${[...S.accounts].sort((a,b)=>a.code.localeCompare(b.code)).map(a=>`<option value="${a.code}" ${a.code===lAcc?'selected':''}>${esc(a.code+' '+a.name)}</option>`).join('')}</select></div>`;
-  const before=totals('', dayBefore(period.from));
+  const before=period.from? totals('', dayBefore(period.from)) : {};
   const list=sortedEntries().filter(e=>e.date>=period.from&&e.date<=period.to);
   const accs=[...S.accounts].sort((a,b)=>a.code.localeCompare(b.code)).filter(a=>!lAcc||a.code===lAcc);
   let html='';
@@ -377,10 +379,10 @@ function rSet(){
     <label class="btn sec" style="display:inline-block;color:var(--pri);margin:0 6px;cursor:pointer;font-size:15px">⬆ นำเข้าไฟล์สำรอง<input type="file" accept=".json" style="display:none" onchange="restore(this)"></label>
     <button class="btn red" onclick="resetAll()">ล้างข้อมูลทั้งหมด</button></div>`;
 }
-function addBook(){ const id=$('nbId').value.trim().toUpperCase(), name=$('nbName').value.trim(); if(!id||!name) return toast('กรอกรหัสและชื่อเล่ม'); if(book(id)) return toast('รหัสเล่มซ้ำ'); S.books.push({id,name}); save(); render(); }
+function addBook(){ const id=$('nbId').value.trim().toUpperCase(), name=$('nbName').value.trim(); if(!id||!name) return toast('กรอกรหัสและชื่อเล่ม'); if(!/^[A-Z0-9]+$/.test(id)) return toast('รหัสเล่มใช้ได้เฉพาะ A-Z และตัวเลข'); if(book(id)) return toast('รหัสเล่มซ้ำ'); S.books.push({id,name}); save(); render(); }
 function renBook(i){ const n=prompt('ชื่อเล่มใหม่',S.books[i].name); if(n&&n.trim()){ S.books[i].name=n.trim(); save(); render(); } }
 function delBook(i){ const b=S.books[i]; if(S.entries.some(e=>e.bookId===b.id)) return toast('เล่มนี้มีรายการแล้ว ลบไม่ได้'); if(S.books.length<=1) return toast('ต้องมีอย่างน้อย 1 เล่ม'); if(confirm('ลบเล่ม '+b.id+' ?')){ S.books.splice(i,1); draft=null; save(); render(); } }
-function addAcc(){ const code=$('naCode').value.trim(), name=$('naName').value.trim(); if(!code||!name) return toast('กรอกรหัสและชื่อบัญชี'); if(/\s/.test(code)) return toast('รหัสห้ามมีช่องว่าง'); if(acc(code)) return toast('รหัสบัญชีซ้ำ'); S.accounts.push({code,name,type:$('naType').value}); save(); render(); }
+function addAcc(){ const code=$('naCode').value.trim(), name=$('naName').value.trim(); if(!code||!name) return toast('กรอกรหัสและชื่อบัญชี'); if(!/^[A-Za-z0-9._-]+$/.test(code)) return toast('รหัสใช้ได้เฉพาะตัวอักษรอังกฤษ ตัวเลข . _ -'); if(acc(code)) return toast('รหัสบัญชีซ้ำ'); S.accounts.push({code,name,type:$('naType').value}); save(); render(); }
 function renAcc(code){ const a=acc(code); const n=prompt('ชื่อบัญชีใหม่',a.name); if(n&&n.trim()){ a.name=n.trim(); save(); render(); } }
 function delAcc(code){ if(used(code)) return toast('บัญชีนี้มีรายการแล้ว ลบไม่ได้'); if(confirm('ลบบัญชี '+code+' ?')){ S.accounts=S.accounts.filter(a=>a.code!==code); save(); render(); } }
 function backup(){ download('ledger-backup-'+today()+'.json', JSON.stringify(S), 'application/json'); }
@@ -417,7 +419,7 @@ function entryEnter(e){
 }
 document.addEventListener('keydown',e=>{
   if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^Digit[1-6]$/.test(e.code)){ e.preventDefault(); go(TABS[+e.code.slice(5)-1][0]); return; }
-  const typing=/INPUT|SELECT|TEXTAREA/.test(e.target.tagName);
+  const typing=/INPUT|SELECT|TEXTAREA|BUTTON|A/.test(e.target.tagName);
   if(tab==='entry'){
     if((e.ctrlKey||e.metaKey)&&(e.key==='s'||e.key==='Enter')){ e.preventDefault(); saveEntry(); return; }
     if(e.key==='Escape'&&editingId){ cancelEdit(); return; }
