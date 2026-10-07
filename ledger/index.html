@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>โปรแกรมบัญชีแยกประเภท</title>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--ink:#1f2937;--mute:#6b7280;--line:#e5e7eb;--pri:#2563eb;--pri-d:#1d4ed8;--ok:#16a34a;--bad:#dc2626;--hd:#eef2ff}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Sarabun","Noto Sans Thai",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+header{background:var(--pri);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;font-weight:600}
+header input{padding:5px 8px;border-radius:6px;border:0;min-width:200px}
+nav{display:flex;gap:2px;background:#fff;border-bottom:1px solid var(--line);padding:0 8px;overflow-x:auto;position:sticky;top:0;z-index:5}
+nav button{border:0;background:none;padding:12px 14px;cursor:pointer;font:inherit;color:var(--mute);border-bottom:3px solid transparent;white-space:nowrap}
+nav button.on{color:var(--pri);border-color:var(--pri);font-weight:600}
+main{max-width:1000px;margin:16px auto;padding:0 12px 60px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+h2{margin:0 0 12px;font-size:17px}
+h3{margin:16px 0 6px;font-size:15px}
+label{font-size:13px;color:var(--mute);display:block;margin-bottom:3px}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:inherit;width:100%}
+input:focus,select:focus{outline:2px solid #93c5fd;border-color:var(--pri)}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px}
+.row>div{flex:1;min-width:140px}
+.row>div.w2{flex:2;min-width:220px}
+button.btn{background:var(--pri);color:#fff;border:0;border-radius:6px;padding:8px 14px;font:inherit;cursor:pointer}
+button.btn:hover{background:var(--pri-d)}
+button.btn.sec{background:#fff;color:var(--pri);border:1px solid var(--pri)}
+button.btn.red{background:var(--bad)}
+button.lnk{background:none;border:0;color:var(--pri);cursor:pointer;font:inherit;padding:2px 6px}
+button.lnk.red{color:var(--bad)}
+table{border-collapse:collapse;width:100%}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:var(--hd);font-weight:600;font-size:13px}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.tot td{font-weight:700;border-top:2px solid #94a3b8;background:#f8fafc}
+tr.sub td{font-weight:600;background:#f8fafc}
+.lines td{padding:3px;border:0}
+.lines input{padding:6px 7px}
+.lines th{border:0}
+.bal{padding:8px 12px;border-radius:6px;font-weight:600;display:inline-block}
+.bal.ok{background:#dcfce7;color:var(--ok)}
+.bal.bad{background:#fee2e2;color:var(--bad)}
+.mute{color:var(--mute);font-size:13px}
+.entry{border:1px solid var(--line);border-radius:8px;margin-bottom:12px;overflow:hidden}
+.entry .eh{background:var(--hd);padding:8px 10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.entry table td{border-bottom:1px dashed var(--line)}
+.ind{padding-left:28px!important}
+.center{text-align:center}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 18px;border-radius:8px;z-index:50}
+@media print{header,nav,.noprint{display:none!important}body{background:#fff}.card{border:0;padding:0}main{margin:0;max-width:none}.pt{display:block!important}}
+.pt{display:none;text-align:center;margin-bottom:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>📒 โปรแกรมบัญชีแยกประเภท</h1>
+  <input id="company" placeholder="ชื่อกิจการ" oninput="S.company=this.value;save()">
+</header>
+<nav id="nav"></nav>
+<main id="main"></main>
+<datalist id="accts"></datalist>
+
+<script>
+/* ---------- ข้อมูล ---------- */
+const KEY = 'ledger-app-v1';
+const TYPES = {A:'สินทรัพย์', L:'หนี้สิน', E:'ส่วนของเจ้าของ', R:'รายได้', X:'ค่าใช้จ่าย'};
+const DEBIT_NORMAL = {A:true, X:true, L:false, E:false, R:false};
+
+function defaults(){
+  return {
+    company:'',
+    accounts:[
+      ['1100','เงินสด','A'],['1110','เงินฝากธนาคาร','A'],['1200','ลูกหนี้การค้า','A'],
+      ['1300','สินค้าคงเหลือ','A'],['1500','อุปกรณ์สำนักงาน','A'],
+      ['2100','เจ้าหนี้การค้า','L'],['2300','เงินกู้ยืม','L'],
+      ['3100','ทุน','E'],['3200','ถอนใช้ส่วนตัว','E'],
+      ['4100','รายได้จากการขาย/บริการ','R'],['4900','รายได้อื่น','R'],
+      ['5100','ต้นทุนขาย','X'],['5200','เงินเดือนและค่าแรง','X'],['5300','ค่าเช่า','X'],
+      ['5400','ค่าน้ำ ค่าไฟ ค่าโทรศัพท์','X'],['5900','ค่าใช้จ่ายอื่น','X']
+    ].map(a=>({code:a[0],name:a[1],type:a[2]})),
+    books:[
+      {id:'JV',name:'สมุดรายวันทั่วไป'},{id:'RV',name:'สมุดรายวันรับเงิน'},
+      {id:'PV',name:'สมุดรายวันจ่ายเงิน'},{id:'SV',name:'สมุดรายวันขาย'},{id:'PU',name:'สมุดรายวันซื้อ'}
+    ],
+    entries:[]
+  };
+}
+function load(){
+  try{ const d=JSON.parse(localStorage.getItem(KEY)); if(d&&d.accounts) return d; }catch(e){}
+  return defaults();
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('บันทึกลงเครื่องไม่ได้'); } }
+let S = load();
+
+/* ---------- ตัวช่วย ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sat = v => Math.round((parseFloat(v)||0)*100);           // เก็บเป็นสตางค์ เลี่ยงทศนิยมเพี้ยน
+const money = s => (s/100).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const mz = s => s ? money(s) : '';
+const today = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const fmtDate = s => { if(!s) return ''; const [y,m,d]=s.split('-'); return `${d}/${m}/${+y+543}`; };
+const acc = code => S.accounts.find(a=>a.code===code);
+const accName = code => { const a=acc(code); return a? `${a.code} ${a.name}` : code; };
+const book = id => S.books.find(b=>b.id===id);
+function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2200); }
+function sortedEntries(){ return [...S.entries].sort((a,b)=>a.date.localeCompare(b.date)||a.docNo.localeCompare(b.docNo)); }
+function download(name, text, type){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
+
+function nextDocNo(bookId, date){
+  const b=book(bookId); if(!b) return '';
+  const [y,m]=(date||today()).split('-');
+  const pre = `${b.id}-${String((+y+543)%100).padStart(2,'0')}${m}-`;
+  let max=0;
+  S.entries.forEach(e=>{ if(e.docNo.startsWith(pre)){ const n=parseInt(e.docNo.slice(pre.length)); if(n>max) max=n; } });
+  return pre + String(max+1).padStart(3,'0');
+}
+
+/* ---------- ยอดคงเหลือ ---------- */
+// คืนค่า {code:{dr,cr}} ของรายการที่ from <= date <= to (ค่าว่างคือไม่จำกัด)
+function totals(from, to){
+  const t={};
+  S.entries.forEach(e=>{
+    if(from && e.date<from) return;
+    if(to && e.date>to) return;
+    e.lines.forEach(l=>{ const o=t[l.code]||(t[l.code]={dr:0,cr:0}); o.dr+=l.dr; o.cr+=l.cr; });
+  });
+  return t;
+}
+// ยอดคงเหลือตามด้านปกติของบัญชี (ติดลบ = ผิดด้าน)
+function natBal(a, o){ o=o||{dr:0,cr:0}; return DEBIT_NORMAL[a.type] ? o.dr-o.cr : o.cr-o.dr; }
+
+/* ---------- ช่วงเวลา (ใช้ร่วมกันทุกรายงาน) ---------- */
+let period = { from: new Date().getFullYear()+'-01-01', to: today() };
+function periodBar(extra){
+  return `<div class="row noprint">
+    <div><label>ตั้งแต่วันที่</label><input type="date" value="${period.from}" onchange="period.from=this.value;render()"></div>
+    <div><label>ถึงวันที่</label><input type="date" value="${period.to}" onchange="period.to=this.value;render()"></div>
+    ${extra||''}
+    <div style="flex:0"><button class="btn sec" onclick="window.print()">🖨 พิมพ์</button></div></div>`;
+}
+function printHead(title){
+  return `<div class="pt"><b>${esc(S.company||'')}</b><br>${title}<br>${fmtDate(period.from)} - ${fmtDate(period.to)}</div>`;
+}
+
+/* ---------- แท็บ ---------- */
+const TABS = [['entry','✏️ บันทึกบัญชี'],['journal','📖 สมุดรายวัน'],['ledger','📚 แยกประเภท'],['tb','⚖️ งบทดลอง'],['fs','📊 งบการเงิน'],['set','⚙️ ตั้งค่า']];
+let tab='entry', editingId=null;
+function go(t){ tab=t; if(t!=='entry') editingId=null; render(); window.scrollTo(0,0); }
+function render(){
+  $('nav').innerHTML = TABS.map(([k,l])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${l}</button>`).join('');
+  $('accts').innerHTML = [...S.accounts].sort((a,b)=>a.code.localeCompare(b.code)).map(a=>`<option value="${esc(a.code+' '+a.name)}">`).join('');
+  $('company').value = S.company||'';
+  ({entry:rEntry, journal:rJournal, ledger:rLedger, tb:rTB, fs:rFS, set:rSet})[tab]();
+}
+
+/* ---------- 1) บันทึกบัญชี ---------- */
+let draft = null;
+function newDraft(){ const b=S.books[0]?.id||''; const d=today(); return {bookId:b,date:d,docNo:nextDocNo(b,d),desc:'',lines:[{code:'',note:'',dr:0,cr:0},{code:'',note:'',dr:0,cr:0}],manual:false}; }
+function rEntry(){
+  if(!draft || (editingId && draft.id!==editingId)){
+    if(editingId){ const e=S.entries.find(x=>x.id===editingId); draft=JSON.parse(JSON.stringify(e)); draft.manual=true; }
+    else draft=newDraft();
+  }
+  $('main').innerHTML = `<div class="card">
+    <h2>${editingId?'แก้ไขรายการ':'บันทึกรายการบัญชี'}</h2>
+    <div class="row">
+      <div><label>เล่มเอกสาร</label><select id="fBook" onchange="onHead()">${S.books.map(b=>`<option value="${esc(b.id)}" ${b.id===draft.bookId?'selected':''}>${esc(b.id)} - ${esc(b.name)}</option>`).join('')}</select></div>
+      <div><label>วันที่</label><input id="fDate" type="date" value="${draft.date}" onchange="onHead()"></div>
+      <div><label>เลขที่เอกสาร</label><input id="fDoc" value="${esc(draft.docNo)}" oninput="draft.manual=true"></div>
+    </div>
+    <div class="row"><div class="w2"><label>คำอธิบายรายการ</label><input id="fDesc" value="${esc(draft.desc)}" placeholder="เช่น ขายสินค้าเงินสด"></div></div>
+    <table class="lines"><thead><tr><th style="width:36%">บัญชี (พิมพ์รหัสหรือชื่อ)</th><th>หมายเหตุ</th><th class="n" style="width:15%">เดบิต</th><th class="n" style="width:15%">เครดิต</th><th style="width:36px"></th></tr></thead>
+    <tbody id="lines"></tbody>
+    <tfoot><tr><td colspan="2"><button class="btn sec" onclick="addLine()">+ เพิ่มบรรทัด</button></td><td class="n" id="tDr"></td><td class="n" id="tCr"></td><td></td></tr></tfoot></table>
+    <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span id="balMsg"></span><span style="flex:1"></span>
+      ${editingId?'<button class="btn sec" onclick="cancelEdit()">ยกเลิก</button>':''}
+      <button class="btn" onclick="saveEntry()">💾 บันทึกรายการ</button>
+    </div></div>
+    <div class="card"><h2>รายการล่าสุด</h2>${recentList()}</div>`;
+  drawLines();
+}
+function recentList(){
+  const l=[...S.entries].sort((a,b)=>b.date.localeCompare(a.date)||b.docNo.localeCompare(a.docNo)).slice(0,5);
+  if(!l.length) return '<p class="mute">ยังไม่มีรายการ</p>';
+  return `<table><tbody>${l.map(e=>`<tr><td>${fmtDate(e.date)}</td><td>${esc(e.docNo)}</td><td>${esc(e.desc)}</td><td class="n">${money(e.lines.reduce((s,x)=>s+x.dr,0))}</td></tr>`).join('')}</tbody></table>`;
+}
+function onHead(){
+  draft.bookId=$('fBook').value; draft.date=$('fDate').value;
+  if(!draft.manual && !editingId) $('fDoc').value = draft.docNo = nextDocNo(draft.bookId, draft.date);
+}
+function readLines(){
+  draft.desc=$('fDesc').value; draft.docNo=$('fDoc').value.trim();
+  draft.lines=[...document.querySelectorAll('#lines tr')].map(tr=>{
+    const q=c=>tr.querySelector('.'+c);
+    return {raw:q('acc').value, code:'', note:q('note').value, dr:sat(q('dr').value), cr:sat(q('cr').value)};
+  });
+}
+function drawLines(){
+  $('lines').innerHTML = draft.lines.map((l,i)=>`<tr>
+    <td><input class="acc" list="accts" value="${esc(l.raw??(l.code?accName(l.code):''))}" placeholder="เลือกบัญชี" oninput="upd()"></td>
+    <td><input class="note" value="${esc(l.note||'')}"></td>
+    <td><input class="dr" type="number" step="0.01" min="0" value="${l.dr?l.dr/100:''}" oninput="side(this,'cr')"></td>
+    <td><input class="cr" type="number" step="0.01" min="0" value="${l.cr?l.cr/100:''}" oninput="side(this,'dr')"></td>
+    <td><button class="lnk red" title="ลบบรรทัด" onclick="delLine(${i})">✕</button></td></tr>`).join('');
+  upd();
+}
+function side(inp, other){ if(inp.value) inp.closest('tr').querySelector('.'+other).value=''; upd(); }
+function upd(){
+  let dr=0,cr=0;
+  document.querySelectorAll('#lines tr').forEach(tr=>{ dr+=sat(tr.querySelector('.dr').value); cr+=sat(tr.querySelector('.cr').value); });
+  $('tDr').textContent=money(dr); $('tCr').textContent=money(cr);
+  const ok = dr===cr && dr>0;
+  $('balMsg').innerHTML = ok ? '<span class="bal ok">✔ เดบิต = เครดิต</span>' : `<span class="bal bad">ผลต่าง ${money(Math.abs(dr-cr))} ${dr>cr?'(เครดิตขาด)':dr<cr?'(เดบิตขาด)':''}</span>`;
+}
+function addLine(){
+  readLines();
+  const dr=draft.lines.reduce((s,l)=>s+l.dr,0), cr=draft.lines.reduce((s,l)=>s+l.cr,0);
+  draft.lines.push({code:'',note:'',dr:cr>dr?cr-dr:0,cr:dr>cr?dr-cr:0});
+  drawLines(); const r=document.querySelectorAll('#lines .acc'); r[r.length-1].focus();
+}
+function delLine(i){ readLines(); if(draft.lines.length<=2){ toast('ต้องมีอย่างน้อย 2 บรรทัด'); return; } draft.lines.splice(i,1); drawLines(); }
+function parseAcc(raw){
+  const v=(raw||'').trim(); if(!v) return null;
+  const code=v.split(/\s+/)[0]; if(acc(code)) return code;
+  const m=S.accounts.filter(a=>a.name===v); return m.length===1? m[0].code : null;
+}
+function saveEntry(){
+  readLines();
+  if(!draft.date) return toast('กรุณาเลือกวันที่');
+  if(!draft.docNo) return toast('กรุณากรอกเลขที่เอกสาร');
+  if(S.entries.some(e=>e.docNo===draft.docNo && e.id!==editingId)) return toast('เลขที่เอกสารนี้ถูกใช้แล้ว');
+  const lines=[];
+  for(const l of draft.lines){
+    if(!l.raw.trim() && !l.dr && !l.cr) continue;
+    const code=parseAcc(l.raw); if(!code) return toast('ไม่พบบัญชี: '+(l.raw||'(ว่าง)'));
+    if(!!l.dr===!!l.cr) return toast('แต่ละบรรทัดต้องมีเดบิตหรือเครดิตอย่างใดอย่างหนึ่ง');
+    lines.push({code, note:l.note, dr:l.dr, cr:l.cr});
+  }
+  if(lines.length<2) return toast('ต้องมีอย่างน้อย 2 บรรทัด');
+  const dr=lines.reduce((s,l)=>s+l.dr,0), cr=lines.reduce((s,l)=>s+l.cr,0);
+  if(dr!==cr) return toast('เดบิตกับเครดิตไม่เท่ากัน');
+  const e={id:editingId||('e'+Date.now()+Math.random().toString(36).slice(2,6)), bookId:draft.bookId, docNo:draft.docNo, date:draft.date, desc:draft.desc.trim(), lines};
+  if(editingId){ S.entries[S.entries.findIndex(x=>x.id===editingId)]=e; } else S.entries.push(e);
+  save(); toast('บันทึกแล้ว '+e.docNo);
+  const wasEdit=editingId; editingId=null; draft=newDraft(); draft.date=e.date; draft.bookId=e.bookId; draft.docNo=nextDocNo(e.bookId,e.date);
+  if(wasEdit) go('journal'); else render();
+}
+function cancelEdit(){ editingId=null; draft=null; go('journal'); }
+function editEntry(id){ editingId=id; draft=null; tab='entry'; render(); window.scrollTo(0,0); }
+function delEntry(id){ const e=S.entries.find(x=>x.id===id); if(!confirm('ลบรายการ '+e.docNo+' ?')) return; S.entries=S.entries.filter(x=>x.id!==id); save(); render(); }
+
+/* ---------- 2) สมุดรายวัน ---------- */
+let jBook='';
+function rJournal(){
+  const bsel = `<div><label>เล่มเอกสาร</label><select onchange="jBook=this.value;render()"><option value="">ทุกเล่ม</option>${S.books.map(b=>`<option value="${esc(b.id)}" ${b.id===jBook?'selected':''}>${esc(b.id)} - ${esc(b.name)}</option>`).join('')}</select></div>`;
+  const list=sortedEntries().filter(e=>e.date>=period.from&&e.date<=period.to&&(!jBook||e.bookId===jBook));
+  let body = list.map(e=>{
+    const dr=e.lines.reduce((s,l)=>s+l.dr,0);
+    return `<div class="entry"><div class="eh"><span><b>${fmtDate(e.date)}</b> &nbsp; ${esc(e.docNo)} <span class="mute">${esc(book(e.bookId)?.name||'')}</span></span>
+      <span class="noprint"><button class="lnk" onclick="editEntry('${e.id}')">แก้ไข</button><button class="lnk red" onclick="delEntry('${e.id}')">ลบ</button></span></div>
+      <table><tbody>${e.lines.map(l=>`<tr><td class="${l.cr?'ind':''}">${esc(accName(l.code))}${l.note?` <span class="mute">(${esc(l.note)})</span>`:''}</td><td class="n" style="width:130px">${mz(l.dr)}</td><td class="n" style="width:130px">${mz(l.cr)}</td></tr>`).join('')}
+      ${e.desc?`<tr><td colspan="3" class="mute">${esc(e.desc)}</td></tr>`:''}</tbody></table></div>`;
+  }).join('') || '<p class="mute">ไม่มีรายการในช่วงนี้</p>';
+  const tot=list.reduce((s,e)=>s+e.lines.reduce((a,l)=>a+l.dr,0),0);
+  $('main').innerHTML = `<div class="card">${printHead('สมุดรายวัน')}<h2>สมุดรายวัน</h2>${periodBar(bsel)}${body}
+    <p><b>รวม ${list.length} รายการ &nbsp; ยอดรวม ${money(tot)}</b></p>
+    <button class="btn sec noprint" onclick="exportCSV()">⬇ ส่งออก CSV</button></div>`;
+}
+function exportCSV(){
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const rows=[['วันที่','เลขที่เอกสาร','เล่ม','คำอธิบาย','รหัสบัญชี','ชื่อบัญชี','เดบิต','เครดิต']];
+  sortedEntries().forEach(e=>e.lines.forEach(l=>rows.push([e.date,e.docNo,e.bookId,e.desc,l.code,acc(l.code)?.name||'',l.dr/100,l.cr/100])));
+  download('journal.csv','﻿'+rows.map(r=>r.map(q).join(',')).join('\n'),'text/csv');
+}
+
+/* ---------- 3) บัญชีแยกประเภท ---------- */
+let lAcc='';
+function rLedger(){
+  const sel=`<div class="w2"><label>บัญชี</label><select onchange="lAcc=this.value;render()"><option value="">ทุกบัญชี</option>${[...S.accounts].sort((a,b)=>a.code.localeCompare(b.code)).map(a=>`<option value="${a.code}" ${a.code===lAcc?'selected':''}>${esc(a.code+' '+a.name)}</option>`).join('')}</select></div>`;
+  const before=totals('', dayBefore(period.from));
+  const list=sortedEntries().filter(e=>e.date>=period.from&&e.date<=period.to);
+  const accs=[...S.accounts].sort((a,b)=>a.code.localeCompare(b.code)).filter(a=>!lAcc||a.code===lAcc);
+  let html='';
+  accs.forEach(a=>{
+    const rows=[]; list.forEach(e=>e.lines.forEach(l=>{ if(l.code===a.code) rows.push({e,l}); }));
+    const ob=before[a.code]||{dr:0,cr:0};
+    if(!rows.length && !ob.dr && !ob.cr && !lAcc) return;
+    let run = natBal(a, ob), sdr=0, scr=0;
+    const d=DEBIT_NORMAL[a.type];
+    html+=`<h3>${esc(a.code+' '+a.name)} <span class="mute">(${TYPES[a.type]})</span></h3><table><thead><tr><th>วันที่</th><th>เลขที่</th><th>คำอธิบาย</th><th class="n">เดบิต</th><th class="n">เครดิต</th><th class="n">คงเหลือ</th></tr></thead><tbody>
+      <tr class="sub"><td colspan="5">ยอดยกมา</td><td class="n">${money(run)}</td></tr>`;
+    rows.forEach(({e,l})=>{ run += d? l.dr-l.cr : l.cr-l.dr; sdr+=l.dr; scr+=l.cr;
+      html+=`<tr><td>${fmtDate(e.date)}</td><td>${esc(e.docNo)}</td><td>${esc(l.note||e.desc)}</td><td class="n">${mz(l.dr)}</td><td class="n">${mz(l.cr)}</td><td class="n">${money(run)}</td></tr>`; });
+    html+=`<tr class="tot"><td colspan="3">รวม / ยอดคงเหลือ</td><td class="n">${money(sdr)}</td><td class="n">${money(scr)}</td><td class="n">${money(run)}</td></tr></tbody></table>`;
+  });
+  $('main').innerHTML=`<div class="card">${printHead('บัญชีแยกประเภท')}<h2>บัญชีแยกประเภท</h2>${periodBar(sel)}${html||'<p class="mute">ไม่มีรายการ</p>'}</div>`;
+}
+function dayBefore(s){ if(!s) return ''; const d=new Date(s+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()-1); return d.toISOString().slice(0,10); }
+
+/* ---------- 4) งบทดลอง ---------- */
+function rTB(){
+  const t=totals('',period.to);
+  let sdr=0,scr=0;
+  const rows=[...S.accounts].sort((a,b)=>a.code.localeCompare(b.code)).map(a=>{
+    const o=t[a.code]; if(!o) return '';
+    const net=o.dr-o.cr; const dr=net>0?net:0, cr=net<0?-net:0; sdr+=dr; scr+=cr;
+    return `<tr><td>${a.code}</td><td>${esc(a.name)}</td><td class="n">${mz(dr)}</td><td class="n">${mz(cr)}</td></tr>`;
+  }).join('');
+  $('main').innerHTML=`<div class="card"><div class="pt"><b>${esc(S.company||'')}</b><br>งบทดลอง ณ วันที่ ${fmtDate(period.to)}</div><h2>งบทดลอง</h2>
+    <div class="row noprint"><div><label>ณ วันที่</label><input type="date" value="${period.to}" onchange="period.to=this.value;render()"></div><div style="flex:0"><button class="btn sec" onclick="window.print()">🖨 พิมพ์</button></div></div>
+    <table><thead><tr><th>รหัส</th><th>ชื่อบัญชี</th><th class="n">เดบิต</th><th class="n">เครดิต</th></tr></thead><tbody>${rows||'<tr><td colspan="4" class="mute">ไม่มีรายการ</td></tr>'}
+    <tr class="tot"><td colspan="2">รวม</td><td class="n">${money(sdr)}</td><td class="n">${money(scr)}</td></tr></tbody></table>
+    <p>${sdr===scr?'<span class="bal ok">✔ งบทดลองดุลกัน</span>':'<span class="bal bad">งบทดลองไม่ดุล</span>'}</p></div>`;
+}
+
+/* ---------- 5) งบการเงิน ---------- */
+function section(title, items){
+  let s=0; const rows=items.map(([a,v])=>{ s+=v; return `<tr><td class="ind">${esc(a.code+' '+a.name)}</td><td class="n">${money(v)}</td></tr>`; }).join('');
+  return {sum:s, html:`<tr class="sub"><td colspan="2">${title}</td></tr>${rows||'<tr><td class="ind mute" colspan="2">-</td></tr>'}`};
+}
+function rFS(){
+  const per=totals(period.from,period.to), cum=totals('',period.to);
+  const pick=(tt,types)=>S.accounts.filter(a=>types.includes(a.type)).sort((a,b)=>a.code.localeCompare(b.code)).map(a=>[a,natBal(a,tt[a.code])]).filter(x=>x[1]!==0);
+  // งบกำไรขาดทุน (ตามช่วงเวลา)
+  const rev=section('รายได้',pick(per,['R'])), exp=section('ค่าใช้จ่าย',pick(per,['X']));
+  const ni=rev.sum-exp.sum;
+  const is=`<h3>งบกำไรขาดทุน</h3><table><tbody>${rev.html}<tr class="tot"><td>รวมรายได้</td><td class="n">${money(rev.sum)}</td></tr>${exp.html}<tr class="tot"><td>รวมค่าใช้จ่าย</td><td class="n">${money(exp.sum)}</td></tr>
+    <tr class="tot"><td>${ni>=0?'กำไรสุทธิ':'ขาดทุนสุทธิ'}</td><td class="n">${money(ni)}</td></tr></tbody></table>`;
+  // งบแสดงฐานะการเงิน (ณ วันสิ้นสุด)
+  const as=section('สินทรัพย์',pick(cum,['A'])), li=section('หนี้สิน',pick(cum,['L'])), eq=section('ส่วนของเจ้าของ',pick(cum,['E']));
+  const cumNI=pick(cum,['R']).reduce((s,x)=>s+x[1],0)-pick(cum,['X']).reduce((s,x)=>s+x[1],0);
+  const eqTot=eq.sum+cumNI, lePlus=li.sum+eqTot;
+  const bs=`<h3>งบแสดงฐานะการเงิน ณ วันที่ ${fmtDate(period.to)}</h3><table><tbody>${as.html}<tr class="tot"><td>รวมสินทรัพย์</td><td class="n">${money(as.sum)}</td></tr>
+    ${li.html}<tr class="tot"><td>รวมหนี้สิน</td><td class="n">${money(li.sum)}</td></tr>
+    ${eq.html}<tr><td class="ind">กำไร(ขาดทุน)สะสม</td><td class="n">${money(cumNI)}</td></tr><tr class="tot"><td>รวมส่วนของเจ้าของ</td><td class="n">${money(eqTot)}</td></tr>
+    <tr class="tot"><td>รวมหนี้สินและส่วนของเจ้าของ</td><td class="n">${money(lePlus)}</td></tr></tbody></table>
+    <p>${as.sum===lePlus?'<span class="bal ok">✔ สินทรัพย์ = หนี้สิน + ส่วนของเจ้าของ</span>':'<span class="bal bad">งบไม่สมดุล ผลต่าง '+money(as.sum-lePlus)+'</span>'}</p>`;
+  $('main').innerHTML=`<div class="card">${printHead('งบการเงิน')}<h2>งบการเงิน</h2>${periodBar()}${is}${bs}</div>`;
+}
+
+/* ---------- 6) ตั้งค่า ---------- */
+function used(code){ return S.entries.some(e=>e.lines.some(l=>l.code===code)); }
+function rSet(){
+  $('main').innerHTML=`
+  <div class="card"><h2>เล่มเอกสาร</h2><p class="mute">รหัสเล่มใช้เป็นตัวนำหน้าเลขที่เอกสาร เช่น JV-6910-001 (เล่ม-ปี พ.ศ.-เดือน-ลำดับ)</p>
+    <table><thead><tr><th style="width:120px">รหัสเล่ม</th><th>ชื่อเล่ม</th><th></th></tr></thead><tbody>
+    ${S.books.map((b,i)=>`<tr><td>${esc(b.id)}</td><td>${esc(b.name)}</td><td class="n"><button class="lnk" onclick="renBook(${i})">เปลี่ยนชื่อ</button><button class="lnk red" onclick="delBook(${i})">ลบ</button></td></tr>`).join('')}</tbody></table>
+    <div class="row" style="margin-top:10px"><div style="flex:0 0 130px"><label>รหัสเล่ม</label><input id="nbId" maxlength="6" placeholder="เช่น CN"></div><div class="w2"><label>ชื่อเล่ม</label><input id="nbName" placeholder="เช่น สมุดรายวันปรับปรุง"></div><div style="flex:0"><button class="btn" onclick="addBook()">เพิ่มเล่ม</button></div></div></div>
+  <div class="card"><h2>ผังบัญชี</h2>
+    <table><thead><tr><th>รหัส</th><th>ชื่อบัญชี</th><th>หมวด</th><th></th></tr></thead><tbody>
+    ${[...S.accounts].sort((a,b)=>a.code.localeCompare(b.code)).map(a=>`<tr><td>${a.code}</td><td>${esc(a.name)}</td><td>${TYPES[a.type]}</td><td class="n"><button class="lnk" onclick="renAcc('${a.code}')">เปลี่ยนชื่อ</button><button class="lnk red" onclick="delAcc('${a.code}')">ลบ</button></td></tr>`).join('')}</tbody></table>
+    <div class="row" style="margin-top:10px"><div style="flex:0 0 110px"><label>รหัส</label><input id="naCode" placeholder="เช่น 1120"></div><div class="w2"><label>ชื่อบัญชี</label><input id="naName"></div>
+    <div><label>หมวด</label><select id="naType">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div><div style="flex:0"><button class="btn" onclick="addAcc()">เพิ่มบัญชี</button></div></div></div>
+  <div class="card"><h2>สำรองข้อมูล</h2><p class="mute">ข้อมูลเก็บในเบราว์เซอร์ของเครื่องนี้ ควรสำรองไฟล์เป็นระยะ</p>
+    <button class="btn" onclick="backup()">⬇ ดาวน์โหลดไฟล์สำรอง</button>
+    <label class="btn sec" style="display:inline-block;color:var(--pri);margin:0 6px;cursor:pointer;font-size:15px">⬆ นำเข้าไฟล์สำรอง<input type="file" accept=".json" style="display:none" onchange="restore(this)"></label>
+    <button class="btn red" onclick="resetAll()">ล้างข้อมูลทั้งหมด</button></div>`;
+}
+function addBook(){ const id=$('nbId').value.trim().toUpperCase(), name=$('nbName').value.trim(); if(!id||!name) return toast('กรอกรหัสและชื่อเล่ม'); if(book(id)) return toast('รหัสเล่มซ้ำ'); S.books.push({id,name}); save(); render(); }
+function renBook(i){ const n=prompt('ชื่อเล่มใหม่',S.books[i].name); if(n&&n.trim()){ S.books[i].name=n.trim(); save(); render(); } }
+function delBook(i){ const b=S.books[i]; if(S.entries.some(e=>e.bookId===b.id)) return toast('เล่มนี้มีรายการแล้ว ลบไม่ได้'); if(S.books.length<=1) return toast('ต้องมีอย่างน้อย 1 เล่ม'); if(confirm('ลบเล่ม '+b.id+' ?')){ S.books.splice(i,1); draft=null; save(); render(); } }
+function addAcc(){ const code=$('naCode').value.trim(), name=$('naName').value.trim(); if(!code||!name) return toast('กรอกรหัสและชื่อบัญชี'); if(/\s/.test(code)) return toast('รหัสห้ามมีช่องว่าง'); if(acc(code)) return toast('รหัสบัญชีซ้ำ'); S.accounts.push({code,name,type:$('naType').value}); save(); render(); }
+function renAcc(code){ const a=acc(code); const n=prompt('ชื่อบัญชีใหม่',a.name); if(n&&n.trim()){ a.name=n.trim(); save(); render(); } }
+function delAcc(code){ if(used(code)) return toast('บัญชีนี้มีรายการแล้ว ลบไม่ได้'); if(confirm('ลบบัญชี '+code+' ?')){ S.accounts=S.accounts.filter(a=>a.code!==code); save(); render(); } }
+function backup(){ download('ledger-backup-'+today()+'.json', JSON.stringify(S), 'application/json'); }
+function restore(inp){
+  const f=inp.files[0]; if(!f) return; const r=new FileReader();
+  r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!d.accounts||!d.books||!d.entries) throw 0; if(!confirm('แทนที่ข้อมูลปัจจุบันด้วยไฟล์นี้?')) return; S=d; draft=null; save(); render(); toast('นำเข้าแล้ว'); }catch(e){ toast('ไฟล์ไม่ถูกต้อง'); } };
+  r.readAsText(f);
+}
+function resetAll(){ if(confirm('ล้างข้อมูลทั้งหมด? ย้อนกลับไม่ได้') && confirm('ยืนยันอีกครั้ง')){ S=defaults(); draft=null; save(); render(); } }
+
+render();
+</script>
+</body>
+</html>
