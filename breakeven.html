@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>คำนวณจุดคุ้มทุนหลาย SKU</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1c2430; --muted:#667085; --line:#e3e6eb; --accent:#2563eb; --good:#0f7b4b; --bad:#c0392b; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#12161c; --card:#1b212a; --text:#e8ecf2; --muted:#9aa5b5; --line:#2c3541; --accent:#6ea0ff; --good:#4cc790; --bad:#ff7b6b; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,"Noto Sans Thai",sans-serif; }
+  main { max-width:960px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:1.5rem; margin:0 0 4px; }
+  p.sub { color:var(--muted); margin:0 0 20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+  label { display:block; font-size:.85rem; color:var(--muted); margin-bottom:4px; }
+  input { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--text); font:inherit; }
+  input:focus { outline:2px solid var(--accent); outline-offset:-1px; }
+  .tablewrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; min-width:640px; }
+  th, td { padding:6px 6px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { font-size:.8rem; color:var(--muted); font-weight:600; }
+  th:first-child, td:first-child { text-align:left; }
+  td input { min-width:80px; text-align:right; }
+  td:first-child input { text-align:left; min-width:120px; }
+  button { font:inherit; padding:8px 14px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--text); cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button.del { padding:4px 9px; color:var(--bad); }
+  .actions { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-bottom:16px; }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .kpi .v { font-size:1.5rem; font-weight:700; }
+  .kpi .l { color:var(--muted); font-size:.85rem; }
+  .warn { color:var(--bad); font-weight:600; }
+  .ok { color:var(--good); }
+  .note { color:var(--muted); font-size:.85rem; }
+  tfoot td { font-weight:700; }
+</style>
+</head>
+<body>
+<main>
+  <h1>คำนวณจุดคุ้มทุนสินค้าหลาย SKU</h1>
+  <p class="sub">กรอกข้อมูล ผลลัพธ์คำนวณให้อัตโนมัติ — ใช้วิธีสัดส่วนยอดขาย (Sales-mix)</p>
+
+  <section class="card">
+    <div class="grid">
+      <div><label for="fixed">ต้นทุนคงที่รวม (บาท)</label><input id="fixed" type="number" min="0" step="any" value="50000"></div>
+      <div><label for="target">กำไรเป้าหมาย (บาท, ไม่บังคับ)</label><input id="target" type="number" min="0" step="any" value="0"></div>
+      <div><label for="expected">ยอดขายคาดการณ์รวม (หน่วย, ไม่บังคับ)</label><input id="expected" type="number" min="0" step="any" placeholder="เช่น 1500"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="tablewrap">
+      <table id="skus">
+        <thead><tr>
+          <th>SKU</th><th>ราคาขาย/หน่วย</th><th>ต้นทุนผันแปร/หน่วย</th><th>จำนวนที่คาดว่าจะขาย (mix)</th><th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="actions">
+      <button id="add" class="primary">+ เพิ่ม SKU</button>
+      <button id="reset">โหลดข้อมูลตัวอย่าง</button>
+    </div>
+    <p class="note">mix = จำนวนที่คาดว่าจะขายของแต่ละ SKU (หน่วยใดก็ได้ ระบบแปลงเป็นสัดส่วนให้เอง)</p>
+  </section>
+
+  <div id="msg"></div>
+  <div class="kpis" id="kpis"></div>
+
+  <section class="card" id="resultCard" hidden>
+    <div class="tablewrap">
+      <table id="result"></table>
+    </div>
+    <p class="note">จุดคุ้มทุนต่อ SKU ปัดขึ้นเป็นจำนวนเต็ม โดยสมมติว่าสัดส่วนยอดขายคงที่</p>
+  </section>
+</main>
+
+<script>
+const SAMPLE = [
+  ["เสื้อยืด", 250, 120, 500],
+  ["กางเกงยีนส์", 890, 520, 200],
+  ["หมวก", 150, 60, 300],
+];
+const $ = id => document.getElementById(id);
+const tbody = $("skus").querySelector("tbody");
+const fmt = (n, d = 2) => n.toLocaleString("th-TH", { minimumFractionDigits: d, maximumFractionDigits: d });
+const ceilInt = x => Math.ceil(Math.round(x * 1e6) / 1e6);
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function addRow(name = "", price = "", cost = "", mix = "") {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td><input class="n" type="text" placeholder="ชื่อสินค้า" value="${esc(String(name))}"></td>
+    <td><input class="p" type="number" min="0" step="any" value="${price}"></td>
+    <td><input class="c" type="number" min="0" step="any" value="${cost}"></td>
+    <td><input class="m" type="number" min="0" step="any" value="${mix}"></td>
+    <td><button class="del" title="ลบ" aria-label="ลบแถว">✕</button></td>`;
+  tr.querySelector(".del").onclick = () => { tr.remove(); calc(); };
+  tbody.appendChild(tr);
+}
+
+function readSkus() {
+  return [...tbody.rows].map((tr, i) => ({
+    name: tr.querySelector(".n").value.trim() || `SKU ${i + 1}`,
+    price: parseFloat(tr.querySelector(".p").value),
+    cost: parseFloat(tr.querySelector(".c").value),
+    mix: parseFloat(tr.querySelector(".m").value),
+  }));
+}
+
+function calculate(skus, fixed, target, expected) {
+  const totalMix = skus.reduce((a, s) => a + s.mix, 0);
+  const rows = skus.map(s => ({ ...s, cm: s.price - s.cost, share: s.mix / totalMix }));
+  const wacm = rows.reduce((a, r) => a + r.cm * r.share, 0);
+  const avgPrice = rows.reduce((a, r) => a + r.price * r.share, 0);
+  if (wacm <= 0) return { feasible: false, wacm };
+  const bep = fixed / wacm, tgt = (fixed + target) / wacm;
+  rows.forEach(r => {
+    r.bepUnits = bep * r.share; r.bepRev = r.bepUnits * r.price;
+    r.tgtUnits = tgt * r.share; r.tgtRev = r.tgtUnits * r.price;
+  });
+  const out = { feasible: true, rows, wacm, avgPrice, bep, tgt, fixed, target,
+    bepRev: rows.reduce((a, r) => a + r.bepRev, 0), tgtRev: rows.reduce((a, r) => a + r.tgtRev, 0) };
+  if (expected > 0) {
+    out.expected = expected;
+    out.mosUnits = expected - bep;
+    out.mosPct = out.mosUnits / expected;
+    out.profit = expected * wacm - fixed;
+  }
+  return out;
+}
+
+function calc() {
+  const msg = $("msg"), kpis = $("kpis"), card = $("resultCard");
+  const fixed = parseFloat($("fixed").value), target = parseFloat($("target").value) || 0;
+  const expected = parseFloat($("expected").value) || 0;
+  const skus = readSkus();
+  kpis.innerHTML = ""; card.hidden = true; msg.innerHTML = "";
+  const err = t => { msg.innerHTML = `<p class="note">${t}</p>`; };
+
+  if (!(fixed >= 0)) return err("กรอกต้นทุนคงที่รวม");
+  if (!skus.length) return err("เพิ่ม SKU อย่างน้อย 1 รายการ");
+  const incomplete = skus.some(s => !(s.price > 0) || !(s.cost >= 0) || !(s.mix >= 0));
+  if (incomplete) return err("กรอกราคา ต้นทุนผันแปร และ mix ของทุก SKU ให้ครบ (ราคาต้องมากกว่า 0)");
+  if (skus.every(s => s.mix === 0)) return err("ต้องมี SKU ที่ mix มากกว่า 0 อย่างน้อย 1 รายการ");
+
+  const r = calculate(skus, fixed, target, expected);
+  if (!r.feasible) {
+    msg.innerHTML = `<p class="warn">⚠ CM เฉลี่ยถ่วงน้ำหนัก ≤ 0 : ราคาขายไม่พอครอบคลุมต้นทุนผันแปร จึงไม่มีจุดคุ้มทุน — ลองปรับราคา ต้นทุน หรือสัดส่วนสินค้า</p>`;
+    return;
+  }
+  const k = (v, l) => `<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+  let html = k(`${ceilInt(r.bep).toLocaleString("th-TH")} หน่วย`, "จุดคุ้มทุนรวม") +
+             k(`฿${fmt(r.bepRev)}`, "ยอดขายที่จุดคุ้มทุน") +
+             k(`฿${fmt(r.wacm)}`, "CM เฉลี่ยถ่วงน้ำหนัก / หน่วย");
+  if (target > 0) html += k(`${ceilInt(r.tgt).toLocaleString("th-TH")} หน่วย`, `ถึงกำไรเป้าหมาย ฿${fmt(target, 0)} (฿${fmt(r.tgtRev)})`);
+  if (r.expected) html += k(`<span class="${r.profit >= 0 ? "ok" : "warn"}">฿${fmt(r.profit)}</span>`, `กำไรคาดการณ์ · Margin of Safety ${(r.mosPct * 100).toFixed(1)}%`);
+  kpis.innerHTML = html;
+
+  const showT = target > 0;
+  const head = `<thead><tr><th>SKU</th><th>CM/หน่วย</th><th>CM%</th><th>สัดส่วน</th><th>BEP (หน่วย)</th><th>BEP (บาท)</th>${showT ? "<th>เป้าหมาย (หน่วย)</th><th>เป้าหมาย (บาท)</th>" : ""}</tr></thead>`;
+  const body = r.rows.map(x => `<tr><td>${esc(x.name)}</td><td>${fmt(x.cm)}</td><td>${(x.cm / x.price * 100).toFixed(1)}%</td><td>${(x.share * 100).toFixed(1)}%</td><td>${ceilInt(x.bepUnits).toLocaleString("th-TH")}</td><td>${fmt(x.bepRev)}</td>${showT ? `<td>${ceilInt(x.tgtUnits).toLocaleString("th-TH")}</td><td>${fmt(x.tgtRev)}</td>` : ""}</tr>`).join("");
+  const foot = `<tfoot><tr><td>รวม</td><td>${fmt(r.wacm)}</td><td>${(r.wacm / r.avgPrice * 100).toFixed(1)}%</td><td>100%</td><td>${ceilInt(r.bep).toLocaleString("th-TH")}</td><td>${fmt(r.bepRev)}</td>${showT ? `<td>${ceilInt(r.tgt).toLocaleString("th-TH")}</td><td>${fmt(r.tgtRev)}</td>` : ""}</tr></tfoot>`;
+  $("result").innerHTML = head + `<tbody>${body}</tbody>` + foot;
+  card.hidden = false;
+}
+
+function load() { tbody.innerHTML = ""; SAMPLE.forEach(s => addRow(...s)); calc(); }
+document.addEventListener("input", calc);
+$("add").onclick = () => { addRow(); };
+$("reset").onclick = load;
+load();
+</script>
+</body>
+</html>
