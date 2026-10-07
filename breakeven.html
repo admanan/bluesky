@@ -5,60 +5,129 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>คำนวณจุดคุ้มทุนหลาย SKU</title>
 <style>
-  :root { --bg:#f6f7f9; --card:#fff; --text:#1c2430; --muted:#667085; --line:#e3e6eb; --accent:#2563eb; --good:#0f7b4b; --bad:#c0392b; }
+  :root {
+    color-scheme: light;
+    --bg:#f3f4f6; --surface:#fcfcfb; --surface-2:#f6f6f4;
+    --text:#0b0b0b; --text-2:#52514e; --muted:#7a7974;
+    --line:#e4e3df; --grid:#ececE8;
+    --s1:#2a78d6; --s2:#eb6834; --ref:#8a8985;
+    --accent:#2a78d6; --accent-ink:#fff;
+    --good:#0f7b4b; --bad:#c0392b; --tint:#2a78d61f; --loss:#8a898522;
+    --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.05);
+  }
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#12161c; --card:#1b212a; --text:#e8ecf2; --muted:#9aa5b5; --line:#2c3541; --accent:#6ea0ff; --good:#4cc790; --bad:#ff7b6b; }
+    :root {
+      color-scheme: dark;
+      --bg:#111110; --surface:#1a1a19; --surface-2:#222221;
+      --text:#ffffff; --text-2:#c3c2b7; --muted:#8f8e86;
+      --line:#2f2f2c; --grid:#2a2a28;
+      --s1:#3987e5; --s2:#d95926; --ref:#8f8e86;
+      --accent:#3987e5; --accent-ink:#fff;
+      --good:#4cc790; --bad:#ff7b6b; --tint:#3987e529; --loss:#8f8e8626;
+      --shadow:none;
+    }
   }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,"Noto Sans Thai",sans-serif; }
-  main { max-width:960px; margin:0 auto; padding:24px 16px 48px; }
-  h1 { font-size:1.5rem; margin:0 0 4px; }
-  p.sub { color:var(--muted); margin:0 0 20px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
-  label { display:block; font-size:.85rem; color:var(--muted); margin-bottom:4px; }
-  input { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--text); font:inherit; }
-  input:focus { outline:2px solid var(--accent); outline-offset:-1px; }
-  .tablewrap { overflow-x:auto; }
-  table { width:100%; border-collapse:collapse; min-width:640px; }
-  th, td { padding:6px 6px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap; }
-  th { font-size:.8rem; color:var(--muted); font-weight:600; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 system-ui,"Noto Sans Thai","Sarabun",sans-serif; -webkit-font-smoothing:antialiased; }
+  main { max-width:1040px; margin:0 auto; padding:0 16px 56px; }
+
+  header.hero { padding:36px 0 22px; }
+  .eyebrow { display:inline-block; font-size:.78rem; font-weight:600; letter-spacing:.04em; color:var(--accent); background:var(--tint); padding:3px 10px; border-radius:999px; }
+  h1 { font-size:clamp(1.6rem,4vw,2.2rem); line-height:1.2; margin:10px 0 6px; font-weight:800; }
+  .sub { color:var(--text-2); margin:0; max-width:62ch; }
+
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:20px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .card h2 { font-size:1.05rem; margin:0 0 2px; }
+  .card .hint { color:var(--muted); font-size:.85rem; margin:0 0 14px; }
+  .step { display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--accent); color:var(--accent-ink); font-size:.78rem; font-weight:700; margin-right:8px; vertical-align:1px; }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; }
+  label { display:block; font-size:.82rem; font-weight:600; color:var(--text-2); margin-bottom:5px; }
+  label small { font-weight:400; color:var(--muted); }
+  .field { position:relative; }
+  .field .unit { position:absolute; right:11px; bottom:9px; color:var(--muted); font-size:.85rem; pointer-events:none; }
+  input { width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:10px; background:var(--surface-2); color:var(--text); font:inherit; transition:border-color .15s, box-shadow .15s; }
+  .field input { padding-right:56px; }
+  input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--tint); background:var(--surface); }
+
+  .tablewrap { overflow-x:auto; margin:0 -4px; padding:0 4px; }
+  table { width:100%; border-collapse:collapse; }
+  #skus { min-width:620px; }
+  th, td { padding:7px 6px; text-align:right; white-space:nowrap; }
+  th { font-size:.76rem; color:var(--muted); font-weight:600; border-bottom:1px solid var(--line); }
+  td { border-bottom:1px solid var(--line); }
   th:first-child, td:first-child { text-align:left; }
-  td input { min-width:80px; text-align:right; }
-  td:first-child input { text-align:left; min-width:120px; }
-  button { font:inherit; padding:8px 14px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--text); cursor:pointer; }
-  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
-  button.del { padding:4px 9px; color:var(--bad); }
-  .actions { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
-  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-bottom:16px; }
-  .kpi { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
-  .kpi .v { font-size:1.5rem; font-weight:700; }
-  .kpi .l { color:var(--muted); font-size:.85rem; }
-  .warn { color:var(--bad); font-weight:600; }
-  .ok { color:var(--good); }
-  .note { color:var(--muted); font-size:.85rem; }
-  tfoot td { font-weight:700; }
+  #skus td input { text-align:right; padding:8px 10px; min-width:90px; }
+  #skus td:first-child input { text-align:left; min-width:150px; }
+  button { font:inherit; font-weight:600; font-size:.9rem; padding:9px 15px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); cursor:pointer; transition:background .15s, transform .05s; }
+  button:hover { background:var(--surface-2); }
+  button:active { transform:translateY(1px); }
+  button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+  button.primary:hover { filter:brightness(1.07); background:var(--accent); }
+  button.del { padding:4px 10px; color:var(--muted); border-color:transparent; background:transparent; }
+  button.del:hover { color:var(--bad); background:var(--surface-2); }
+  .actions { margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; }
+
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin-bottom:16px; }
+  .kpi { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px 18px; box-shadow:var(--shadow); }
+  .kpi.main { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+  .kpi.main .l { color:#ffffffcc; }
+  .kpi .v { font-size:1.7rem; font-weight:800; line-height:1.15; font-variant-numeric:tabular-nums; }
+  .kpi .v small { font-size:.9rem; font-weight:600; opacity:.8; }
+  .kpi .l { color:var(--text-2); font-size:.84rem; margin-top:4px; }
+  .ok { color:var(--good); } .warn { color:var(--bad); }
+  .msg { margin-bottom:16px; }
+  .msg p { margin:0; padding:14px 16px; border-radius:12px; background:var(--surface); border:1px solid var(--line); color:var(--text-2); }
+  .msg p.warn { border-color:var(--bad); font-weight:600; }
+
+  .charthead { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:6px 16px; margin-bottom:6px; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:.84rem; color:var(--text-2); }
+  .legend span { display:inline-flex; align-items:center; gap:7px; }
+  .legend i { display:inline-block; width:18px; height:0; border-top:2.5px solid; }
+  .legend i.dash { border-top-style:dashed; }
+  .chart { position:relative; width:100%; touch-action:pan-y; }
+  .chart svg { display:block; width:100%; overflow:visible; }
+  .chart svg text { font-family:inherit; }
+  .chart:focus-visible { outline:2px solid var(--accent); outline-offset:4px; border-radius:8px; }
+  .tip { position:absolute; pointer-events:none; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px 11px; font-size:.82rem; box-shadow:0 6px 20px rgba(0,0,0,.14); min-width:150px; z-index:3; opacity:0; transition:opacity .08s; }
+  .tip.on { opacity:1; }
+  .tip .t { color:var(--text-2); margin-bottom:4px; }
+  .tip .r { display:flex; align-items:center; gap:8px; justify-content:space-between; }
+  .tip .r b { font-variant-numeric:tabular-nums; }
+  .tip .k { display:inline-flex; align-items:center; gap:6px; color:var(--text-2); }
+  .tip .k i { display:inline-block; width:12px; border-top:2.5px solid; }
+
+  #result { min-width:640px; font-variant-numeric:tabular-nums; }
+  #result tfoot td { font-weight:700; border-bottom:none; background:var(--surface-2); }
+  .note { color:var(--muted); font-size:.82rem; margin:10px 0 0; }
+  footer { color:var(--muted); font-size:.8rem; text-align:center; margin-top:28px; }
 </style>
 </head>
 <body>
 <main>
-  <h1>คำนวณจุดคุ้มทุนสินค้าหลาย SKU</h1>
-  <p class="sub">กรอกข้อมูล ผลลัพธ์คำนวณให้อัตโนมัติ — ใช้วิธีสัดส่วนยอดขาย (Sales-mix)</p>
+  <header class="hero">
+    <span class="eyebrow">BREAK-EVEN · หลาย SKU</span>
+    <h1>ต้องขายเท่าไรถึงจะคุ้มทุน?</h1>
+    <p class="sub">กรอกต้นทุนและสินค้าของคุณ ระบบคำนวณจุดคุ้มทุนรวมและของแต่ละ SKU พร้อมกราฟให้ทันที</p>
+  </header>
 
   <section class="card">
+    <h2><span class="step">1</span>ต้นทุนและเป้าหมาย</h2>
+    <p class="hint">ต้นทุนคงที่ เช่น ค่าเช่า เงินเดือน ค่าไฟ ที่จ่ายทุกเดือนไม่ว่าจะขายได้หรือไม่</p>
     <div class="grid">
-      <div><label for="fixed">ต้นทุนคงที่รวม (บาท)</label><input id="fixed" type="number" min="0" step="any" value="50000"></div>
-      <div><label for="target">กำไรเป้าหมาย (บาท, ไม่บังคับ)</label><input id="target" type="number" min="0" step="any" value="0"></div>
-      <div><label for="expected">ยอดขายคาดการณ์รวม (หน่วย, ไม่บังคับ)</label><input id="expected" type="number" min="0" step="any" placeholder="เช่น 1500"></div>
+      <div class="field"><label for="fixed">ต้นทุนคงที่รวม</label><input id="fixed" type="number" min="0" step="any" inputmode="decimal" value="50000"><span class="unit">บาท</span></div>
+      <div class="field"><label for="target">กำไรเป้าหมาย <small>(ไม่บังคับ)</small></label><input id="target" type="number" min="0" step="any" inputmode="decimal" value="0"><span class="unit">บาท</span></div>
+      <div class="field"><label for="expected">ยอดขายคาดการณ์รวม <small>(ไม่บังคับ)</small></label><input id="expected" type="number" min="0" step="any" inputmode="decimal" placeholder="เช่น 1500"><span class="unit">หน่วย</span></div>
     </div>
   </section>
 
   <section class="card">
+    <h2><span class="step">2</span>สินค้า (SKU)</h2>
+    <p class="hint">mix = จำนวนที่คาดว่าจะขายของแต่ละ SKU ใช้หน่วยใดก็ได้ ระบบแปลงเป็นสัดส่วนให้เอง</p>
     <div class="tablewrap">
       <table id="skus">
-        <thead><tr>
-          <th>SKU</th><th>ราคาขาย/หน่วย</th><th>ต้นทุนผันแปร/หน่วย</th><th>จำนวนที่คาดว่าจะขาย (mix)</th><th></th>
-        </tr></thead>
+        <thead><tr><th>ชื่อสินค้า</th><th>ราคาขาย/หน่วย</th><th>ต้นทุนผันแปร/หน่วย</th><th>จำนวนที่คาดว่าจะขาย (mix)</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -66,44 +135,68 @@
       <button id="add" class="primary">+ เพิ่ม SKU</button>
       <button id="reset">โหลดข้อมูลตัวอย่าง</button>
     </div>
-    <p class="note">mix = จำนวนที่คาดว่าจะขายของแต่ละ SKU (หน่วยใดก็ได้ ระบบแปลงเป็นสัดส่วนให้เอง)</p>
   </section>
 
-  <div id="msg"></div>
+  <div class="msg" id="msg"></div>
   <div class="kpis" id="kpis"></div>
 
-  <section class="card" id="resultCard" hidden>
-    <div class="tablewrap">
-      <table id="result"></table>
-    </div>
-    <p class="note">จุดคุ้มทุนต่อ SKU ปัดขึ้นเป็นจำนวนเต็ม โดยสมมติว่าสัดส่วนยอดขายคงที่</p>
-  </section>
+  <div id="out" hidden>
+    <section class="card">
+      <div class="charthead">
+        <div><h2>กราฟจุดคุ้มทุน</h2><p class="hint" style="margin:0">รายได้รวมตัดกับต้นทุนรวมที่จุดคุ้มทุน เลื่อนเมาส์ (หรือกด ← →) เพื่อดูค่า</p></div>
+        <div class="legend" id="legend1"></div>
+      </div>
+      <div class="chart" id="chart1" tabindex="0" role="img" aria-label="กราฟเส้นรายได้รวมและต้นทุนรวมเทียบกับจำนวนที่ขาย"></div>
+    </section>
+
+    <section class="card">
+      <div class="charthead">
+        <div><h2>กำไร / ขาดทุน ตามจำนวนที่ขาย</h2><p class="hint" style="margin:0">เส้นตัดศูนย์ = จุดคุ้มทุน ด้านล่าง = ขาดทุน ด้านบน = กำไร</p></div>
+      </div>
+      <div class="chart" id="chart2" tabindex="0" role="img" aria-label="กราฟเส้นกำไรขาดทุนเทียบกับจำนวนที่ขาย"></div>
+    </section>
+
+    <section class="card">
+      <h2>ตารางสรุปแต่ละ SKU</h2>
+      <div class="tablewrap" style="margin-top:10px"><table id="result"></table></div>
+      <p class="note">จุดคุ้มทุนต่อ SKU ปัดขึ้นเป็นจำนวนเต็ม โดยสมมติว่าสัดส่วนยอดขายคงที่</p>
+    </section>
+  </div>
+  <footer>ข้อมูลที่กรอกจะถูกจำไว้ในเบราว์เซอร์ของคุณเท่านั้น ไม่ส่งไปที่ไหน</footer>
 </main>
 
 <script>
-const SAMPLE = [
-  ["เสื้อยืด", 250, 120, 500],
-  ["กางเกงยีนส์", 890, 520, 200],
-  ["หมวก", 150, 60, 300],
-];
+const SAMPLE = [["เสื้อยืด",250,120,500],["กางเกงยีนส์",890,520,200],["หมวก",150,60,300]];
+const KEY = "breakeven-v1";
 const $ = id => document.getElementById(id);
 const tbody = $("skus").querySelector("tbody");
-const fmt = (n, d = 2) => n.toLocaleString("th-TH", { minimumFractionDigits: d, maximumFractionDigits: d });
+const nf = (n, d = 2) => n.toLocaleString("th-TH", { minimumFractionDigits: d, maximumFractionDigits: d });
+const ni = n => n.toLocaleString("th-TH", { maximumFractionDigits: 0 });
 const ceilInt = x => Math.ceil(Math.round(x * 1e6) / 1e6);
-const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const el = (tag, props = {}, kids = []) => {
+  const e = document.createElement(tag);
+  Object.assign(e, props);
+  kids.forEach(k => e.append(k));
+  return e;
+};
 
+/* ---------- ตาราง SKU ---------- */
 function addRow(name = "", price = "", cost = "", mix = "") {
   const tr = document.createElement("tr");
-  tr.innerHTML = `
-    <td><input class="n" type="text" placeholder="ชื่อสินค้า" value="${esc(String(name))}"></td>
-    <td><input class="p" type="number" min="0" step="any" value="${price}"></td>
-    <td><input class="c" type="number" min="0" step="any" value="${cost}"></td>
-    <td><input class="m" type="number" min="0" step="any" value="${mix}"></td>
-    <td><button class="del" title="ลบ" aria-label="ลบแถว">✕</button></td>`;
-  tr.querySelector(".del").onclick = () => { tr.remove(); calc(); };
-  tbody.appendChild(tr);
+  const cell = (cls, type, val, ph) => {
+    const td = document.createElement("td");
+    const inp = el("input", { className: cls, type, value: val, placeholder: ph || "" });
+    if (type === "number") { inp.min = 0; inp.step = "any"; inp.inputMode = "decimal"; }
+    td.append(inp); return td;
+  };
+  tr.append(cell("n", "text", name, "ชื่อสินค้า"), cell("p", "number", price), cell("c", "number", cost), cell("m", "number", mix));
+  const del = el("button", { className: "del", title: "ลบแถว", textContent: "✕" });
+  del.setAttribute("aria-label", "ลบแถว");
+  del.onclick = () => { tr.remove(); calc(); };
+  const td = document.createElement("td"); td.append(del); tr.append(td);
+  tbody.append(tr);
 }
-
 function readSkus() {
   return [...tbody.rows].map((tr, i) => ({
     name: tr.querySelector(".n").value.trim() || `SKU ${i + 1}`,
@@ -112,69 +205,224 @@ function readSkus() {
     mix: parseFloat(tr.querySelector(".m").value),
   }));
 }
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify({
+      fixed: $("fixed").value, target: $("target").value, expected: $("expected").value,
+      rows: [...tbody.rows].map(tr => ["n","p","c","m"].map(c => tr.querySelector("." + c).value)),
+    }));
+  } catch (e) {}
+}
+function restore() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (!s || !Array.isArray(s.rows)) return false;
+    $("fixed").value = s.fixed; $("target").value = s.target; $("expected").value = s.expected;
+    tbody.innerHTML = ""; s.rows.forEach(r => addRow(...r));
+    return true;
+  } catch (e) { return false; }
+}
 
+/* ---------- คำนวณ ---------- */
 function calculate(skus, fixed, target, expected) {
   const totalMix = skus.reduce((a, s) => a + s.mix, 0);
   const rows = skus.map(s => ({ ...s, cm: s.price - s.cost, share: s.mix / totalMix }));
   const wacm = rows.reduce((a, r) => a + r.cm * r.share, 0);
   const avgPrice = rows.reduce((a, r) => a + r.price * r.share, 0);
-  if (wacm <= 0) return { feasible: false, wacm };
+  if (wacm <= 0) return { feasible: false };
   const bep = fixed / wacm, tgt = (fixed + target) / wacm;
   rows.forEach(r => {
     r.bepUnits = bep * r.share; r.bepRev = r.bepUnits * r.price;
     r.tgtUnits = tgt * r.share; r.tgtRev = r.tgtUnits * r.price;
   });
-  const out = { feasible: true, rows, wacm, avgPrice, bep, tgt, fixed, target,
+  const out = { feasible: true, rows, wacm, avgPrice, bep, tgt, fixed, target, varCostAvg: avgPrice - wacm,
     bepRev: rows.reduce((a, r) => a + r.bepRev, 0), tgtRev: rows.reduce((a, r) => a + r.tgtRev, 0) };
   if (expected > 0) {
-    out.expected = expected;
-    out.mosUnits = expected - bep;
-    out.mosPct = out.mosUnits / expected;
+    out.expected = expected; out.mosUnits = expected - bep; out.mosPct = out.mosUnits / expected;
     out.profit = expected * wacm - fixed;
   }
   return out;
 }
 
+/* ---------- กราฟเส้น (SVG) ---------- */
+function niceTicks(min, max, n = 5) {
+  const span = max - min || 1, raw = span / n, p = Math.pow(10, Math.floor(Math.log10(raw)));
+  const f = raw / p, step = (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+  const out = []; for (let v = Math.ceil(min / step) * step; v <= max + step * 1e-6; v += step) out.push(Math.abs(v) < step * 1e-9 ? 0 : v);
+  return out;
+}
+const compact = v => ni(v);
+
+const charts = {};
+function drawChart(host, cfg) {
+  charts[host.id] = cfg;
+  const W = Math.max(host.clientWidth, 280), H = cfg.height;
+  const m = { l: 66, r: W < 520 ? 18 : 84, t: 14, b: 38 };
+  const pw = W - m.l - m.r, ph = H - m.t - m.b;
+  const X = x => m.l + (x / cfg.xMax) * pw;
+  const Y = y => m.t + (1 - (y - cfg.yMin) / (cfg.yMax - cfg.yMin)) * ph;
+  const NS = "http://www.w3.org/2000/svg";
+  host.querySelectorAll("svg").forEach(s => s.remove());
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("height", H);
+  const add = (tag, attrs, text, parent = svg) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text; parent.append(n); return n;
+  };
+
+  // grid + y labels
+  niceTicks(cfg.yMin, cfg.yMax, 5).forEach(v => {
+    add("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), stroke: v === 0 && cfg.yMin < 0 ? css("--text-2") : css("--grid"), "stroke-width": v === 0 && cfg.yMin < 0 ? 1.2 : 1 });
+    add("text", { x: m.l - 8, y: Y(v) + 4, "text-anchor": "end", "font-size": 11, fill: css("--muted") }, compact(v));
+  });
+  // x labels
+  niceTicks(0, cfg.xMax, W < 520 ? 4 : 7).forEach(v => {
+    add("text", { x: X(v), y: H - m.b + 18, "text-anchor": "middle", "font-size": 11, fill: css("--muted") }, ni(v));
+  });
+  add("text", { x: m.l + pw / 2, y: H - 4, "text-anchor": "middle", "font-size": 11.5, fill: css("--text-2") }, "จำนวนที่ขาย (หน่วย)");
+
+  const N = 80, pts = fn => Array.from({ length: N + 1 }, (_, i) => { const x = cfg.xMax * i / N; return [X(x), Y(fn(x))]; });
+
+  // area tint (profit chart)
+  if (cfg.areas) cfg.areas.forEach(a => {
+    const p = pts(cfg.series[0].fn).map(([px, py]) => [px, a.above ? Math.min(py, Y(0)) : Math.max(py, Y(0))]);
+    add("path", { d: `M${p[0][0]},${Y(0)} ` + p.map(q => `L${q[0]},${q[1]}`).join(" ") + ` L${p[N][0]},${Y(0)}Z`, fill: a.fill });
+  });
+  // vertical reference lines
+  (cfg.vlines || []).forEach(v => {
+    add("line", { x1: X(v.x), x2: X(v.x), y1: m.t, y2: H - m.b, stroke: v.color || css("--ref"), "stroke-width": 1.2, "stroke-dasharray": "4 4" });
+    add("text", { x: X(v.x) + (v.x > cfg.xMax * 0.75 ? -6 : 6), y: m.t + 11 + (v.row || 0) * 15, "text-anchor": v.x > cfg.xMax * 0.75 ? "end" : "start", "font-size": 11.5, "font-weight": 600, fill: css("--text") }, v.label);
+  });
+  // series lines
+  cfg.series.forEach(s => {
+    add("path", { d: pts(s.fn).map((q, i) => (i ? "L" : "M") + q[0] + "," + q[1]).join(" "), fill: "none", stroke: s.color, "stroke-width": 2.5, "stroke-linecap": "round", "stroke-linejoin": "round", "stroke-dasharray": s.dash || "none" });
+  });
+  // direct end labels (กันชนกัน)
+  if (W >= 520) {
+    const ends = cfg.series.map(s => ({ s, y: Y(s.fn(cfg.xMax)) })).sort((a, b) => a.y - b.y);
+    for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 15) ends[i].y = ends[i - 1].y + 15;
+    ends.forEach(e => add("text", { x: W - m.r + 8, y: e.y + 4, "font-size": 11.5, "font-weight": 600, fill: css("--text-2") }, e.s.short || e.s.name));
+  }
+  // markers
+  (cfg.markers || []).forEach(k => {
+    add("circle", { cx: X(k.x), cy: Y(k.y), r: 6.5, fill: css("--surface") });
+    add("circle", { cx: X(k.x), cy: Y(k.y), r: 4.5, fill: k.color });
+  });
+
+  // hover layer
+  const cross = add("line", { y1: m.t, y2: H - m.b, stroke: css("--text-2"), "stroke-width": 1, opacity: 0 });
+  const dots = cfg.series.map(s => add("circle", { r: 4.5, fill: s.color, stroke: css("--surface"), "stroke-width": 2, opacity: 0 }));
+  const hit = add("rect", { x: m.l, y: m.t, width: pw, height: ph, fill: "transparent" });
+  host.append(svg);
+
+  let tip = host.querySelector(".tip");
+  if (!tip) { tip = el("div", { className: "tip" }); host.append(tip); }
+  const show = x => {
+    x = Math.max(0, Math.min(cfg.xMax, x));
+    cross.setAttribute("x1", X(x)); cross.setAttribute("x2", X(x)); cross.setAttribute("opacity", 1);
+    cfg.series.forEach((s, i) => { dots[i].setAttribute("cx", X(x)); dots[i].setAttribute("cy", Y(s.fn(x))); dots[i].setAttribute("opacity", 1); });
+    tip.replaceChildren(el("div", { className: "t", textContent: `ขาย ${ni(x)} หน่วย` }),
+      ...cfg.series.map(s => el("div", { className: "r" }, [
+        el("span", { className: "k" }, [Object.assign(el("i"), { style: `border-color:${s.color};${s.dash ? "border-top-style:dashed" : ""}` }), document.createTextNode(s.name)]),
+        el("b", { textContent: `${cfg.signed && s.fn(x) > 0 ? "+" : ""}฿${nf(s.fn(x), 0)}` })])));
+    tip.classList.add("on");
+    const left = X(x) + 14, tw = tip.offsetWidth;
+    tip.style.left = (left + tw > W ? X(x) - tw - 14 : left) + "px";
+    tip.style.top = m.t + 8 + "px";
+    cfg.cur = x;
+  };
+  const hide = () => { cross.setAttribute("opacity", 0); dots.forEach(d => d.setAttribute("opacity", 0)); tip.classList.remove("on"); };
+  const toX = ev => { const r = svg.getBoundingClientRect(); return ((ev.clientX - r.left) / r.width * W - m.l) / pw * cfg.xMax; };
+  hit.addEventListener("pointermove", ev => show(toX(ev)));
+  hit.addEventListener("pointerdown", ev => show(toX(ev)));
+  hit.addEventListener("pointerleave", hide);
+  host.onkeydown = ev => {
+    if (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
+    ev.preventDefault();
+    const step = cfg.xMax / 40, c = cfg.cur ?? cfg.bep ?? 0;
+    show(c + (ev.key === "ArrowRight" ? step : -step));
+  };
+  host.onblur = hide;
+}
+
+function legendInto(host, items) {
+  host.replaceChildren(...items.map(s => el("span", {}, [
+    Object.assign(el("i", { className: s.dash ? "dash" : "" }), { style: `border-color:${s.color}` }), document.createTextNode(s.name)])));
+}
+
+/* ---------- แสดงผล ---------- */
 function calc() {
-  const msg = $("msg"), kpis = $("kpis"), card = $("resultCard");
+  save();
+  const msg = $("msg"), kpis = $("kpis"), out = $("out");
   const fixed = parseFloat($("fixed").value), target = parseFloat($("target").value) || 0;
   const expected = parseFloat($("expected").value) || 0;
   const skus = readSkus();
-  kpis.innerHTML = ""; card.hidden = true; msg.innerHTML = "";
-  const err = t => { msg.innerHTML = `<p class="note">${t}</p>`; };
+  kpis.replaceChildren(); out.hidden = true; msg.replaceChildren();
+  const info = (t, cls = "") => msg.append(el("p", { className: cls, textContent: t }));
 
-  if (!(fixed >= 0)) return err("กรอกต้นทุนคงที่รวม");
-  if (!skus.length) return err("เพิ่ม SKU อย่างน้อย 1 รายการ");
-  const incomplete = skus.some(s => !(s.price > 0) || !(s.cost >= 0) || !(s.mix >= 0));
-  if (incomplete) return err("กรอกราคา ต้นทุนผันแปร และ mix ของทุก SKU ให้ครบ (ราคาต้องมากกว่า 0)");
-  if (skus.every(s => s.mix === 0)) return err("ต้องมี SKU ที่ mix มากกว่า 0 อย่างน้อย 1 รายการ");
+  if (!(fixed >= 0)) return info("กรอกต้นทุนคงที่รวมก่อน");
+  if (!skus.length) return info("เพิ่ม SKU อย่างน้อย 1 รายการ");
+  if (skus.some(s => !(s.price > 0) || !(s.cost >= 0) || !(s.mix >= 0))) return info("กรอกราคา ต้นทุนผันแปร และ mix ของทุก SKU ให้ครบ (ราคาต้องมากกว่า 0)");
+  if (skus.every(s => s.mix === 0)) return info("ต้องมี SKU ที่ mix มากกว่า 0 อย่างน้อย 1 รายการ");
 
   const r = calculate(skus, fixed, target, expected);
-  if (!r.feasible) {
-    msg.innerHTML = `<p class="warn">⚠ CM เฉลี่ยถ่วงน้ำหนัก ≤ 0 : ราคาขายไม่พอครอบคลุมต้นทุนผันแปร จึงไม่มีจุดคุ้มทุน — ลองปรับราคา ต้นทุน หรือสัดส่วนสินค้า</p>`;
-    return;
-  }
-  const k = (v, l) => `<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`;
-  let html = k(`${ceilInt(r.bep).toLocaleString("th-TH")} หน่วย`, "จุดคุ้มทุนรวม") +
-             k(`฿${fmt(r.bepRev)}`, "ยอดขายที่จุดคุ้มทุน") +
-             k(`฿${fmt(r.wacm)}`, "CM เฉลี่ยถ่วงน้ำหนัก / หน่วย");
-  if (target > 0) html += k(`${ceilInt(r.tgt).toLocaleString("th-TH")} หน่วย`, `ถึงกำไรเป้าหมาย ฿${fmt(target, 0)} (฿${fmt(r.tgtRev)})`);
-  if (r.expected) html += k(`<span class="${r.profit >= 0 ? "ok" : "warn"}">฿${fmt(r.profit)}</span>`, `กำไรคาดการณ์ · Margin of Safety ${(r.mosPct * 100).toFixed(1)}%`);
-  kpis.innerHTML = html;
+  if (!r.feasible) return info("⚠ CM เฉลี่ยถ่วงน้ำหนัก ≤ 0 : ราคาขายไม่พอครอบคลุมต้นทุนผันแปร จึงไม่มีจุดคุ้มทุน — ลองปรับราคา ต้นทุน หรือสัดส่วนสินค้า", "warn");
 
-  const showT = target > 0;
-  const head = `<thead><tr><th>SKU</th><th>CM/หน่วย</th><th>CM%</th><th>สัดส่วน</th><th>BEP (หน่วย)</th><th>BEP (บาท)</th>${showT ? "<th>เป้าหมาย (หน่วย)</th><th>เป้าหมาย (บาท)</th>" : ""}</tr></thead>`;
-  const body = r.rows.map(x => `<tr><td>${esc(x.name)}</td><td>${fmt(x.cm)}</td><td>${(x.cm / x.price * 100).toFixed(1)}%</td><td>${(x.share * 100).toFixed(1)}%</td><td>${ceilInt(x.bepUnits).toLocaleString("th-TH")}</td><td>${fmt(x.bepRev)}</td>${showT ? `<td>${ceilInt(x.tgtUnits).toLocaleString("th-TH")}</td><td>${fmt(x.tgtRev)}</td>` : ""}</tr>`).join("");
-  const foot = `<tfoot><tr><td>รวม</td><td>${fmt(r.wacm)}</td><td>${(r.wacm / r.avgPrice * 100).toFixed(1)}%</td><td>100%</td><td>${ceilInt(r.bep).toLocaleString("th-TH")}</td><td>${fmt(r.bepRev)}</td>${showT ? `<td>${ceilInt(r.tgt).toLocaleString("th-TH")}</td><td>${fmt(r.tgtRev)}</td>` : ""}</tr></tfoot>`;
-  $("result").innerHTML = head + `<tbody>${body}</tbody>` + foot;
-  card.hidden = false;
+  const kpi = (v, l, main) => el("div", { className: "kpi" + (main ? " main" : "") }, [v, el("div", { className: "l", textContent: l })]);
+  const big = (txt, unit) => { const d = el("div", { className: "v", textContent: txt }); if (unit) d.append(el("small", { textContent: " " + unit })); return d; };
+  kpis.append(
+    kpi(big(ni(ceilInt(r.bep)), "หน่วย"), "จุดคุ้มทุนรวม (ขายเท่านี้จึงเริ่มมีกำไร)", true),
+    kpi(big("฿" + nf(r.bepRev, 0)), "ยอดขายที่จุดคุ้มทุน"),
+    kpi(big("฿" + nf(r.wacm), "/หน่วย"), "CM เฉลี่ยถ่วงน้ำหนัก"));
+  if (target > 0) kpis.append(kpi(big(ni(ceilInt(r.tgt)), "หน่วย"), `ถึงกำไรเป้าหมาย ฿${ni(target)} (ยอดขาย ฿${nf(r.tgtRev, 0)})`));
+  if (r.expected) {
+    const v = big((r.profit >= 0 ? "+" : "") + "฿" + nf(r.profit, 0)); v.classList.add(r.profit >= 0 ? "ok" : "warn");
+    kpis.append(kpi(v, `กำไรคาดการณ์ที่ขาย ${ni(r.expected)} หน่วย · Margin of Safety ${(r.mosPct * 100).toFixed(1)}%`));
+  }
+  out.hidden = false;
+
+  // กราฟ
+  const c1 = css("--s1"), c2 = css("--s2"), ref = css("--ref");
+  let xMax = Math.max(r.bep * 1.8, r.tgt * 1.25, (r.expected || 0) * 1.15);
+  if (!(xMax > 0)) xMax = 100;
+  const revFn = x => x * r.avgPrice, costFn = x => fixed + x * r.varCostAvg, profFn = x => x * r.wacm - fixed;
+  const series1 = [
+    { name: "รายได้รวม", fn: revFn, color: c1 },
+    { name: "ต้นทุนรวม", fn: costFn, color: c2 },
+    { name: "ต้นทุนคงที่", short: "ต้นทุนคงที่", fn: () => fixed, color: ref, dash: "6 5" }];
+  const vlines = [], markers = [{ x: r.bep, y: revFn(r.bep), color: c1 }];
+  vlines.push({ x: r.bep, label: `จุดคุ้มทุน ${ni(ceilInt(r.bep))} หน่วย`, row: 0 });
+  if (target > 0) { vlines.push({ x: r.tgt, label: `เป้าหมาย ${ni(ceilInt(r.tgt))}`, row: 1 }); markers.push({ x: r.tgt, y: revFn(r.tgt), color: c1 }); }
+  if (r.expected) { vlines.push({ x: r.expected, label: `คาดการณ์ ${ni(r.expected)}`, row: 2 }); }
+  // ถ้า vline อยู่ใกล้กัน ให้เลื่อนแถวป้าย
+  vlines.sort((a, b) => a.x - b.x).forEach((v, i) => v.row = i);
+  const yMax1 = Math.max(revFn(xMax), costFn(xMax)) * 1.04;
+  legendInto($("legend1"), series1);
+  drawChart($("chart1"), { height: 320, xMax, yMin: 0, yMax: yMax1, series: series1, vlines, markers, bep: r.bep });
+
+  const yMax2 = Math.max(profFn(xMax), 1) * 1.1, yMin2 = -fixed * 1.1 || -1;
+  drawChart($("chart2"), { height: 240, xMax, yMin: yMin2, yMax: yMax2, signed: true, bep: r.bep,
+    series: [{ name: "กำไร/ขาดทุน", short: "กำไร", fn: profFn, color: c1 }],
+    areas: [{ above: true, fill: css("--tint") }, { above: false, fill: css("--loss") }],
+    vlines: [{ x: r.bep, label: "จุดคุ้มทุน", row: 0 }], markers: [{ x: r.bep, y: 0, color: c1 }] });
+
+  // ตาราง
+  const showT = target > 0, tc = (v, d) => el("td", { textContent: v });
+  const head = el("thead", {}, [el("tr", {}, ["SKU", "ราคา", "CM/หน่วย", "CM%", "สัดส่วน", "BEP (หน่วย)", "BEP (บาท)", ...(showT ? ["เป้าหมาย (หน่วย)", "เป้าหมาย (บาท)"] : [])].map(t => el("th", { textContent: t })))]);
+  const rowOf = (a) => el("tr", {}, a.map(t => tc(t)));
+  const body = el("tbody", {}, r.rows.map(x => rowOf([x.name, nf(x.price), nf(x.cm), (x.cm / x.price * 100).toFixed(1) + "%", (x.share * 100).toFixed(1) + "%", ni(ceilInt(x.bepUnits)), nf(x.bepRev), ...(showT ? [ni(ceilInt(x.tgtUnits)), nf(x.tgtRev)] : [])])));
+  const foot = el("tfoot", {}, [rowOf(["รวม", nf(r.avgPrice), nf(r.wacm), (r.wacm / r.avgPrice * 100).toFixed(1) + "%", "100%", ni(ceilInt(r.bep)), nf(r.bepRev), ...(showT ? [ni(ceilInt(r.tgt)), nf(r.tgtRev)] : [])])]);
+  $("result").replaceChildren(head, body, foot);
 }
 
-function load() { tbody.innerHTML = ""; SAMPLE.forEach(s => addRow(...s)); calc(); }
 document.addEventListener("input", calc);
-$("add").onclick = () => { addRow(); };
-$("reset").onclick = load;
-load();
+$("add").onclick = () => { addRow(); save(); };
+$("reset").onclick = () => { tbody.innerHTML = ""; SAMPLE.forEach(s => addRow(...s)); $("fixed").value = 50000; $("target").value = 0; $("expected").value = ""; calc(); };
+if (!restore()) SAMPLE.forEach(s => addRow(...s));
+calc();
+let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if (!$("out").hidden) calc(); }, 80); }).observe(document.querySelector("main"));
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", calc);
 </script>
 </body>
 </html>
