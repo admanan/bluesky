@@ -61,6 +61,7 @@ tr.sub td{font-weight:600;background:#f8fafc}
 <nav id="nav"></nav>
 <main id="main"></main>
 <datalist id="accts"></datalist>
+<datalist id="tpls"></datalist>
 
 <script>
 /* ---------- ข้อมูล ---------- */
@@ -68,6 +69,19 @@ const KEY = 'ledger-app-v1';
 const TYPES = {A:'สินทรัพย์', L:'หนี้สิน', E:'ส่วนของเจ้าของ', R:'รายได้', X:'ค่าใช้จ่าย'};
 const DEBIT_NORMAL = {A:true, X:true, L:false, E:false, R:false};
 
+function defaultTemplates(){
+  return [
+    ['ขายสินค้าเงินสด','RV',[['1100','dr'],['4100','cr']]],
+    ['ขายเชื่อ','SV',[['1200','dr'],['4100','cr']]],
+    ['รับชำระหนี้จากลูกหนี้','RV',[['1100','dr'],['1200','cr']]],
+    ['ซื้อสินค้าเงินสด','PV',[['1300','dr'],['1100','cr']]],
+    ['จ่ายค่าเช่า','PV',[['5300','dr'],['1100','cr']]],
+    ['จ่ายเงินเดือน','PV',[['5200','dr'],['1100','cr']]],
+    ['จ่ายค่าน้ำ ค่าไฟ ค่าโทรศัพท์','PV',[['5400','dr'],['1100','cr']]],
+    ['นำเงินสดฝากธนาคาร','JV',[['1110','dr'],['1100','cr']]],
+    ['เจ้าของนำเงินมาลงทุน','RV',[['1100','dr'],['3100','cr']]]
+  ].map(([name,bookId,l])=>({name,bookId,desc:name,lines:l.map(([code,side])=>({code,side,note:'',fixed:0}))}));
+}
 function defaults(){
   return {
     company:'',
@@ -84,11 +98,12 @@ function defaults(){
       {id:'JV',name:'สมุดรายวันทั่วไป'},{id:'RV',name:'สมุดรายวันรับเงิน'},
       {id:'PV',name:'สมุดรายวันจ่ายเงิน'},{id:'SV',name:'สมุดรายวันขาย'},{id:'PU',name:'สมุดรายวันซื้อ'}
     ],
+    templates:defaultTemplates(),
     entries:[]
   };
 }
 function load(){
-  try{ const d=JSON.parse(localStorage.getItem(KEY)); if(d&&d.accounts) return d; }catch(e){}
+  try{ const d=JSON.parse(localStorage.getItem(KEY)); if(d&&d.accounts){ if(!d.templates) d.templates=defaultTemplates().filter(t=>t.lines.every(l=>d.accounts.some(a=>a.code===l.code))&&d.books.some(b=>b.id===t.bookId)); return d; } }catch(e){}
   return defaults();
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('บันทึกลงเครื่องไม่ได้'); } }
@@ -151,10 +166,11 @@ const TABS = [['entry','✏️ บันทึกบัญชี'],['journal','�
 let tab='entry', editingId=null;
 function go(t){ if(tab==='entry'&&draft&&$('lines')){ try{ readLines(); }catch(e){} }
   if(t==='entry'&&tab==='entry'&&editingId){ editingId=null; draft=null; toast('เริ่มรายการใหม่'); }
-  tab=t; if(t!=='entry'&&editingId){ editingId=null; draft=null; } render(); window.scrollTo(0,0); }
+  tab=t; if(t!=='set') tplEdit=null; if(t!=='entry'&&editingId){ editingId=null; draft=null; } render(); window.scrollTo(0,0); }
 function render(){
   $('nav').innerHTML = TABS.map(([k,l],i)=>`<button class="${k===tab?'on':''}" title="Alt+${i+1}" onclick="go('${k}')">${l} <span class="mute">Alt+${i+1}</span></button>`).join('');
   $('accts').innerHTML = [...S.accounts].sort((a,b)=>a.code.localeCompare(b.code)).map(a=>`<option value="${esc(a.code+' '+a.name)}">`).join('');
+  $('tpls').innerHTML = S.templates.map(t=>`<option value="${esc(t.name)}">`).join('');
   $('company').value = S.company||'';
   ({entry:rEntry, journal:rJournal, ledger:rLedger, tb:rTB, fs:rFS, set:rSet})[tab]();
 }
@@ -169,6 +185,11 @@ function rEntry(){
   }
   $('main').innerHTML = `<div class="card">
     <h2>${editingId?'แก้ไขรายการ':'บันทึกรายการบัญชี'}</h2>
+    <div class="row noprint" style="background:#f8fafc;padding:8px;border-radius:8px">
+      <div class="w2"><label>⚡ ต้นแบบรายการ (Alt+T)</label><input id="fTpl" list="tpls" placeholder="พิมพ์ชื่อต้นแบบ แล้วกด Enter"></div>
+      <div><label>จำนวนเงิน</label><input id="fAmt" type="number" step="0.01" min="0" placeholder="ใส่แล้ว Enter"></div>
+      <div style="flex:0"><button class="btn sec" onclick="useTpl()">ใช้ต้นแบบ</button></div>
+    </div>
     <div class="row">
       <div><label>เล่มเอกสาร</label><select id="fBook" onchange="onHead()">${S.books.map(b=>`<option value="${esc(b.id)}" ${b.id===draft.bookId?'selected':''}>${esc(b.id)} - ${esc(b.name)}</option>`).join('')}</select></div>
       <div><label>วันที่</label><input id="fDate" type="date" value="${draft.date}" onchange="onHead()"></div>
@@ -180,6 +201,7 @@ function rEntry(){
     <tfoot><tr><td colspan="2"><button class="btn sec" onclick="addLine()">+ เพิ่มบรรทัด</button></td><td class="n" id="tDr"></td><td class="n" id="tCr"></td><td></td></tr></tfoot></table>
     <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <span id="balMsg"></span><span style="flex:1"></span>
+      <button class="btn sec" onclick="saveAsTpl()">⚡ บันทึกเป็นต้นแบบ</button>
       ${editingId?'<button class="btn sec" onclick="cancelEdit()">ยกเลิก</button>':''}
       <button class="btn" id="bSave" onclick="saveEntry()">💾 บันทึกรายการ <small>(Ctrl+Enter)</small></button>
     </div></div>
@@ -187,6 +209,7 @@ function rEntry(){
       <tr><td><b>Enter</b></td><td>ไปช่องถัดไป: เล่ม → วันที่ → คำอธิบาย → บัญชี → เดบิต → เครดิต → บรรทัดถัดไป (ข้ามหมายเหตุ)</td></tr>
       <tr><td><b>พิมพ์บางส่วน</b></td><td>ช่องบัญชีพิมพ์แค่ <code>11</code> หรือ <code>เงินส</code> แล้วกด Enter/Tab ระบบเติมให้</td></tr>
       <tr><td><b>Enter ที่บรรทัดสุดท้าย</b></td><td>ถ้ายังไม่ดุลเพิ่มบรรทัดพร้อมยอดที่ขาด ถ้าดุลแล้วไปที่ปุ่มบันทึก</td></tr>
+      <tr><td><b>Alt+T</b></td><td>ไปช่องต้นแบบ: พิมพ์ชื่อบางส่วน → Enter → ใส่จำนวนเงิน → Enter ระบบเติมรายการบัญชีให้ทั้งหมด</td></tr>
       <tr><td><b>Ctrl+Enter / Ctrl+S</b></td><td>บันทึกรายการ</td></tr>
       <tr><td><b>Alt+N / Alt+Backspace</b></td><td>เพิ่ม / ลบบรรทัดปัจจุบัน</td></tr>
       <tr><td><b>Alt+1 ถึง Alt+6</b></td><td>สลับหน้า</td></tr>
@@ -364,13 +387,14 @@ function rFS(){
 }
 
 /* ---------- 6) ตั้งค่า ---------- */
-function used(code){ return S.entries.some(e=>e.lines.some(l=>l.code===code)); }
+function used(code){ return S.entries.some(e=>e.lines.some(l=>l.code===code))||S.templates.some(t=>t.lines.some(l=>l.code===code)); }
 function rSet(){
   $('main').innerHTML=`
   <div class="card"><h2>เล่มเอกสาร</h2><p class="mute">รหัสเล่มใช้เป็นตัวนำหน้าเลขที่เอกสาร เช่น JV-6910-001 (เล่ม-ปี พ.ศ.-เดือน-ลำดับ)</p>
     <table><thead><tr><th style="width:120px">รหัสเล่ม</th><th>ชื่อเล่ม</th><th></th></tr></thead><tbody>
     ${S.books.map((b,i)=>`<tr><td>${esc(b.id)}</td><td>${esc(b.name)}</td><td class="n"><button class="lnk" onclick="renBook(${i})">เปลี่ยนชื่อ</button><button class="lnk red" onclick="delBook(${i})">ลบ</button></td></tr>`).join('')}</tbody></table>
     <div class="row" style="margin-top:10px"><div style="flex:0 0 130px"><label>รหัสเล่ม</label><input id="nbId" maxlength="6" placeholder="เช่น CN"></div><div class="w2"><label>ชื่อเล่ม</label><input id="nbName" placeholder="เช่น สมุดรายวันปรับปรุง"></div><div style="flex:0"><button class="btn" onclick="addBook()">เพิ่มเล่ม</button></div></div></div>
+  ${tplCard()}
   <div class="card"><h2>ผังบัญชี</h2>
     <table><thead><tr><th>รหัส</th><th>ชื่อบัญชี</th><th>หมวด</th><th></th></tr></thead><tbody>
     ${[...S.accounts].sort((a,b)=>a.code.localeCompare(b.code)).map(a=>`<tr><td>${a.code}</td><td>${esc(a.name)}</td><td>${TYPES[a.type]}</td><td class="n"><button class="lnk" onclick="renAcc('${a.code}')">เปลี่ยนชื่อ</button><button class="lnk red" onclick="delAcc('${a.code}')">ลบ</button></td></tr>`).join('')}</tbody></table>
@@ -386,14 +410,94 @@ function renBook(i){ const n=prompt('ชื่อเล่มใหม่',S.boo
 function delBook(i){ const b=S.books[i]; if(S.entries.some(e=>e.bookId===b.id)) return toast('เล่มนี้มีรายการแล้ว ลบไม่ได้'); if(S.books.length<=1) return toast('ต้องมีอย่างน้อย 1 เล่ม'); if(confirm('ลบเล่ม '+b.id+' ?')){ S.books.splice(i,1); draft=null; save(); render(); } }
 function addAcc(){ const code=$('naCode').value.trim(), name=$('naName').value.trim(); if(!code||!name) return toast('กรอกรหัสและชื่อบัญชี'); if(!/^[A-Za-z0-9._-]+$/.test(code)) return toast('รหัสใช้ได้เฉพาะตัวอักษรอังกฤษ ตัวเลข . _ -'); if(acc(code)) return toast('รหัสบัญชีซ้ำ'); S.accounts.push({code,name,type:$('naType').value}); save(); render(); }
 function renAcc(code){ const a=acc(code); const n=prompt('ชื่อบัญชีใหม่',a.name); if(n&&n.trim()){ a.name=n.trim(); save(); render(); } }
-function delAcc(code){ if(used(code)) return toast('บัญชีนี้มีรายการแล้ว ลบไม่ได้'); if(confirm('ลบบัญชี '+code+' ?')){ S.accounts=S.accounts.filter(a=>a.code!==code); save(); render(); } }
+function delAcc(code){ if(used(code)) return toast('บัญชีนี้ถูกใช้ในรายการหรือต้นแบบแล้ว ลบไม่ได้'); if(confirm('ลบบัญชี '+code+' ?')){ S.accounts=S.accounts.filter(a=>a.code!==code); save(); render(); } }
 function backup(){ download('ledger-backup-'+today()+'.json', JSON.stringify(S), 'application/json'); }
 function restore(inp){
   const f=inp.files[0]; if(!f) return; const r=new FileReader();
-  r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!d.accounts||!d.books||!d.entries) throw 0; if(!confirm('แทนที่ข้อมูลปัจจุบันด้วยไฟล์นี้?')) return; S=d; draft=null; save(); render(); toast('นำเข้าแล้ว'); }catch(e){ toast('ไฟล์ไม่ถูกต้อง'); } };
+  r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!d.accounts||!d.books||!d.entries) throw 0; if(!confirm('แทนที่ข้อมูลปัจจุบันด้วยไฟล์นี้?')) return; if(!d.templates) d.templates=[]; S=d; draft=null; save(); render(); toast('นำเข้าแล้ว'); }catch(e){ toast('ไฟล์ไม่ถูกต้อง'); } };
   r.readAsText(f);
 }
 function resetAll(){ if(confirm('ล้างข้อมูลทั้งหมด? ย้อนกลับไม่ได้') && confirm('ยืนยันอีกครั้ง')){ S=defaults(); draft=null; save(); render(); } }
+
+/* ---------- ต้นแบบรายการ ---------- */
+function findTpl(v){
+  v=(v||'').trim().toLowerCase(); if(!v) return null;
+  const n=t=>t.name.toLowerCase();
+  return S.templates.find(t=>n(t)===v)||S.templates.find(t=>n(t).startsWith(v))||S.templates.find(t=>n(t).includes(v))||null;
+}
+function useTpl(){
+  const t=findTpl($('fTpl').value); if(!t) return toast('ไม่พบต้นแบบ');
+  const amt=sat($('fAmt').value);
+  readLines(); draft.date=$('fDate').value||draft.date; draft.bookId=$('fBook').value;
+  if(book(t.bookId)) draft.bookId=t.bookId;
+  draft.desc=t.desc||t.name;
+  draft.lines=t.lines.filter(l=>acc(l.code)).map(l=>{ const a=l.fixed||amt; return {code:l.code,note:l.note||'',dr:l.side==='dr'?a:0,cr:l.side==='cr'?a:0}; });
+  while(draft.lines.length<2) draft.lines.push({code:'',note:'',dr:0,cr:0});
+  if(!draft.manual&&!editingId) draft.docNo=nextDocNo(draft.bookId,draft.date);
+  render(); $('fDesc').focus(); $('fDesc').select();
+  toast('ใช้ต้นแบบ: '+t.name);
+}
+function saveAsTpl(){
+  readLines();
+  const lines=[];
+  for(const l of draft.lines){
+    if(!l.raw.trim()&&!l.dr&&!l.cr) continue;
+    const code=parseAcc(l.raw); if(!code) return toast('ไม่พบบัญชี: '+(l.raw||'(ว่าง)'));
+    if(l.dr<0||l.cr<0||!!l.dr===!!l.cr) return toast('แต่ละบรรทัดต้องมีเดบิตหรือเครดิตอย่างใดอย่างหนึ่ง');
+    lines.push({code,side:l.dr?'dr':'cr',note:l.note,amt:l.dr||l.cr});
+  }
+  if(lines.length<2) return toast('ต้องมีอย่างน้อย 2 บรรทัด');
+  const name=(prompt('ชื่อต้นแบบ',draft.desc||'')||'').trim(); if(!name) return;
+  if(S.templates.some(t=>t.name===name)) return toast('มีต้นแบบชื่อนี้แล้ว');
+  const same=new Set(lines.map(l=>l.amt)).size===1;   // ยอดเท่ากันทุกบรรทัด = ใช้ "จำนวนเงิน" ช่องเดียว
+  S.templates.push({name,bookId:draft.bookId,desc:draft.desc.trim()||name,lines:lines.map(l=>({code:l.code,side:l.side,note:l.note,fixed:same?0:l.amt}))});
+  save(); render(); toast('บันทึกต้นแบบแล้ว');
+}
+let tplEdit=null;
+function tplSummary(t){ return t.lines.map(l=>`${l.side==='dr'?'เดบิต':'เครดิต'} ${esc(accName(l.code))}${l.fixed?' ('+money(l.fixed)+')':''}`).join('<br>'); }
+function tplCard(){
+  const rows=S.templates.map((t,i)=>`<tr><td><b>${esc(t.name)}</b></td><td>${esc(t.bookId||'')}</td><td>${tplSummary(t)}</td><td class="n"><button class="lnk" onclick="editTpl(${i})">แก้ไข</button><button class="lnk red" onclick="delTpl(${i})">ลบ</button></td></tr>`).join('');
+  return `<div class="card"><h2>ต้นแบบรายการ</h2><p class="mute">กำหนดเรื่องและรายการบัญชีไว้ล่วงหน้า ตอนบันทึกบัญชีกด Alt+T เลือกต้นแบบ ระบบเติมให้เลย (สร้างจากหน้าบันทึกบัญชีด้วยปุ่ม ⚡ ก็ได้)</p>
+    <table><thead><tr><th>เรื่อง</th><th>เล่ม</th><th>รายการบัญชี</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="4" class="mute">ยังไม่มีต้นแบบ</td></tr>'}</tbody></table>
+    <div style="margin-top:10px"><button class="btn" onclick="editTpl()">+ สร้างต้นแบบ</button></div>${tplEdit?tplEditor():''}</div>`;
+}
+function tplEditor(){
+  const e=tplEdit;
+  return `<div id="tplEd" style="margin-top:14px;padding:12px;border:2px solid var(--pri);border-radius:8px">
+    <h3 style="margin-top:0">${e.idx<0?'สร้างต้นแบบใหม่':'แก้ไขต้นแบบ'}</h3>
+    <div class="row"><div class="w2"><label>ชื่อเรื่อง</label><input id="tName" value="${esc(e.name)}" placeholder="เช่น ขายสินค้าเงินสด"></div>
+      <div><label>เล่มเอกสาร</label><select id="tBook">${S.books.map(b=>`<option value="${esc(b.id)}" ${b.id===e.bookId?'selected':''}>${esc(b.id)} - ${esc(b.name)}</option>`).join('')}</select></div></div>
+    <div class="row"><div class="w2"><label>คำอธิบายรายการ</label><input id="tDesc" value="${esc(e.desc)}"></div></div>
+    <table class="lines"><thead><tr><th style="width:42%">บัญชี</th><th>ด้าน</th><th class="n">ยอดคงที่ (ถ้ามี)</th><th style="width:36px"></th></tr></thead><tbody id="tLines">
+    ${e.lines.map((l,i)=>`<tr><td><input class="acc" list="accts" value="${esc(l.raw)}" placeholder="รหัส/ชื่อบัญชี" onchange="resolveAcc(this)"></td>
+      <td><select class="side"><option value="dr" ${l.side==='dr'?'selected':''}>เดบิต</option><option value="cr" ${l.side==='cr'?'selected':''}>เครดิต</option></select></td>
+      <td><input class="fx" type="number" step="0.01" min="0" value="${l.fixed||''}" placeholder="ใช้ตามจำนวนเงินที่ใส่"></td>
+      <td><button class="lnk red" onclick="tplDelRow(${i})">✕</button></td></tr>`).join('')}</tbody></table>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" onclick="tplAddRow()">+ เพิ่มบรรทัด</button><span style="flex:1"></span><button class="btn sec" onclick="tplEdit=null;render()">ยกเลิก</button><button class="btn" onclick="tplSave()">💾 บันทึกต้นแบบ</button></div></div>`;
+}
+function tplRead(){
+  const e=tplEdit; e.name=$('tName').value; e.bookId=$('tBook').value; e.desc=$('tDesc').value;
+  e.lines=[...document.querySelectorAll('#tLines tr')].map(tr=>({raw:tr.querySelector('.acc').value,side:tr.querySelector('.side').value,fixed:sat(tr.querySelector('.fx').value)}));
+}
+function editTpl(i){
+  if(i==null) tplEdit={idx:-1,name:'',bookId:S.books[0].id,desc:'',lines:[{raw:'',side:'dr',fixed:0},{raw:'',side:'cr',fixed:0}]};
+  else { const t=S.templates[i]; tplEdit={idx:i,name:t.name,bookId:t.bookId,desc:t.desc,lines:t.lines.map(l=>({raw:accName(l.code),side:l.side,fixed:l.fixed||0}))}; }
+  render(); $('tplEd').scrollIntoView({block:'center'}); $('tName').focus();
+}
+function tplAddRow(){ tplRead(); tplEdit.lines.push({raw:'',side:'dr',fixed:0}); render(); $('tplEd').scrollIntoView({block:'center'}); }
+function tplDelRow(i){ tplRead(); if(tplEdit.lines.length<=2) return toast('ต้องมีอย่างน้อย 2 บรรทัด'); tplEdit.lines.splice(i,1); render(); }
+function tplSave(){
+  tplRead(); const e=tplEdit, name=e.name.trim();
+  if(!name) return toast('กรอกชื่อเรื่อง');
+  if(S.templates.some((t,i)=>t.name===name&&i!==e.idx)) return toast('มีต้นแบบชื่อนี้แล้ว');
+  const lines=[];
+  for(const l of e.lines){ const code=parseAcc(l.raw); if(!code) return toast('ไม่พบบัญชี: '+(l.raw||'(ว่าง)')); lines.push({code,side:l.side,note:'',fixed:l.fixed}); }
+  if(!lines.some(l=>l.side==='dr')||!lines.some(l=>l.side==='cr')) return toast('ต้องมีทั้งเดบิตและเครดิต');
+  const t={name,bookId:e.bookId,desc:e.desc.trim()||name,lines};
+  if(e.idx<0) S.templates.push(t); else S.templates[e.idx]=t;
+  tplEdit=null; save(); render(); toast('บันทึกต้นแบบแล้ว');
+}
+function delTpl(i){ if(confirm('ลบต้นแบบ '+S.templates[i].name+' ?')){ S.templates.splice(i,1); tplEdit=null; save(); render(); } }
 
 /* ---------- คีย์ลัด ---------- */
 function resolveAcc(inp){
@@ -406,6 +510,9 @@ function resolveAcc(inp){
 function focusRow(tr,cls){ const el=tr&&tr.querySelector('.'+cls); if(el){ el.focus(); el.select&&el.select(); } }
 function entryEnter(e){
   const t=e.target, id=t.id;
+  if(id==='fTpl'){ e.preventDefault(); const tp=findTpl(t.value); if(!tp) return toast('ไม่พบต้นแบบ'); t.value=tp.name;
+    if(!$('fAmt').value && tp.lines.some(l=>!l.fixed)) $('fAmt').focus(); else useTpl(); return; }
+  if(id==='fAmt'){ e.preventDefault(); if($('fTpl').value) useTpl(); return; }
   if(id==='fBook'){ e.preventDefault(); $('fDate').focus(); return; }
   if(id==='fDate'){ e.preventDefault(); $('fDesc').focus(); return; }
   if(id==='fDesc'){ e.preventDefault(); focusRow(document.querySelector('#lines tr'),'acc'); return; }
@@ -425,6 +532,7 @@ document.addEventListener('keydown',e=>{
   if(tab==='entry'){
     if((e.ctrlKey||e.metaKey)&&(e.key==='s'||e.key==='Enter')){ e.preventDefault(); saveEntry(); return; }
     if(e.key==='Escape'&&editingId){ cancelEdit(); return; }
+    if(e.altKey&&e.code==='KeyT'){ e.preventDefault(); $('fTpl').focus(); $('fTpl').select(); return; }
     if(e.altKey&&e.code==='KeyN'){ e.preventDefault(); addLine(); return; }
     if(e.altKey&&e.key==='Backspace'){ const tr=e.target.closest&&e.target.closest('#lines tr'); if(tr){ e.preventDefault(); delLine([...tr.parentNode.children].indexOf(tr)); } return; }
     if(e.key==='Enter'&&!e.ctrlKey&&!e.metaKey&&e.target.tagName!=='BUTTON') entryEnter(e);
