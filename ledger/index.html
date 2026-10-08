@@ -471,7 +471,7 @@ function tplEditor(){
     <table class="lines"><thead><tr><th style="width:42%">บัญชี</th><th>ด้าน</th><th class="n">ยอดคงที่ (ถ้ามี)</th><th style="width:36px"></th></tr></thead><tbody id="tLines">
     ${e.lines.map((l,i)=>`<tr><td><input class="acc" list="accts" value="${esc(l.raw)}" placeholder="รหัส/ชื่อบัญชี" onchange="resolveAcc(this)"></td>
       <td><select class="side"><option value="dr" ${l.side==='dr'?'selected':''}>เดบิต</option><option value="cr" ${l.side==='cr'?'selected':''}>เครดิต</option></select></td>
-      <td><input class="fx" type="number" step="0.01" min="0" value="${l.fixed||''}" placeholder="ใช้ตามจำนวนเงินที่ใส่"></td>
+      <td><input class="fx" type="number" step="0.01" min="0" value="${l.fixed?l.fixed/100:''}" placeholder="ใช้ตามจำนวนเงินที่ใส่"></td>
       <td><button class="lnk red" onclick="tplDelRow(${i})">✕</button></td></tr>`).join('')}</tbody></table>
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" onclick="tplAddRow()">+ เพิ่มบรรทัด</button><span style="flex:1"></span><button class="btn sec" onclick="tplEdit=null;render()">ยกเลิก</button><button class="btn" onclick="tplSave()">💾 บันทึกต้นแบบ</button></div></div>`;
 }
@@ -491,7 +491,7 @@ function tplSave(){
   if(!name) return toast('กรอกชื่อเรื่อง');
   if(S.templates.some((t,i)=>t.name===name&&i!==e.idx)) return toast('มีต้นแบบชื่อนี้แล้ว');
   const lines=[];
-  for(const l of e.lines){ const code=parseAcc(l.raw); if(!code) return toast('ไม่พบบัญชี: '+(l.raw||'(ว่าง)')); lines.push({code,side:l.side,note:'',fixed:l.fixed}); }
+  for(const l of e.lines){ if(l.fixed<0) return toast('ยอดคงที่ต้องไม่ติดลบ'); const code=parseAcc(l.raw); if(!code) return toast('ไม่พบบัญชี: '+(l.raw||'(ว่าง)')); lines.push({code,side:l.side,note:'',fixed:l.fixed}); }
   if(!lines.some(l=>l.side==='dr')||!lines.some(l=>l.side==='cr')) return toast('ต้องมีทั้งเดบิตและเครดิต');
   const t={name,bookId:e.bookId,desc:e.desc.trim()||name,lines};
   if(e.idx<0) S.templates.push(t); else S.templates[e.idx]=t;
