@@ -137,8 +137,8 @@
     </div>
     <div class="actions"><button id="addFixed" class="primary">+ เพิ่มรายการต้นทุนคงที่</button></div>
     <div class="grid" style="margin-top:20px">
-      <div class="field"><label for="target">กำไรเป้าหมาย <small>(ไม่บังคับ)</small></label><input id="target" type="number" min="0" step="any" inputmode="decimal" value="0"><span class="unit">บาท</span></div>
-      <div class="field"><label for="expected">ยอดขายคาดการณ์รวม <small>(ไม่บังคับ)</small></label><input id="expected" type="number" min="0" step="any" inputmode="decimal" placeholder="เช่น 1500"><span class="unit">หน่วย</span></div>
+      <div class="field"><label for="target">กำไรเป้าหมาย <small>(ไม่บังคับ)</small></label><input id="target" type="text" class="num" inputmode="decimal" value="0"><span class="unit">บาท</span></div>
+      <div class="field"><label for="expected">ยอดขายคาดการณ์รวม <small>(ไม่บังคับ)</small></label><input id="expected" type="text" class="num" inputmode="decimal" placeholder="เช่น 1500"><span class="unit">หน่วย</span></div>
     </div>
   </section>
 
@@ -184,8 +184,8 @@
       <div class="grid">
         <div><label for="pairA">สินค้า A (แกนนอน)</label><select id="pairA"></select></div>
         <div><label for="pairB">สินค้า B (ที่ต้องขายชดเชย)</label><select id="pairB"></select></div>
-        <div class="field"><label for="pairStart">เริ่มกราฟที่ A ขายได้</label><input id="pairStart" type="number" min="0" step="any" inputmode="decimal" value="0"><span class="unit">หน่วย</span></div>
-        <div class="field"><label for="pairEnd">ถึง <small>(เว้นว่าง = อัตโนมัติ)</small></label><input id="pairEnd" type="number" min="0" step="any" inputmode="decimal" placeholder="อัตโนมัติ"><span class="unit">หน่วย</span></div>
+        <div class="field"><label for="pairStart">เริ่มกราฟที่ A ขายได้</label><input id="pairStart" type="text" class="num" inputmode="decimal" value="0"><span class="unit">หน่วย</span></div>
+        <div class="field"><label for="pairEnd">ถึง <small>(เว้นว่าง = จนถึง B = 0)</small></label><input id="pairEnd" type="text" class="num" inputmode="decimal" placeholder="จนถึง B = 0"><span class="unit">หน่วย</span></div>
       </div>
       <div class="actions"><button id="swap">สลับ A ↔ B</button></div>
       <p class="warn" id="pairmsg" style="margin:12px 0 0;font-weight:600"></p>
@@ -216,6 +216,15 @@ const SAMPLE_FIXED = [["ค่าเช่า",20000],["เงินเดือ
 const KEY = "breakeven-v2";
 const pair = { a: 0, b: 1, start: "0", end: "" };
 const $ = id => document.getElementById(id);
+const pf = v => parseFloat(String(v).replace(/,/g, ""));
+const withCommas = raw => {
+  if (raw === "" || isNaN(raw)) return raw;
+  const [a, b] = raw.split(".");
+  const int = String(parseInt(a || "0", 10)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return b === undefined ? int : int + "." + b;
+};
+const fmtField = i => { i.value = withCommas(i.value.replace(/,/g, "")); };
+const fmtAll = () => document.querySelectorAll("input.num").forEach(i => { if (i !== document.activeElement) fmtField(i); });
 const tbody = $("skus").querySelector("tbody");
 const nf = (n, d = 2) => n.toLocaleString("th-TH", { minimumFractionDigits: d, maximumFractionDigits: d });
 const ni = n => n.toLocaleString("th-TH", { maximumFractionDigits: 0 });
@@ -232,8 +241,9 @@ const el = (tag, props = {}, kids = []) => {
 const fbody = $("fixedtbl").querySelector("tbody");
 function mkInput(cls, type, val, ph) {
   const td = document.createElement("td");
-  const inp = el("input", { className: cls, type, value: val, placeholder: ph || "" });
-  if (type === "number") { inp.min = 0; inp.step = "any"; inp.inputMode = "decimal"; }
+  const num = type === "number";
+  const inp = el("input", { className: cls + (num ? " num" : ""), type: "text", value: val, placeholder: ph || "" });
+  if (num) inp.inputMode = "decimal";
   td.append(inp); return td;
 }
 function addTo(body, cells) {
@@ -244,6 +254,7 @@ function addTo(body, cells) {
   del.onclick = () => { tr.remove(); calc(); };
   const td = document.createElement("td"); td.append(del); tr.append(td);
   body.append(tr);
+  fmtAll();
 }
 const addRow = (name = "", price = "", cost = "", mix = "") =>
   addTo(tbody, [mkInput("n", "text", name, "ชื่อสินค้า"), mkInput("p", "number", price), mkInput("c", "number", cost), mkInput("m", "number", mix)]);
@@ -252,15 +263,15 @@ const addFixed = (name = "", amt = "") =>
 function readSkus() {
   return [...tbody.rows].map((tr, i) => ({
     name: tr.querySelector(".n").value.trim() || `SKU ${i + 1}`,
-    price: parseFloat(tr.querySelector(".p").value),
-    cost: parseFloat(tr.querySelector(".c").value),
-    mix: parseFloat(tr.querySelector(".m").value),
+    price: pf(tr.querySelector(".p").value),
+    cost: pf(tr.querySelector(".c").value),
+    mix: pf(tr.querySelector(".m").value),
   }));
 }
 function readFixed() {
   return [...fbody.rows].map((tr, i) => ({
     name: tr.querySelector(".n").value.trim() || `รายการ ${i + 1}`,
-    amt: parseFloat(tr.querySelector(".a").value) || 0,
+    amt: pf(tr.querySelector(".a").value) || 0,
   }));
 }
 function loadSample() {
@@ -360,7 +371,7 @@ function drawChart(host, cfg) {
   // vertical reference lines
   (cfg.vlines || []).forEach(v => {
     add("line", { x1: X(v.x), x2: X(v.x), y1: m.t, y2: H - m.b, stroke: v.color || css("--ref"), "stroke-width": 1.2, "stroke-dasharray": "4 4" });
-    add("text", { x: X(v.x) + ((v.x - x0) / xs > 0.75 ? -6 : 6), y: m.t + 11 + (v.row || 0) * 15, "text-anchor": (v.x - x0) / xs > 0.75 ? "end" : "start", "font-size": 11.5, "font-weight": 600, fill: css("--text") }, v.label);
+    add("text", { x: X(v.x) + ((v.x - x0) / xs > 0.75 ? -6 : 6), y: v.bottom ? H - m.b - 28 : m.t + 11 + (v.row || 0) * 15, "text-anchor": (v.x - x0) / xs > 0.75 ? "end" : "start", "font-size": 11.5, "font-weight": 600, fill: css("--text") }, v.label);
   });
   // series lines
   cfg.series.forEach(s => {
@@ -480,12 +491,12 @@ function renderPair(r, fixed) {
   if (pair.a === pair.b) return stop("เลือกสินค้า A และ B คนละรายการ");
   if (!(B.cm > 0)) return stop(`${B.name} มี CM ≤ 0 ขายเท่าไรก็ชดเชยต้นทุนคงที่ไม่ได้ ลองสลับให้เป็นสินค้า A หรือเลือกสินค้าอื่นเป็น B`);
 
-  const start = Math.max(0, parseFloat($("pairStart").value) || 0);
+  const start = Math.max(0, pf($("pairStart").value) || 0);
   const bNeed = x => Math.max(0, (fixed - x * A.cm) / B.cm);
   const aOnly = A.cm > 0 ? fixed / A.cm : null, bOnly = fixed / B.cm;
   const cross = A.cm + B.cm > 0 ? fixed / (A.cm + B.cm) : null;
-  let end = parseFloat($("pairEnd").value);
-  if (!(end > start)) end = Math.max(start * 1.5, start + 20, aOnly ? aOnly * 1.1 : 0);
+  let end = pf($("pairEnd").value);
+  if (!(end > start)) end = aOnly && aOnly > start ? ceilInt(aOnly) : Math.max(start * 1.5, start + 20);
   const yMax = Math.max(bNeed(start), end) * 1.05 || 1;
   const c1 = css("--s1"), c2 = css("--s2");
   const short = (p, x) => p + ": " + (x.name.length > 8 ? x.name.slice(0, 8) + "…" : x.name);
@@ -502,13 +513,13 @@ function renderPair(r, fixed) {
     kpi(big(ni(ceilInt(bOnly)), "หน่วย"), "B อย่างเดียว คุ้มทุนที่", `${nfa(fixed)} ÷ ${nf(B.cm)} = ${nf(bOnly)}`),
     kpi(big(cross ? ni(ceilInt(cross)) : "—", cross ? "หน่วย" : ""), "ขาย A = B เท่ากัน คุ้มทุนที่ (ชนิดละ)", cross ? `${nfa(fixed)} ÷ (${nf(A.cm)} + ${nf(B.cm)}) = ${nf(cross)}` : "CM รวมของ A + B ≤ 0"));
 
-  const inRange = cross && cross > start && cross < end;
+  const inRange = cross && cross > start && cross < end, atZero = bNeed(end) === 0 && b0 > 0;
   drawChart(chart, {
     height: 300, xMin: start, xMax: end, yMin: 0, yMax, series, snap: true, bep: start,
     xTitle: `จำนวนสินค้า A ที่ขาย — ${A.name} (หน่วย)`,
     tipTitle: x => `A ขาย ${ni(x)} หน่วย`, fmtVal: v => `${ni(ceilInt(v))} หน่วย`,
-    vlines: inRange ? [{ x: cross, label: `A = B ที่ ${ni(ceilInt(cross))} หน่วย`, row: 0 }] : [],
-    markers: [{ x: start, y: b0, color: c2 }, ...(inRange ? [{ x: cross, y: cross, color: c1 }] : [])] });
+    vlines: [...(inRange ? [{ x: cross, label: `A = B ที่ ${ni(ceilInt(cross))} หน่วย`, row: 0 }] : []), ...(atZero ? [{ x: end, label: `B = 0 ที่ A = ${ni(end)}`, bottom: true }] : [])],
+    markers: [{ x: start, y: b0, color: c2 }, ...(inRange ? [{ x: cross, y: cross, color: c1 }] : []), ...(atZero ? [{ x: end, y: 0, color: c2 }] : [])] });
   $("fm3").textContent = `สูตร: B ที่ต้องขาย = (ต้นทุนคงที่ − A × CM ของ A) ÷ CM ของ B = (${nfa(fixed)} − A × ${nf(A.cm)}) ÷ ${nf(B.cm)} · ถ้าได้ค่าติดลบ แปลว่า A ชดเชยได้ครบแล้ว B = 0 · คิดเฉพาะ 2 สินค้านี้ ต้นทุนคงที่รวมทั้งหมดต้องถูกชดเชยด้วย A และ B เท่านั้น สินค้าอื่นไม่นับ`;
 }
 
@@ -517,8 +528,8 @@ function calc() {
   const msg = $("msg"), kpis = $("kpis"), out = $("out");
   const items = readFixed(), fixed = items.reduce((a, i) => a + i.amt, 0);
   $("fixedTotal").textContent = nfa(fixed);
-  const target = parseFloat($("target").value) || 0;
-  const expected = parseFloat($("expected").value) || 0;
+  const target = pf($("target").value) || 0;
+  const expected = pf($("expected").value) || 0;
   const skus = readSkus();
   kpis.replaceChildren(); out.hidden = true; msg.replaceChildren();
   const info = (t, cls = "") => msg.append(el("p", { className: cls, textContent: t }));
@@ -591,12 +602,27 @@ function calc() {
     [el("h3", { textContent: t }), ...lines.map(l => el("p", { textContent: l }))]));
 }
 
-document.addEventListener("input", calc);
+document.addEventListener("input", ev => {
+  const t = ev.target;
+  if (t.classList && t.classList.contains("num")) {
+    const v = t.value.replace(/,/g, "").replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+    if (v !== t.value) t.value = v;
+  }
+  calc();
+});
+document.addEventListener("focusin", ev => {
+  const t = ev.target;
+  if (!t.classList?.contains("num")) return;
+  t.value = t.value.replace(/,/g, "");
+  setTimeout(() => { if (document.activeElement === t) t.select(); }, 0);
+});
+document.addEventListener("focusout", ev => { if (ev.target.classList?.contains("num")) { fmtField(ev.target); save(); } });
 $("add").onclick = () => { addRow(); save(); };
 $("addFixed").onclick = () => { addFixed(); save(); };
 $("swap").onclick = () => { const a = $("pairA").value; $("pairA").value = $("pairB").value; $("pairB").value = a; calc(); };
 $("reset").onclick = () => { loadSample(); calc(); };
 if (!restore()) loadSample();
+fmtAll();
 calc();
 let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if (!$("out").hidden) calc(); }, 80); }).observe(document.querySelector("main"));
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", calc);
