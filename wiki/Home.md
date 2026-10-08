@@ -6,7 +6,7 @@
 
 | | 🟢 ง่าย | 🟡 กลาง | 🔴 ยาก |
 |---|---|---|---|
-| **ไพ่คำนวณ** (Self-Working: ใช้หลักคณิตศาสตร์/การจัดลำดับ ไม่ต้องใช้ฝีมือ) | [ไพ่คีย์, ไพ่ 9 ใบ](Self-Working-Easy.md) | [ไพ่ 21 ใบ, Gilbreath, Si Stebbins](Self-Working-Medium.md) | [Fitch–Cheney 5 ใบ, Faro คณิตศาสตร์](Self-Working-Hard.md) |
+| **ไพ่คำนวณ** (Self-Working: ใช้หลักคณิตศาสตร์/การจัดลำดับ ไม่ต้องใช้ฝีมือ) | [ไพ่คีย์, ไพ่ 9 ใบ, ไพ่สะกดชื่อ, เอซ 4 กอง, คว่ำ–หงาย (คู่–คี่)](Self-Working-Easy.md) | [ไพ่ 21 ใบ, Gilbreath (สี/ดอก), Si Stebbins, Kruskal Count, Binary Cards](Self-Working-Medium.md) | [Fitch–Cheney (+ฝึกถอดรหัส), Faro คณิตศาสตร์, Mnemonica, Monge's Shuffle](Self-Working-Hard.md) |
 | **ไพ่ฝีมือ** (Sleight of Hand: ใช้เทคนิคมือ) | [Overhand, Glimpse, Cross-Cut Force](Sleight-Easy.md) | [Double Lift, Hindu Force, Riffle & Bridge](Sleight-Medium.md) | [Classic Pass, Palm, Faro Shuffle](Sleight-Hard.md) |
 
 ## เริ่มตรงไหนดี?
@@ -28,3 +28,12 @@
 | ข้อควรระวัง | ถ้าเล่นซ้ำ คนจับทางได้ง่าย | ฝึกไม่พอ = เห็นเทคนิค |
 
 > ⚠️ **จริยธรรมนักมายากล:** ความสนุกอยู่ที่ "ความอัศจรรย์ใจ" ไม่ใช่การหลอกลวงเอาประโยชน์ อย่านำไปใช้กับการพนัน/การโกงเงิน และอย่าเฉลยวิธีให้ผู้ชมระหว่างการแสดง
+
+## 🧪 เครื่องมือตรวจสอบและฝึกซ้อม (`wiki/tools/`)
+
+| สคริปต์ | หน้าที่ |
+|---|---|
+| `verify_tricks.py [--fitch]` | ตรวจความถูกต้องของกลไพ่คำนวณทุกกลด้วยการจำลอง (`--fitch` ตรวจครบทุก 2.6 ล้านมือ) |
+| `fitch_drill.py` | สร้างโจทย์ฝึกถอดรหัส Fitch–Cheney |
+| `mnemonica_drill.py` | ฝึกท่องตำแหน่ง Mnemonica / Si Stebbins |
+| `generate_images.py` | สร้างภาพประกอบ SVG ทั้งหมดใหม่ |

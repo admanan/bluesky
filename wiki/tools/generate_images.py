@@ -520,23 +520,218 @@ def faro_physical():
     s.save("faro-physical.svg")
 
 
+# ---------------------------------------------------------------- เพิ่มเติม: ไพ่คำนวณ
+from verify_tricks import (spelling_arrangement, kval, kruskal_final, binary_cards, monge)
+
+
+def spelling():
+    arr = spelling_arrangement()
+    s = Svg(760, 330, "ไพ่สะกดชื่อ: สะกด O-N-E แล้วไพ่ที่เปิดคือ A, T-W-O → 2 …")
+    s.text(30, 62, "① จัดไพ่ 10 ใบ (บน → ล่าง) ล่วงหน้า  (A = 1)", 14, "start", 600)
+    for i, n in enumerate(arr):
+        s.strip(30 + i * 70, 76, "A♠" if n == 1 else f"{n}♠", 62, 34)
+        s.text(61 + i * 70, 128, f"ใบที่ {i+1}", 10, "middle", 400, MUTE)
+    s.text(30, 160, "② สะกด ONE: ย้ายไพ่จาก 'บน → ล่าง' ทีละใบ ตามจำนวนตัวอักษร (3 ตัว = 3 ใบ)", 14, "start", 600)
+    q = arr[:]
+    row = lambda y, cards, hl=None, lab="": ([s.strip(30 + i * 70, y, "A♠" if n == 1 else f"{n}♠", 62, 30, hl=(n == hl)) for i, n in enumerate(cards)], s.text(30, y - 6, lab, 11, "start", 400, MUTE))
+    row(182, q, None, "ก่อนสะกด")
+    for _ in "ONE": q.append(q.pop(0))
+    row(238, q, 1, "หลังย้าย 3 ใบ → ใบบนสุดคือ A  (เปิดทิ้งออกไป แล้วสะกดคำต่อไป)")
+    s.rect(30, 282, 700, 36, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 305, "ทำซ้ำ: TWO(3) → 2, THREE(5) → 3 … TEN(3) → 10 (ตรวจด้วยโค้ดแล้ว)", 13, "middle", 700, GREEN)
+    s.save("spelling.svg")
+
+
+def four_aces_deal():
+    s = Svg(760, 330, "เอซ 4 ใบจากการแจก 4 กอง: เอซอยู่ 4 ใบล่างสุด (ใบที่ 49–52)")
+    s.text(30, 62, "① สำรับ 52 ใบ: เอซ 4 ใบอยู่ล่างสุด", 14, "start", 600)
+    for i in range(6):
+        s.strip(30 + i * 40, 76, "?", 36, 26)
+    s.text(30 + 6 * 40 + 6, 94, "…", 16, "start", 700)
+    for i, c in enumerate(["A♠", "A♥", "A♦", "A♣"]):
+        s.strip(300 + i * 52, 76, c, 48, 26, hl=True)
+    s.text(300, 122, "ใบที่ 49 50 51 52", 11, "start", 400, MUTE)
+    s.text(30, 156, "② แจกหงายหน้า/คว่ำหน้าทีละใบ วนซ้าย→ขวา 4 กอง จนหมดสำรับ (กองละ 13 ใบ)", 14, "start", 600)
+    for p in range(4):
+        x = 90 + p * 160
+        s.text(x + 48, 182, f"กอง {p+1}", 12, "middle", 600, MUTE)
+        for k, lab in enumerate(["?", "?", "…"]):
+            s.strip(x, 190 + k * 20, lab, 96, 18)
+        s.strip(x, 250, ["A♠", "A♥", "A♦", "A♣"][p], 96, 26, hl=True)
+    s.text(380, 300, "ใบสุดท้ายที่แจกของแต่ละกอง (บนสุด) = เอซ ครบ 4 กอง", 13, "middle", 700, GREEN)
+    s.text(380, 320, "ต้องแจกครบทั้ง 52 ใบ และสำรับห้ามถูกตัดก่อนแจก", 12, "middle", 400, MUTE)
+    s.save("four-aces-deal.svg")
+
+
+def parity():
+    s = Svg(760, 360, "ทายด้านไพ่ด้วยหลักคู่–คี่ (Parity): พลิกคู่ ๆ จำนวนหงายยังเป็นเลขคู่เสมอ")
+    up = [1, 0, 1, 1, 0, 0, 1, 0, 0, 0]
+    def row(y, ups, hide=None, title=""):
+        s.text(30, y - 8, title, 13, "start", 600)
+        for i, u in enumerate(ups):
+            x = 30 + i * 70
+            if i == hide:
+                s.rect(x, y, 56, 70, "#e5e7eb", "#6b7280", 1.5, 6); s.text(x + 28, y + 42, "ปิดไว้", 12, "middle", 700, MUTE)
+            elif u:
+                s.rect(x, y, 56, 70, PAPER, "#6b7280", 1.5, 6); s.text(x + 28, y + 43, "หงาย", 12, "middle", 700)
+            else:
+                s.card(x, y, None, 56, 70, back=True)
+    row(80, up, None, "① เริ่มต้น: หงาย 4 ใบ (เลขคู่) — ผู้ชมพลิกไพ่ 'ทีละ 2 ใบ' กี่ครั้งก็ได้ (ผมไม่มอง)")
+    up2 = [1, 0, 1, 1, 0, 0, 1, 0, 0, 0]
+    row(200, up2, hide=2, title="② ผู้ชมเอามือปิดไพ่ 1 ใบ (ใบที่ 3)  → ผมนับหงายที่เห็น = 3 ใบ (คี่)")
+    s.rect(30, 290, 700, 56, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 314, "หงายที่เห็นเป็นเลขคี่ → ใบที่ปิดอยู่ต้อง 'หงาย' (ให้รวมเป็นเลขคู่)", 14, "middle", 700, GREEN)
+    s.text(380, 334, "หงายที่เห็นเป็นเลขคู่ → ใบที่ปิดอยู่ 'คว่ำ'", 13, "middle", 400)
+    s.save("parity.svg")
+
+
+def kruskal():
+    # หาสำรับตัวอย่างที่เส้นทางจากใบที่ 1 กับใบที่ 3 ไปบรรจบกันภายใน 24 ใบแรก
+    rnd = random.Random(11)
+    base = [r for r in range(1, 14) for _ in range(4)]
+    while True:
+        d = base[:]; rnd.shuffle(d)
+        def path(st):
+            i, ps = st, [st]
+            while i + kval(d[i]) < len(d): i += kval(d[i]); ps.append(i)
+            return ps
+        pa, pb = path(0), path(2)
+        com = [i for i in pa if i in pb]
+        if com and com[0] < 24 and kruskal_final(d, 0) == kruskal_final(d, 2):
+            break
+    s = Svg(760, 330, "Kruskal Count: เริ่มต่างกัน แต่เส้นทางมักไปบรรจบกัน")
+    face = lambda r: {1: "A", 11: "J", 12: "Q", 13: "K"}.get(r, str(r))
+    for i in range(24):
+        x, y = 22 + (i % 12) * 60, 60 + (i // 12) * 90
+        inA, inB = i in pa, i in pb
+        col = GOLD if (inA and inB) else (BLUE if inA else (GREEN if inB else "#9ca3af"))
+        s.rect(x, y, 52, 66, "#fff7ed" if col == GOLD else PAPER, col, 3.2 if col != "#9ca3af" else 1.2, 6)
+        s.text(x + 26, y + 40, face(d[i]), 20, "middle", 700)
+        s.text(x + 26, y + 60, f"#{i+1}", 10, "middle", 400, MUTE)
+    s.text(30, 252, "● น้ำเงิน = เส้นทางเริ่มที่ใบ #1   ● เขียว = เริ่มที่ใบ #3   ● ทอง = ตกใบเดียวกัน (เดินต่อไปด้วยกันเสมอ)", 12, "start", 600)
+    s.text(30, 274, "นับตามค่าไพ่: A=1 … 10=10, J Q K = 5  → ไปหยุดที่ใบสุดท้ายที่นับต่อไม่ได้อีก", 12, "start", 400, MUTE)
+    s.rect(30, 288, 700, 30, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 308, "จำลอง 20,000 สำรับ: เริ่ม #1 กับจุดเริ่มใด ๆ ใน 10 ใบแรก ได้ใบสุดท้ายเดียวกัน ≈ 85%", 13, "middle", 700, GREEN)
+    s.save("kruskal.svg")
+
+
+def binary_cards_img():
+    cards = binary_cards()
+    s = Svg(760, 440, "Binary Cards: ไพ่ตัวเลข 6 ใบ ทายเลข 1–63 ที่ผู้ชมคิดไว้")
+    for b, nums in enumerate(cards):
+        ox, oy = 18 + (b % 3) * 245, 52 + (b // 3) * 190
+        s.rect(ox, oy, 230, 176, PAPER, "#6b7280", 1.5, 8)
+        s.text(ox + 115, oy + 18, f"ใบที่ {b+1}  (เลขแรก = {1 << b})", 12, "middle", 700, BLUE)
+        for k, n in enumerate(nums):
+            cx, cy = ox + 14 + (k % 8) * 26.5, oy + 38 + (k // 8) * 33
+            hl = n == 37
+            if hl: s.rect(cx - 3, cy - 14, 24, 20, "#fff3cd", GOLD, 2, 4)
+            s.text(cx + 9, cy, n, 12, "middle", 700 if hl else 400)
+    s.text(380, 428, "ตัวอย่าง: 37 อยู่ในใบ 1, 3, 6  →  1 + 4 + 32 = 37", 14, "middle", 700, GREEN)
+    s.save("binary-cards.svg")
+
+
+def gilbreath_suit():
+    random.seed(3)
+    suits = "♣♥♠♦"
+    deck = [i % 4 for i in range(12)]
+    n = 5
+    table, hand = list(reversed(deck[:n])), deck[n:]
+    a, b, merged = table[:], hand[:], []
+    while a or b:
+        if a and (not b or random.random() < .5): merged.append(a.pop(0))
+        else: merged.append(b.pop(0))
+    for i in range(0, 12, 4): assert sorted(merged[i:i + 4]) == [0, 1, 2, 3]
+    s = Svg(760, 470, "Gilbreath หลักการที่ 2: จัดดอกวน ♣♥♠♦ → ทุกกลุ่ม 4 ใบมีครบ 4 ดอก")
+    def col(x, y, seq, title, groups=False):
+        s.text(x + 30, y - 12, title, 12, "middle", 600)
+        for i, c in enumerate(seq):
+            s.strip(x, y + i * 28, suits[c], 60, 24, color=RED if c in (1, 3) else INK)
+        if groups:
+            for k in range(0, len(seq), 4):
+                s.parts.append(f'<path d="M{x+68},{y+k*28} q10,0 10,10 v76 q0,10 -10,10" fill="none" stroke="{GREEN}" stroke-width="2.5"/>')
+                s.text(x + 90, y + k * 28 + 60, "ครบ 4 ดอก", 12, "start", 700, GREEN)
+    col(40, 80, deck, "① จัดดอกวน")
+    s.line(115, 200, 190, 200, arrow=True); s.text(152, 182, "แจก 5 ใบ", 11, "middle", 400, MUTE)
+    col(205, 80, table, "② กองโต๊ะ (กลับ)")
+    col(305, 80, hand, "ในมือ (7)")
+    s.line(385, 200, 455, 200, arrow=True); s.text(420, 182, "ริฟเฟิล", 11, "middle", 400, MUTE)
+    col(470, 80, merged, "③ หลังริฟเฟิล", True)
+    s.text(380, 452, "ใช้ได้กับทุกจำนวนที่แจกออก (ตรวจ 0–52 ใบ × 100 รูปแบบ) · ดอกที่ใช้แทนสีได้ · ริฟเฟิลแค่ 1 ครั้ง", 12, "middle", 600, GREEN)
+    s.save("gilbreath-suit.svg")
+
+
+MNEMONICA = "4♣ 2♥ 7♦ 3♣ 4♥ 6♦ A♠ 5♥ 9♠ 2♠ Q♥ 3♦ Q♣ 8♥ 6♠ 5♠ 9♥ K♣ 2♦ J♥ 3♠ 8♠ 6♥ 10♣ 5♦ K♦ 2♣ 3♥ 8♦ 5♣ K♠ J♦ 8♣ 10♠ K♥ J♣ 7♠ 10♥ A♦ 4♠ 7♥ 4♦ A♣ 9♣ J♠ Q♦ 7♣ Q♠ 10♦ 6♣ A♥ 9♦".split()
+
+
+def mnemonica():
+    assert len(set(MNEMONICA)) == 52
+    s = Svg(760, 330, "Mnemonica Stack (Juan Tamariz): 52 ใบเรียงบน → ล่าง")
+    for i, c in enumerate(MNEMONICA):
+        x, y = 16 + (i % 13) * 56.5, 52 + (i // 13) * 64
+        s.rect(x, y, 52, 56, PAPER, "#9ca3af", 1.2, 5)
+        s.text(x + 5, y + 14, i + 1, 10, "start", 400, MUTE)
+        s.text(x + 26, y + 40, c, 17, "middle", 700, RED if c[-1] in "♥♦" else INK)
+    s.text(380, 318, "อ่านจากซ้ายไปขวา แถวบนไปล่าง (ใบที่ 1 = 4♣ … ใบที่ 52 = 9♦)", 13, "middle", 600, MUTE)
+    s.save("mnemonica.svg")
+
+
+def monge_img():
+    s = Svg(760, 360, "Monge's Shuffle: ไพ่ใบที่ 1 วางก่อน ใบถัดไปสลับ 'วางทับ / วางใต้'")
+    d = list(range(1, 11)); t = []; steps = []
+    for i, c in enumerate(d):
+        t = [c] + t if i % 2 else t + [c]; steps.append(t[:])
+    s.text(30, 60, "ตัวอย่าง 10 ใบ — สถานะกองใหม่หลังวางแต่ละใบ", 13, "start", 600)
+    for k in (1, 2, 3, 4, 5):
+        x = 30 + (k - 1) * 140
+        s.text(x, 84, f"วางใบ {k} " + ("" if k == 1 else ("ทับ" if k % 2 == 0 else "ใต้")), 12, "start", 700, BLUE)
+        for r, c in enumerate(steps[k - 1]):
+            s.strip(x, 94 + r * 26, c, 70, 22, hl=(c == k))
+    s.text(30, 242, "ผลสุดท้าย (บน → ล่าง) — ใบคู่เรียงย้อนกลับก่อน แล้วตามด้วยใบคี่เรียงปกติ:", 13, "start", 600)
+    fin = steps[-1]
+    for i, c in enumerate(fin):
+        s.strip(30 + i * 70, 252, c, 62, 26)
+    s.rect(30, 296, 700, 50, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 318, "สำรับ 52 ใบ: ใบคี่ i → ตำแหน่ง 26 + (i+1)/2   ·   ใบคู่ i → ตำแหน่ง 27 − i/2", 13, "middle", 700, GREEN)
+    s.text(380, 337, "ทำซ้ำ 12 รอบ สำรับ 52 ใบกลับเป็นลำดับเดิมพอดี (ตรวจด้วยโค้ดแล้ว)", 12, "middle", 400)
+    s.save("monge.svg")
+
+
+def fitch_flow():
+    s = Svg(760, 300, "Fitch–Cheney ถอดรหัสเร็ว: 3 ขั้นตอนใน 5 วินาที")
+    boxes = [("① ใบแรก", "ดู 'ดอก' → ดอกของใบซ่อน\nจำ 'เลข' เป็นจุดเริ่ม", BLUE),
+             ("② ใบที่เหลือ 3 ใบ", "เรียงเล็ก–กลาง–ใหญ่\n→ อ่านรหัส d (1–6)", GOLD),
+             ("③ บวก", "ใบซ่อน = เลขใบแรก + d\n(เกิน K ให้วนกลับ A)", GREEN)]
+    for i, (h, b, c) in enumerate(boxes):
+        x = 30 + i * 240
+        s.rect(x, 60, 220, 120, PAPER, c, 3, 12)
+        s.text(x + 110, 90, h, 16, "middle", 700, c)
+        for k, ln in enumerate(b.split("\n")): s.text(x + 110, 124 + k * 24, ln, 13, "middle", 400)
+        if i < 2: s.line(x + 224, 120, x + 236, 120, MUTE, 2, arrow=True)
+    s.rect(30, 204, 700, 74, "#eff6ff", BLUE, 1.2, 10)
+    s.text(380, 230, "เทคนิคช่วยจำ: d = ตำแหน่งในลิสต์ SML, SLM, MSL, MLS, LSM, LMS", 13, "middle", 700)
+    s.text(380, 252, "เล็ก–กลาง–ใหญ่ ใช้ A<2<…<K ก่อน ถ้าเลขเท่ากันใช้ ♣<♦<♥<♠", 13, "middle")
+    s.text(380, 270, "กฎนี้ตรวจแล้วครบทุก 2,598,960 มือ", 12, "middle", 700, GREEN)
+    s.save("fitch-flow.svg")
+
+
 # ---------------------------------------------------------------- overview
 def learning_path():
-    s = Svg(760, 400, "เส้นทางการเรียน: ไต่ระดับจากง่ายไปยาก")
-    levels = [("ง่าย", GREEN, ["ไพ่คีย์", "ไพ่ 9 ใบ", "Overhand Shuffle", "Glimpse", "Cross-Cut Force"]),
-              ("กลาง", GOLD, ["ไพ่ 21 ใบ", "Gilbreath", "Si Stebbins", "Double Lift", "Hindu Shuffle Force", "Riffle + Bridge"]),
-              ("ยาก", RED, ["Fitch–Cheney 5 ใบ", "Faro คณิตศาสตร์", "Classic Pass", "Top-Card Palm", "Faro Shuffle จริง"])]
+    s = Svg(760, 440, "เส้นทางการเรียน: ไต่ระดับจากง่ายไปยาก")
+    levels = [("ง่าย", GREEN, ["ไพ่คีย์", "ไพ่ 9 ใบ", "ไพ่สะกดชื่อ", "เอซ 4 กอง", "คู่–คี่ คว่ำ/หงาย", "Overhand Shuffle", "Glimpse", "Cross-Cut Force"]),
+              ("กลาง", GOLD, ["ไพ่ 21 ใบ", "Gilbreath (สี/ดอก)", "Si Stebbins", "Kruskal Count", "Binary Cards", "Double Lift", "Hindu Shuffle Force", "Riffle + Bridge"]),
+              ("ยาก", RED, ["Fitch–Cheney 5 ใบ", "Mnemonica Stack", "Monge's Shuffle", "Faro คณิตศาสตร์", "Classic Pass", "Top-Card Palm", "Faro Shuffle จริง"])]
     for i, (name, c, items) in enumerate(levels):
         x = 30 + i * 240
         h = 62 + len(items) * 28
-        y = 380 - h
+        y = 420 - h
         s.rect(x, y, 220, h, "#fff", c, 2.5, 12)
         s.text(x + 110, y + 28, f"ระดับ{name}", 17, "middle", 700, c)
         for k, it in enumerate(items):
             s.rect(x + 16, y + 42 + k * 28, 188, 22, "#f8fafc", "#cbd5e1", 1, 5)
             s.text(x + 110, y + 58 + k * 28, it, 13, "middle", 600)
         if i < 2:
-            s.line(x + 224, 330, x + 236, 330, MUTE, 2, arrow=True)
+            s.line(x + 224, 380, x + 236, 380, MUTE, 2, arrow=True)
     s.save("learning-path.svg")
 
 
@@ -555,6 +750,7 @@ if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     for fn in (keycard, nine_cards, twentyone, gilbreath, stebbins, fitch, faro_math, overhand, glimpse,
                crosscut, double_lift, hindu_force, riffle, classic_pass, palm, faro_physical,
-               learning_path, cover):
+               learning_path, cover, spelling, four_aces_deal, parity, kruskal, binary_cards_img,
+               gilbreath_suit, mnemonica, monge_img, fitch_flow):
         fn()
     print("สร้างภาพครบ", len(os.listdir(OUT)), "ไฟล์")
