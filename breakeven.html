@@ -53,12 +53,17 @@
   .tablewrap { overflow-x:auto; margin:0 -4px; padding:0 4px; }
   table { width:100%; border-collapse:collapse; }
   #skus { min-width:620px; }
+  #fixedtbl { min-width:420px; }
+  #fixedtbl tfoot td { font-weight:700; border-bottom:none; font-variant-numeric:tabular-nums; }
+  #fixedtbl tfoot td:last-child { width:1%; }
   th, td { padding:7px 6px; text-align:right; white-space:nowrap; }
   th { font-size:.76rem; color:var(--muted); font-weight:600; border-bottom:1px solid var(--line); }
   td { border-bottom:1px solid var(--line); }
   th:first-child, td:first-child { text-align:left; }
-  #skus td input { text-align:right; padding:8px 10px; min-width:90px; }
-  #skus td:first-child input { text-align:left; min-width:150px; }
+  #skus td input, #fixedtbl td input { text-align:right; padding:8px 10px; min-width:90px; }
+  #skus td:first-child input, #fixedtbl td:first-child input { text-align:left; min-width:150px; }
+  input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
   button { font:inherit; font-weight:600; font-size:.9rem; padding:9px 15px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); cursor:pointer; transition:background .15s, transform .05s; }
   button:hover { background:var(--surface-2); }
   button:active { transform:translateY(1px); }
@@ -76,6 +81,11 @@
   .kpi .v { font-size:1.7rem; font-weight:800; line-height:1.15; font-variant-numeric:tabular-nums; }
   .kpi .v small { font-size:.9rem; font-weight:600; opacity:.8; }
   .kpi .l { color:var(--text-2); font-size:.84rem; margin-top:4px; }
+  .kpi .f { color:var(--muted); font-size:.76rem; margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+  .kpi.main .f { color:#ffffffcc; border-top-color:#ffffff55; }
+  .how h3 { font-size:.92rem; margin:18px 0 4px; }
+  .how h3:first-child { margin-top:4px; }
+  .how p { margin:2px 0; color:var(--text-2); font-size:.88rem; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
   .ok { color:var(--good); } .warn { color:var(--bad); }
   .msg { margin-bottom:16px; }
   .msg p { margin:0; padding:14px 16px; border-radius:12px; background:var(--surface); border:1px solid var(--line); color:var(--text-2); }
@@ -113,10 +123,17 @@
   </header>
 
   <section class="card">
-    <h2><span class="step">1</span>ต้นทุนและเป้าหมาย</h2>
-    <p class="hint">ต้นทุนคงที่ เช่น ค่าเช่า เงินเดือน ค่าไฟ ที่จ่ายทุกเดือนไม่ว่าจะขายได้หรือไม่</p>
-    <div class="grid">
-      <div class="field"><label for="fixed">ต้นทุนคงที่รวม</label><input id="fixed" type="number" min="0" step="any" inputmode="decimal" value="50000"><span class="unit">บาท</span></div>
+    <h2><span class="step">1</span>ต้นทุนคงที่และเป้าหมาย</h2>
+    <p class="hint">ต้นทุนคงที่คือค่าใช้จ่ายที่ต้องจ่ายทุกเดือนไม่ว่าจะขายได้หรือไม่ เพิ่มได้หลายรายการและตั้งชื่อเองได้</p>
+    <div class="tablewrap">
+      <table id="fixedtbl">
+        <thead><tr><th>รายการ</th><th>จำนวนเงิน (บาท/เดือน)</th><th></th></tr></thead>
+        <tbody></tbody>
+        <tfoot><tr><td>รวมต้นทุนคงที่</td><td id="fixedTotal">0</td><td></td></tr></tfoot>
+      </table>
+    </div>
+    <div class="actions"><button id="addFixed" class="primary">+ เพิ่มรายการต้นทุนคงที่</button></div>
+    <div class="grid" style="margin-top:20px">
       <div class="field"><label for="target">กำไรเป้าหมาย <small>(ไม่บังคับ)</small></label><input id="target" type="number" min="0" step="any" inputmode="decimal" value="0"><span class="unit">บาท</span></div>
       <div class="field"><label for="expected">ยอดขายคาดการณ์รวม <small>(ไม่บังคับ)</small></label><input id="expected" type="number" min="0" step="any" inputmode="decimal" placeholder="เช่น 1500"><span class="unit">หน่วย</span></div>
     </div>
@@ -147,6 +164,7 @@
         <div class="legend" id="legend1"></div>
       </div>
       <div class="chart" id="chart1" tabindex="0" role="img" aria-label="กราฟเส้นรายได้รวมและต้นทุนรวมเทียบกับจำนวนที่ขาย"></div>
+      <p class="note" id="fm1"></p>
     </section>
 
     <section class="card">
@@ -154,12 +172,19 @@
         <div><h2>กำไร / ขาดทุน ตามจำนวนที่ขาย</h2><p class="hint" style="margin:0">เส้นตัดศูนย์ = จุดคุ้มทุน ด้านล่าง = ขาดทุน ด้านบน = กำไร</p></div>
       </div>
       <div class="chart" id="chart2" tabindex="0" role="img" aria-label="กราฟเส้นกำไรขาดทุนเทียบกับจำนวนที่ขาย"></div>
+      <p class="note" id="fm2"></p>
     </section>
 
     <section class="card">
       <h2>ตารางสรุปแต่ละ SKU</h2>
       <div class="tablewrap" style="margin-top:10px"><table id="result"></table></div>
-      <p class="note">จุดคุ้มทุนต่อ SKU ปัดขึ้นเป็นจำนวนเต็ม โดยสมมติว่าสัดส่วนยอดขายคงที่</p>
+      <p class="note">เอาเมาส์ชี้ที่ตัวเลขในตารางเพื่อดูสูตร · จุดคุ้มทุนต่อ SKU ปัดขึ้นเป็นจำนวนเต็ม โดยสมมติว่าสัดส่วนยอดขายคงที่</p>
+    </section>
+
+    <section class="card">
+      <h2>ที่มาของตัวเลข</h2>
+      <p class="hint">สูตรและค่าที่แทนจริงของทุกตัวเลขข้างบน (ตัวเลขในสูตรแสดงทศนิยม 2 ตำแหน่ง แต่คำนวณด้วยค่าเต็ม)</p>
+      <div class="how" id="how"></div>
     </section>
   </div>
   <footer>ข้อมูลที่กรอกจะถูกจำไว้ในเบราว์เซอร์ของคุณเท่านั้น ไม่ส่งไปที่ไหน</footer>
@@ -167,7 +192,8 @@
 
 <script>
 const SAMPLE = [["เสื้อยืด",250,120,500],["กางเกงยีนส์",890,520,200],["หมวก",150,60,300]];
-const KEY = "breakeven-v1";
+const SAMPLE_FIXED = [["ค่าเช่า",20000],["เงินเดือน",25000],["ค่าไฟ น้ำ และอื่น ๆ",5000]];
+const KEY = "breakeven-v2";
 const $ = id => document.getElementById(id);
 const tbody = $("skus").querySelector("tbody");
 const nf = (n, d = 2) => n.toLocaleString("th-TH", { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -181,22 +207,27 @@ const el = (tag, props = {}, kids = []) => {
   return e;
 };
 
-/* ---------- ตาราง SKU ---------- */
-function addRow(name = "", price = "", cost = "", mix = "") {
+/* ---------- ตารางกรอกข้อมูล ---------- */
+const fbody = $("fixedtbl").querySelector("tbody");
+function mkInput(cls, type, val, ph) {
+  const td = document.createElement("td");
+  const inp = el("input", { className: cls, type, value: val, placeholder: ph || "" });
+  if (type === "number") { inp.min = 0; inp.step = "any"; inp.inputMode = "decimal"; }
+  td.append(inp); return td;
+}
+function addTo(body, cells) {
   const tr = document.createElement("tr");
-  const cell = (cls, type, val, ph) => {
-    const td = document.createElement("td");
-    const inp = el("input", { className: cls, type, value: val, placeholder: ph || "" });
-    if (type === "number") { inp.min = 0; inp.step = "any"; inp.inputMode = "decimal"; }
-    td.append(inp); return td;
-  };
-  tr.append(cell("n", "text", name, "ชื่อสินค้า"), cell("p", "number", price), cell("c", "number", cost), cell("m", "number", mix));
+  tr.append(...cells);
   const del = el("button", { className: "del", title: "ลบแถว", textContent: "✕" });
   del.setAttribute("aria-label", "ลบแถว");
   del.onclick = () => { tr.remove(); calc(); };
   const td = document.createElement("td"); td.append(del); tr.append(td);
-  tbody.append(tr);
+  body.append(tr);
 }
+const addRow = (name = "", price = "", cost = "", mix = "") =>
+  addTo(tbody, [mkInput("n", "text", name, "ชื่อสินค้า"), mkInput("p", "number", price), mkInput("c", "number", cost), mkInput("m", "number", mix)]);
+const addFixed = (name = "", amt = "") =>
+  addTo(fbody, [mkInput("n", "text", name, "เช่น ค่าเช่า"), mkInput("a", "number", amt, "0")]);
 function readSkus() {
   return [...tbody.rows].map((tr, i) => ({
     name: tr.querySelector(".n").value.trim() || `SKU ${i + 1}`,
@@ -205,20 +236,33 @@ function readSkus() {
     mix: parseFloat(tr.querySelector(".m").value),
   }));
 }
+function readFixed() {
+  return [...fbody.rows].map((tr, i) => ({
+    name: tr.querySelector(".n").value.trim() || `รายการ ${i + 1}`,
+    amt: parseFloat(tr.querySelector(".a").value) || 0,
+  }));
+}
+function loadSample() {
+  tbody.innerHTML = ""; SAMPLE.forEach(s => addRow(...s));
+  fbody.innerHTML = ""; SAMPLE_FIXED.forEach(f => addFixed(...f));
+  $("target").value = 0; $("expected").value = "";
+}
 function save() {
   try {
     localStorage.setItem(KEY, JSON.stringify({
-      fixed: $("fixed").value, target: $("target").value, expected: $("expected").value,
-      rows: [...tbody.rows].map(tr => ["n","p","c","m"].map(c => tr.querySelector("." + c).value)),
+      target: $("target").value, expected: $("expected").value,
+      fixedRows: [...fbody.rows].map(tr => ["n", "a"].map(c => tr.querySelector("." + c).value)),
+      rows: [...tbody.rows].map(tr => ["n", "p", "c", "m"].map(c => tr.querySelector("." + c).value)),
     }));
   } catch (e) {}
 }
 function restore() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || "null");
-    if (!s || !Array.isArray(s.rows)) return false;
-    $("fixed").value = s.fixed; $("target").value = s.target; $("expected").value = s.expected;
+    if (!s || !Array.isArray(s.rows) || !Array.isArray(s.fixedRows)) return false;
+    $("target").value = s.target; $("expected").value = s.expected;
     tbody.innerHTML = ""; s.rows.forEach(r => addRow(...r));
+    fbody.innerHTML = ""; s.fixedRows.forEach(r => addFixed(...r));
     return true;
   } catch (e) { return false; }
 }
@@ -352,16 +396,50 @@ function legendInto(host, items) {
 }
 
 /* ---------- แสดงผล ---------- */
+const nfa = x => nf(x, Number.isInteger(x) ? 0 : 2);
+const pct = x => (x * 100).toFixed(1) + "%";
+
+function explain(r, items, target, expected) {
+  const steps = [];
+  const totalMix = r.rows.reduce((a, x) => a + x.mix, 0);
+  steps.push(["1. ต้นทุนคงที่รวม = ผลรวมทุกรายการ",
+    [items.length ? `${items.map(i => `${i.name} ${nfa(i.amt)}`).join(" + ")} = ${nfa(r.fixed)} บาท` : "ไม่มีรายการ = 0 บาท"]]);
+  steps.push(["2. CM ต่อหน่วย (กำไรส่วนเกิน) = ราคาขาย − ต้นทุนผันแปร",
+    r.rows.map(x => `${x.name}: ${nfa(x.price)} − ${nfa(x.cost)} = ${nf(x.cm)} บาท · CM% = ${nf(x.cm)} ÷ ${nfa(x.price)} = ${pct(x.cm / x.price)}`)]);
+  steps.push([`3. สัดส่วนยอดขาย = mix ÷ ผลรวม mix (ผลรวม = ${nfa(totalMix)})`,
+    r.rows.map(x => `${x.name}: ${nfa(x.mix)} ÷ ${nfa(totalMix)} = ${pct(x.share)}`)]);
+  steps.push(["4. CM เฉลี่ยถ่วงน้ำหนัก = Σ (CM × สัดส่วน)",
+    [`${r.rows.map(x => `${nf(x.cm)}×${pct(x.share)}`).join(" + ")} = ${nf(r.wacm)} บาท/หน่วย`,
+     `ราคาขายเฉลี่ย = Σ (ราคา × สัดส่วน) = ${r.rows.map(x => `${nfa(x.price)}×${pct(x.share)}`).join(" + ")} = ${nf(r.avgPrice)} บาท`,
+     `ต้นทุนผันแปรเฉลี่ย = ราคาเฉลี่ย − CM เฉลี่ย = ${nf(r.avgPrice)} − ${nf(r.wacm)} = ${nf(r.varCostAvg)} บาท`]]);
+  steps.push(["5. จุดคุ้มทุนรวม = ต้นทุนคงที่ ÷ CM เฉลี่ย",
+    [`${nfa(r.fixed)} ÷ ${nf(r.wacm)} = ${nf(r.bep)} หน่วย → ปัดขึ้นเป็น ${ni(ceilInt(r.bep))} หน่วย`,
+     `ยอดขายที่จุดคุ้มทุน = ${nf(r.bep)} × ราคาเฉลี่ย ${nf(r.avgPrice)} = ${nf(r.bepRev)} บาท`]]);
+  steps.push(["6. จุดคุ้มทุนของแต่ละ SKU = จุดคุ้มทุนรวม × สัดส่วน",
+    r.rows.map(x => `${x.name}: ${nf(x.bep ?? r.bep)} × ${pct(x.share)} = ${nf(x.bepUnits)} → ปัดขึ้น ${ni(ceilInt(x.bepUnits))} หน่วย · ยอดขาย ${nf(x.bepUnits)} × ${nfa(x.price)} = ${nf(x.bepRev)} บาท`)]);
+  if (target > 0) steps.push(["7. หน่วยที่ต้องขายให้ถึงกำไรเป้าหมาย = (ต้นทุนคงที่ + กำไรเป้าหมาย) ÷ CM เฉลี่ย",
+    [`(${nfa(r.fixed)} + ${nfa(target)}) ÷ ${nf(r.wacm)} = ${nf(r.tgt)} หน่วย → ปัดขึ้น ${ni(ceilInt(r.tgt))} หน่วย`,
+     `ยอดขาย = ${nf(r.tgt)} × ${nf(r.avgPrice)} = ${nf(r.tgtRev)} บาท · ต่อ SKU คิดแบบข้อ 6 โดยใช้ ${nf(r.tgt)} หน่วย`]]);
+  if (expected > 0) steps.push(["8. กำไรคาดการณ์ และ Margin of Safety",
+    [`กำไร = ยอดขายคาดการณ์ × CM เฉลี่ย − ต้นทุนคงที่ = ${nfa(expected)} × ${nf(r.wacm)} − ${nfa(r.fixed)} = ${nf(r.profit)} บาท`,
+     `Margin of Safety = (ยอดขายคาดการณ์ − จุดคุ้มทุน) ÷ ยอดขายคาดการณ์ = (${nfa(expected)} − ${nf(r.bep)}) ÷ ${nfa(expected)} = ${pct(r.mosPct)}`]]);
+  steps.push(["สมการเส้นในกราฟ (x = จำนวนที่ขาย)",
+    [`รายได้รวม = x × ${nf(r.avgPrice)}`, `ต้นทุนรวม = ${nfa(r.fixed)} + x × ${nf(r.varCostAvg)}`, `กำไร = x × ${nf(r.wacm)} − ${nfa(r.fixed)}`]]);
+  return steps;
+}
+
 function calc() {
   save();
   const msg = $("msg"), kpis = $("kpis"), out = $("out");
-  const fixed = parseFloat($("fixed").value), target = parseFloat($("target").value) || 0;
+  const items = readFixed(), fixed = items.reduce((a, i) => a + i.amt, 0);
+  $("fixedTotal").textContent = nfa(fixed);
+  const target = parseFloat($("target").value) || 0;
   const expected = parseFloat($("expected").value) || 0;
   const skus = readSkus();
   kpis.replaceChildren(); out.hidden = true; msg.replaceChildren();
   const info = (t, cls = "") => msg.append(el("p", { className: cls, textContent: t }));
 
-  if (!(fixed >= 0)) return info("กรอกต้นทุนคงที่รวมก่อน");
+  if (items.some(i => i.amt < 0)) return info("ต้นทุนคงที่ต้องไม่ติดลบ");
   if (!skus.length) return info("เพิ่ม SKU อย่างน้อย 1 รายการ");
   if (skus.some(s => !(s.price > 0) || !(s.cost >= 0) || !(s.mix >= 0))) return info("กรอกราคา ต้นทุนผันแปร และ mix ของทุก SKU ให้ครบ (ราคาต้องมากกว่า 0)");
   if (skus.every(s => s.mix === 0)) return info("ต้องมี SKU ที่ mix มากกว่า 0 อย่างน้อย 1 รายการ");
@@ -369,16 +447,16 @@ function calc() {
   const r = calculate(skus, fixed, target, expected);
   if (!r.feasible) return info("⚠ CM เฉลี่ยถ่วงน้ำหนัก ≤ 0 : ราคาขายไม่พอครอบคลุมต้นทุนผันแปร จึงไม่มีจุดคุ้มทุน — ลองปรับราคา ต้นทุน หรือสัดส่วนสินค้า", "warn");
 
-  const kpi = (v, l, main) => el("div", { className: "kpi" + (main ? " main" : "") }, [v, el("div", { className: "l", textContent: l })]);
+  const kpi = (v, l, f, main) => el("div", { className: "kpi" + (main ? " main" : "") }, [v, el("div", { className: "l", textContent: l }), el("div", { className: "f", textContent: f })]);
   const big = (txt, unit) => { const d = el("div", { className: "v", textContent: txt }); if (unit) d.append(el("small", { textContent: " " + unit })); return d; };
   kpis.append(
-    kpi(big(ni(ceilInt(r.bep)), "หน่วย"), "จุดคุ้มทุนรวม (ขายเท่านี้จึงเริ่มมีกำไร)", true),
-    kpi(big("฿" + nf(r.bepRev, 0)), "ยอดขายที่จุดคุ้มทุน"),
-    kpi(big("฿" + nf(r.wacm), "/หน่วย"), "CM เฉลี่ยถ่วงน้ำหนัก"));
-  if (target > 0) kpis.append(kpi(big(ni(ceilInt(r.tgt)), "หน่วย"), `ถึงกำไรเป้าหมาย ฿${ni(target)} (ยอดขาย ฿${nf(r.tgtRev, 0)})`));
+    kpi(big(ni(ceilInt(r.bep)), "หน่วย"), "จุดคุ้มทุนรวม (ขายเท่านี้จึงเริ่มมีกำไร)", `${nfa(fixed)} ÷ ${nf(r.wacm)} = ${nf(r.bep)} → ปัดขึ้น`, true),
+    kpi(big("฿" + nf(r.bepRev, 0)), "ยอดขายที่จุดคุ้มทุน", `${nf(r.bep)} หน่วย × ราคาเฉลี่ย ${nf(r.avgPrice)}`),
+    kpi(big("฿" + nf(r.wacm), "/หน่วย"), "CM เฉลี่ยถ่วงน้ำหนัก", "Σ (CM × สัดส่วนยอดขาย) ของทุก SKU"));
+  if (target > 0) kpis.append(kpi(big(ni(ceilInt(r.tgt)), "หน่วย"), `ถึงกำไรเป้าหมาย ฿${ni(target)} (ยอดขาย ฿${nf(r.tgtRev, 0)})`, `(${nfa(fixed)} + ${nfa(target)}) ÷ ${nf(r.wacm)} = ${nf(r.tgt)}`));
   if (r.expected) {
     const v = big((r.profit >= 0 ? "+" : "") + "฿" + nf(r.profit, 0)); v.classList.add(r.profit >= 0 ? "ok" : "warn");
-    kpis.append(kpi(v, `กำไรคาดการณ์ที่ขาย ${ni(r.expected)} หน่วย · Margin of Safety ${(r.mosPct * 100).toFixed(1)}%`));
+    kpis.append(kpi(v, `กำไรคาดการณ์ที่ขาย ${ni(r.expected)} หน่วย · Margin of Safety ${pct(r.mosPct)}`, `${nfa(r.expected)} × ${nf(r.wacm)} − ${nfa(fixed)} · MoS = (${nfa(r.expected)} − ${nf(r.bep)}) ÷ ${nfa(r.expected)}`));
   }
   out.hidden = false;
 
@@ -395,31 +473,45 @@ function calc() {
   vlines.push({ x: r.bep, label: `จุดคุ้มทุน ${ni(ceilInt(r.bep))} หน่วย`, row: 0 });
   if (target > 0) { vlines.push({ x: r.tgt, label: `เป้าหมาย ${ni(ceilInt(r.tgt))}`, row: 1 }); markers.push({ x: r.tgt, y: revFn(r.tgt), color: c1 }); }
   if (r.expected) { vlines.push({ x: r.expected, label: `คาดการณ์ ${ni(r.expected)}`, row: 2 }); }
-  // ถ้า vline อยู่ใกล้กัน ให้เลื่อนแถวป้าย
   vlines.sort((a, b) => a.x - b.x).forEach((v, i) => v.row = i);
   const yMax1 = Math.max(revFn(xMax), costFn(xMax)) * 1.04;
   legendInto($("legend1"), series1);
   drawChart($("chart1"), { height: 320, xMax, yMin: 0, yMax: yMax1, series: series1, vlines, markers, bep: r.bep });
+  $("fm1").textContent = `สูตร (x = จำนวนที่ขาย): รายได้รวม = x × ${nf(r.avgPrice)} · ต้นทุนรวม = ${nfa(fixed)} + x × ${nf(r.varCostAvg)} · ต้นทุนคงที่ = ${nfa(fixed)} · จุดคุ้มทุนคือ x ที่รายได้รวม = ต้นทุนรวม`;
 
   const yMax2 = Math.max(profFn(xMax), 1) * 1.1, yMin2 = -fixed * 1.1 || -1;
   drawChart($("chart2"), { height: 240, xMax, yMin: yMin2, yMax: yMax2, signed: true, bep: r.bep,
     series: [{ name: "กำไร/ขาดทุน", short: "กำไร", fn: profFn, color: c1 }],
     areas: [{ above: true, fill: css("--tint") }, { above: false, fill: css("--loss") }],
     vlines: [{ x: r.bep, label: "จุดคุ้มทุน", row: 0 }], markers: [{ x: r.bep, y: 0, color: c1 }] });
+  $("fm2").textContent = `สูตร: กำไร = x × ${nf(r.wacm)} − ${nfa(fixed)} (ที่ x = 0 ขาดทุนเท่าต้นทุนคงที่ ${nfa(fixed)} บาท)`;
 
-  // ตาราง
-  const showT = target > 0, tc = (v, d) => el("td", { textContent: v });
-  const head = el("thead", {}, [el("tr", {}, ["SKU", "ราคา", "CM/หน่วย", "CM%", "สัดส่วน", "BEP (หน่วย)", "BEP (บาท)", ...(showT ? ["เป้าหมาย (หน่วย)", "เป้าหมาย (บาท)"] : [])].map(t => el("th", { textContent: t })))]);
-  const rowOf = (a) => el("tr", {}, a.map(t => tc(t)));
-  const body = el("tbody", {}, r.rows.map(x => rowOf([x.name, nf(x.price), nf(x.cm), (x.cm / x.price * 100).toFixed(1) + "%", (x.share * 100).toFixed(1) + "%", ni(ceilInt(x.bepUnits)), nf(x.bepRev), ...(showT ? [ni(ceilInt(x.tgtUnits)), nf(x.tgtRev)] : [])])));
-  const foot = el("tfoot", {}, [rowOf(["รวม", nf(r.avgPrice), nf(r.wacm), (r.wacm / r.avgPrice * 100).toFixed(1) + "%", "100%", ni(ceilInt(r.bep)), nf(r.bepRev), ...(showT ? [ni(ceilInt(r.tgt)), nf(r.tgtRev)] : [])])]);
+  // ตาราง (เอาเมาส์ชี้ที่ตัวเลขเพื่อดูสูตร)
+  const showT = target > 0, tc = ([v, t]) => el("td", { textContent: v, title: t || "" });
+  const heads = [["SKU", ""], ["ราคา", "ราคาที่กรอก"], ["CM/หน่วย", "ราคา − ต้นทุนผันแปร"], ["CM%", "CM ÷ ราคา"], ["สัดส่วน", "mix ÷ ผลรวม mix"], ["BEP (หน่วย)", "จุดคุ้มทุนรวม × สัดส่วน (ปัดขึ้น)"], ["BEP (บาท)", "หน่วย × ราคา"],
+    ...(showT ? [["เป้าหมาย (หน่วย)", "ยอดเป้าหมายรวม × สัดส่วน (ปัดขึ้น)"], ["เป้าหมาย (บาท)", "หน่วย × ราคา"]] : [])];
+  const head = el("thead", {}, [el("tr", {}, heads.map(([t, tip]) => el("th", { textContent: t, title: tip })))]);
+  const rowOf = a => el("tr", {}, a.map(tc));
+  const body = el("tbody", {}, r.rows.map(x => rowOf([
+    [x.name], [nf(x.price)], [nf(x.cm), `${nfa(x.price)} − ${nfa(x.cost)}`], [pct(x.cm / x.price), `${nf(x.cm)} ÷ ${nfa(x.price)}`],
+    [pct(x.share), `${nfa(x.mix)} ÷ ${nfa(r.rows.reduce((a, y) => a + y.mix, 0))}`],
+    [ni(ceilInt(x.bepUnits)), `${nf(r.bep)} × ${pct(x.share)} = ${nf(x.bepUnits)}`], [nf(x.bepRev), `${nf(x.bepUnits)} × ${nfa(x.price)}`],
+    ...(showT ? [[ni(ceilInt(x.tgtUnits)), `${nf(r.tgt)} × ${pct(x.share)} = ${nf(x.tgtUnits)}`], [nf(x.tgtRev), `${nf(x.tgtUnits)} × ${nfa(x.price)}`]] : [])])));
+  const foot = el("tfoot", {}, [rowOf([["รวม"], [nf(r.avgPrice), "ราคาเฉลี่ยถ่วงน้ำหนัก = Σ (ราคา × สัดส่วน)"], [nf(r.wacm), "CM เฉลี่ยถ่วงน้ำหนัก = Σ (CM × สัดส่วน)"], [pct(r.wacm / r.avgPrice), `${nf(r.wacm)} ÷ ${nf(r.avgPrice)}`], ["100%"],
+    [ni(ceilInt(r.bep)), `${nfa(fixed)} ÷ ${nf(r.wacm)} = ${nf(r.bep)} (ปัดขึ้น)`], [nf(r.bepRev), `${nf(r.bep)} × ${nf(r.avgPrice)}`],
+    ...(showT ? [[ni(ceilInt(r.tgt)), `(${nfa(fixed)} + ${nfa(target)}) ÷ ${nf(r.wacm)}`], [nf(r.tgtRev), `${nf(r.tgt)} × ${nf(r.avgPrice)}`]] : [])])]);
   $("result").replaceChildren(head, body, foot);
+
+  // ที่มาของตัวเลข
+  $("how").replaceChildren(...explain(r, items, target, expected).flatMap(([t, lines]) =>
+    [el("h3", { textContent: t }), ...lines.map(l => el("p", { textContent: l }))]));
 }
 
 document.addEventListener("input", calc);
 $("add").onclick = () => { addRow(); save(); };
-$("reset").onclick = () => { tbody.innerHTML = ""; SAMPLE.forEach(s => addRow(...s)); $("fixed").value = 50000; $("target").value = 0; $("expected").value = ""; calc(); };
-if (!restore()) SAMPLE.forEach(s => addRow(...s));
+$("addFixed").onclick = () => { addFixed(); save(); };
+$("reset").onclick = () => { loadSample(); calc(); };
+if (!restore()) loadSample();
 calc();
 let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if (!$("out").hidden) calc(); }, 80); }).observe(document.querySelector("main"));
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", calc);
