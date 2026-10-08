@@ -4,51 +4,59 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>โปรแกรมบัญชีแยกประเภท</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap">
 <style>
-:root{--bg:#f4f6f9;--card:#fff;--ink:#1f2937;--mute:#6b7280;--line:#e5e7eb;--pri:#2563eb;--pri-d:#1d4ed8;--ok:#16a34a;--bad:#dc2626;--hd:#eef2ff}
+:root{--bg:#f4f6f9;--card:#fff;--ink:#1f2937;--mute:#6b7280;--line:#e5e7eb;--pri:#2563eb;--pri-d:#1d4ed8;--link:#2563eb;--ok:#16a34a;--bad:#dc2626;--hd:#eef2ff;--soft:#f8fafc;--okbg:#dcfce7;--badbg:#fee2e2;--ibd:#cbd5e1;--focus:#93c5fd;--rule:#94a3b8;--toast:#111827;--toastfg:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f172a;--card:#1e293b;--ink:#e5e7eb;--mute:#94a3b8;--line:#334155;--link:#7aa7ff;--ok:#4ade80;--bad:#f87171;--hd:#27344f;--soft:#172033;--okbg:#14391f;--badbg:#4a1d1d;--ibd:#475569;--focus:#3b82f6;--rule:#64748b;--toast:#e5e7eb;--toastfg:#111827;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f172a;--card:#1e293b;--ink:#e5e7eb;--mute:#94a3b8;--line:#334155;--link:#7aa7ff;--ok:#4ade80;--bad:#f87171;--hd:#27344f;--soft:#172033;--okbg:#14391f;--badbg:#4a1d1d;--ibd:#475569;--focus:#3b82f6;--rule:#64748b;--toast:#e5e7eb;--toastfg:#111827;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;font-family:"Sarabun","Noto Sans Thai",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
 header{background:var(--pri);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 header h1{font-size:18px;margin:0;font-weight:600}
 header input{padding:5px 8px;border-radius:6px;border:0;min-width:200px}
-nav{display:flex;gap:2px;background:#fff;border-bottom:1px solid var(--line);padding:0 8px;overflow-x:auto;position:sticky;top:0;z-index:5}
+nav{display:flex;gap:2px;background:var(--card);border-bottom:1px solid var(--line);padding:0 8px;overflow-x:auto;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
 nav button{border:0;background:none;padding:12px 14px;cursor:pointer;font:inherit;color:var(--mute);border-bottom:3px solid transparent;white-space:nowrap}
-nav button.on{color:var(--pri);border-color:var(--pri);font-weight:600}
-main{max-width:1000px;margin:16px auto;padding:0 12px 60px}
+nav button.on{color:var(--link);border-color:var(--pri);font-weight:600}
+main{max-width:1000px;margin:16px auto;padding:0 16px 60px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
 h2{margin:0 0 12px;font-size:17px}
 h3{margin:16px 0 6px;font-size:15px}
 label{font-size:13px;color:var(--mute);display:block;margin-bottom:3px}
-input,select,textarea{font:inherit;padding:7px 9px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:inherit;width:100%}
-input:focus,select:focus{outline:2px solid #93c5fd;border-color:var(--pri)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:100}
+.modal .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;width:100%;max-width:520px;max-height:90vh;overflow:auto}
+.modal textarea{height:200px;font-family:ui-monospace,monospace;font-size:12px}
+.modal .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+body.inviewer .printbtn{display:none}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid var(--ibd);border-radius:6px;background:var(--card);color:inherit;width:100%}
+input:focus,select:focus{outline:2px solid var(--focus);border-color:var(--pri)}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px}
 .row>div{flex:1;min-width:140px}
 .row>div.w2{flex:2;min-width:220px}
 button.btn{background:var(--pri);color:#fff;border:0;border-radius:6px;padding:8px 14px;font:inherit;cursor:pointer}
 button.btn:hover{background:var(--pri-d)}
-button.btn.sec{background:#fff;color:var(--pri);border:1px solid var(--pri)}
+button.btn.sec{background:var(--card);color:var(--link);border:1px solid var(--link)}
 button.btn.red{background:var(--bad)}
-button.lnk{background:none;border:0;color:var(--pri);cursor:pointer;font:inherit;padding:2px 6px}
+button.lnk{background:none;border:0;color:var(--link);cursor:pointer;font:inherit;padding:2px 6px}
 button.lnk.red{color:var(--bad)}
 table{border-collapse:collapse;width:100%}
 th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 th{background:var(--hd);font-weight:600;font-size:13px}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-tr.tot td{font-weight:700;border-top:2px solid #94a3b8;background:#f8fafc}
-tr.sub td{font-weight:600;background:#f8fafc}
+tr.tot td{font-weight:700;border-top:2px solid var(--rule);background:var(--soft)}
+tr.sub td{font-weight:600;background:var(--soft)}
 .lines td{padding:3px;border:0}
 .lines input{padding:6px 7px}
 .lines th{border:0}
 .bal{padding:8px 12px;border-radius:6px;font-weight:600;display:inline-block}
-.bal.ok{background:#dcfce7;color:var(--ok)}
-.bal.bad{background:#fee2e2;color:var(--bad)}
+.bal.ok{background:var(--okbg);color:var(--ok)}
+.bal.bad{background:var(--badbg);color:var(--bad)}
 .mute{color:var(--mute);font-size:13px}
 .entry{border:1px solid var(--line);border-radius:8px;margin-bottom:12px;overflow:hidden}
 .entry .eh{background:var(--hd);padding:8px 10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
 .entry table td{border-bottom:1px dashed var(--line)}
 .ind{padding-left:28px!important}
 .center{text-align:center}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 18px;border-radius:8px;z-index:50}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--toast);color:var(--toastfg);padding:10px 18px;border-radius:8px;z-index:50}
 @media print{header,nav,.noprint{display:none!important}body{background:#fff}.card{border:0;padding:0}main{margin:0;max-width:none}.pt{display:block!important}}
 .pt{display:none;text-align:center;margin-bottom:10px}
 </style>
@@ -64,6 +72,40 @@ tr.sub td{font-weight:600;background:#f8fafc}
 <datalist id="tpls"></datalist>
 
 <script>
+/* ---------- กล่องโต้ตอบในหน้า (ใช้แทน confirm/prompt ที่บางสภาพแวดล้อมไม่รองรับ) ---------- */
+function dlg(msg,o){
+  o=o||{};
+  return new Promise(res=>{
+    const el=document.createElement('div'); el.className='modal'; el.id='dlg';
+    el.innerHTML=`<div class="box" role="dialog" aria-modal="true"><p style="margin:0 0 10px;white-space:pre-line">${esc(msg)}</p>
+      ${o.text!=null?`<textarea id="dlgTx" ${o.readonly?'readonly':''} placeholder="${esc(o.ph||'')}">${esc(o.text)}</textarea>`:''}
+      ${o.input?`<input id="dlgIn" value="${esc(o.def||'')}">`:''}
+      <div class="acts">${(o.extra||[]).map((b,i)=>`<button class="btn sec" data-x="${i}">${esc(b[0])}</button>`).join('')}
+      ${o.noCancel?'':'<button class="btn sec" data-c="1">ยกเลิก</button>'}<button class="btn" data-ok="1">${esc(o.ok||'ตกลง')}</button></div></div>`;
+    const done=v=>{ el.remove(); res(v); };
+    el.addEventListener('click',ev=>{
+      const b=ev.target.closest('button'); if(ev.target===el&&!o.noCancel) return done(null); if(!b) return;
+      if(b.dataset.ok) return done(o.input?$('dlgIn').value:o.text!=null&&!o.readonly?$('dlgTx').value:true);
+      if(b.dataset.c) return done(null);
+      if(b.dataset.x!=null) o.extra[+b.dataset.x][1](el);
+    });
+    el.addEventListener('keydown',ev=>{
+      if(ev.key==='Escape'){ ev.preventDefault(); done(o.noCancel?true:null); }
+      else if(ev.key==='Enter'&&ev.target.tagName!=='TEXTAREA'&&ev.target.tagName!=='BUTTON'){ ev.preventDefault(); el.querySelector('[data-ok]').click(); }
+    });
+    document.body.appendChild(el);
+    (o.input?$('dlgIn'):o.text!=null?$('dlgTx'):el.querySelector('[data-ok]')).focus();
+    if(o.input) $('dlgIn').select(); else if(o.text!=null&&o.readonly) $('dlgTx').select();
+  });
+}
+const askConfirm=m=>dlg(m).then(v=>v!==null);
+const askPrompt=(m,d)=>dlg(m,{input:true,def:d});
+function copyText(el){ const t=el.querySelector('textarea'); t.select(); (navigator.clipboard?navigator.clipboard.writeText(t.value):Promise.reject()).then(()=>toast('คัดลอกแล้ว'),()=>{ document.execCommand&&document.execCommand('copy'); toast('เลือกข้อความแล้ว กด Ctrl+C เพื่อคัดลอก'); }); }
+// ส่งออกข้อมูล: แสดงให้คัดลอก และลองดาวน์โหลดเป็นไฟล์ (บางสภาพแวดล้อมดาวน์โหลดไม่ได้)
+function exportText(title,name,text,type){
+  return dlg(title,{text,readonly:true,noCancel:true,ok:'ปิด',extra:[['📋 คัดลอก',copyText],['⬇ ดาวน์โหลดไฟล์',()=>download(name,text,type)]]});
+}
+
 /* ---------- ข้อมูล ---------- */
 const KEY = 'ledger-app-v1';
 const TYPES = {A:'สินทรัพย์', L:'หนี้สิน', E:'ส่วนของเจ้าของ', R:'รายได้', X:'ค่าใช้จ่าย'};
@@ -154,7 +196,7 @@ function periodBar(extra){
     <div><label>ตั้งแต่วันที่</label><input type="date" value="${period.from}" onchange="period.from=this.value;render()"></div>
     <div><label>ถึงวันที่</label><input type="date" value="${period.to}" onchange="period.to=this.value;render()"></div>
     ${extra||''}
-    <div style="flex:0"><button class="btn sec" onclick="window.print()">🖨 พิมพ์</button></div></div>
+    <div style="flex:0"><button class="btn sec printbtn" onclick="window.print()">🖨 พิมพ์</button></div></div>
     ${period.from&&period.to&&period.from>period.to?'<p class="bal bad noprint">⚠ วันที่เริ่มต้นอยู่หลังวันที่สิ้นสุด</p>':''}`;
 }
 function printHead(title){
@@ -185,7 +227,7 @@ function rEntry(){
   }
   $('main').innerHTML = `<div class="card">
     <h2>${editingId?'แก้ไขรายการ':'บันทึกรายการบัญชี'}</h2>
-    <div class="row noprint" style="background:#f8fafc;padding:8px;border-radius:8px">
+    <div class="row noprint" style="background:var(--soft);padding:8px;border-radius:8px">
       <div class="w2"><label>⚡ ต้นแบบรายการ (Alt+T)</label><input id="fTpl" list="tpls" placeholder="พิมพ์ชื่อต้นแบบ แล้วกด Enter"></div>
       <div><label>จำนวนเงิน</label><input id="fAmt" type="number" step="0.01" min="0" placeholder="ใส่แล้ว Enter"></div>
       <div style="flex:0"><button class="btn sec" onclick="useTpl()">ใช้ต้นแบบ</button></div>
@@ -220,7 +262,7 @@ function rEntry(){
 }
 function recentList(){
   const l=[...S.entries].sort((a,b)=>b.date.localeCompare(a.date)||b.docNo.localeCompare(a.docNo)).slice(0,5);
-  if(!l.length) return '<p class="mute">ยังไม่มีรายการ</p>';
+  if(!l.length) return '<p class="mute">ยังไม่มีรายการ ลองสร้างข้อมูลตัวอย่างเพื่อดูการทำงานของโปรแกรม</p><button class="btn" onclick="loadMock(\'small\')">ตัวอย่างธุรกิจขนาดเล็ก (450 รายการ)</button> <button class="btn sec" onclick="loadMock(\'medium\')">ตัวอย่างธุรกิจขนาดกลาง (450 รายการ)</button>';
   return `<table><tbody>${l.map(e=>`<tr><td>${fmtDate(e.date)}</td><td>${esc(e.docNo)}</td><td>${esc(e.desc)}</td><td class="n">${money(e.lines.reduce((s,x)=>s+x.dr,0))}</td></tr>`).join('')}</tbody></table>`;
 }
 function onHead(){
@@ -287,7 +329,7 @@ function saveEntry(){
 }
 function cancelEdit(){ editingId=null; draft=null; go('journal'); }
 function editEntry(id){ editingId=id; draft=null; tab='entry'; render(); window.scrollTo(0,0); }
-function delEntry(id){ const e=S.entries.find(x=>x.id===id); if(!confirm('ลบรายการ '+e.docNo+' ?')) return; S.entries=S.entries.filter(x=>x.id!==id); save(); render(); }
+function delEntry(id){ const e=S.entries.find(x=>x.id===id); return askConfirm('ลบรายการ '+e.docNo+' ?').then(ok=>{ if(!ok) return false; S.entries=S.entries.filter(x=>x.id!==id); save(); render(); return true; }); }
 
 /* ---------- 2) สมุดรายวัน ---------- */
 let jBook='';
@@ -311,14 +353,14 @@ let jSel=0;
 function selJ(d){
   const els=[...document.querySelectorAll('.entry')]; if(!els.length) return;
   jSel=Math.max(0,Math.min(els.length-1,jSel+d));
-  els.forEach((el,i)=>el.style.outline=i===jSel?'3px solid #93c5fd':'');
+  els.forEach((el,i)=>el.style.outline=i===jSel?'3px solid var(--focus)':'');
   els[jSel].scrollIntoView({block:'nearest'});
 }
 function exportCSV(){
   const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const rows=[['วันที่','เลขที่เอกสาร','เล่ม','คำอธิบาย','รหัสบัญชี','ชื่อบัญชี','เดบิต','เครดิต']];
   sortedEntries().forEach(e=>e.lines.forEach(l=>rows.push([e.date,e.docNo,e.bookId,e.desc,l.code,acc(l.code)?.name||'',l.dr/100,l.cr/100])));
-  download('journal.csv','﻿'+rows.map(r=>r.map(q).join(',')).join('\n'),'text/csv');
+  exportText('สมุดรายวัน (CSV) — คัดลอกไปวางใน Excel หรือดาวน์โหลดเป็นไฟล์','journal.csv','\ufeff'+rows.map(r=>r.map(q).join(',')).join('\n'),'text/csv');
 }
 
 /* ---------- 3) บัญชีแยกประเภท ---------- */
@@ -355,7 +397,7 @@ function rTB(){
     return `<tr><td>${a.code}</td><td>${esc(a.name)}</td><td class="n">${mz(dr)}</td><td class="n">${mz(cr)}</td></tr>`;
   }).join('');
   $('main').innerHTML=`<div class="card"><div class="pt"><b>${esc(S.company||'')}</b><br>งบทดลอง ณ วันที่ ${fmtDate(period.to)}</div><h2>งบทดลอง</h2>
-    <div class="row noprint"><div><label>ณ วันที่</label><input type="date" value="${period.to}" onchange="period.to=this.value;render()"></div><div style="flex:0"><button class="btn sec" onclick="window.print()">🖨 พิมพ์</button></div></div>
+    <div class="row noprint"><div><label>ณ วันที่</label><input type="date" value="${period.to}" onchange="period.to=this.value;render()"></div><div style="flex:0"><button class="btn sec printbtn" onclick="window.print()">🖨 พิมพ์</button></div></div>
     <table><thead><tr><th>รหัส</th><th>ชื่อบัญชี</th><th class="n">เดบิต</th><th class="n">เครดิต</th></tr></thead><tbody>${rows||'<tr><td colspan="4" class="mute">ไม่มีรายการ</td></tr>'}
     <tr class="tot"><td colspan="2">รวม</td><td class="n">${money(sdr)}</td><td class="n">${money(scr)}</td></tr></tbody></table>
     <p>${sdr===scr?'<span class="bal ok">✔ งบทดลองดุลกัน</span>':'<span class="bal bad">งบทดลองไม่ดุล</span>'}</p></div>`;
@@ -410,14 +452,15 @@ function rSet(){
   <div class="card"><h2>สำรองข้อมูล</h2><p class="mute">ข้อมูลเก็บในเบราว์เซอร์ของเครื่องนี้ ควรสำรองไฟล์เป็นระยะ</p>
     <button class="btn" onclick="backup()">⬇ ดาวน์โหลดไฟล์สำรอง</button>
     <label class="btn sec" style="display:inline-block;color:var(--pri);margin:0 6px;cursor:pointer;font-size:15px">⬆ นำเข้าไฟล์สำรอง<input type="file" accept=".json" style="display:none" onchange="restore(this)"></label>
+    <button class="btn sec" onclick="restorePaste()">📋 นำเข้าจากข้อความที่วาง</button>
     <button class="btn red" onclick="resetAll()">ล้างข้อมูลทั้งหมด</button></div>`;
 }
 function addBook(){ const id=$('nbId').value.trim().toUpperCase(), name=$('nbName').value.trim(); if(!id||!name) return toast('กรอกรหัสและชื่อเล่ม'); if(!/^[A-Z0-9]+$/.test(id)) return toast('รหัสเล่มใช้ได้เฉพาะ A-Z และตัวเลข'); if(book(id)) return toast('รหัสเล่มซ้ำ'); S.books.push({id,name}); save(); render(); }
-function renBook(i){ const n=prompt('ชื่อเล่มใหม่',S.books[i].name); if(n&&n.trim()){ S.books[i].name=n.trim(); save(); render(); } }
-function delBook(i){ const b=S.books[i]; if(S.entries.some(e=>e.bookId===b.id)) return toast('เล่มนี้มีรายการแล้ว ลบไม่ได้'); if(S.books.length<=1) return toast('ต้องมีอย่างน้อย 1 เล่ม'); if(confirm('ลบเล่ม '+b.id+' ?')){ S.books.splice(i,1); draft=null; save(); render(); } }
+function renBook(i){ askPrompt('ชื่อเล่มใหม่',S.books[i].name).then(n=>{ if(n&&n.trim()){ S.books[i].name=n.trim(); save(); render(); } }); }
+function delBook(i){ const b=S.books[i]; if(S.entries.some(e=>e.bookId===b.id)) return toast('เล่มนี้มีรายการแล้ว ลบไม่ได้'); if(S.books.length<=1) return toast('ต้องมีอย่างน้อย 1 เล่ม'); askConfirm('ลบเล่ม '+b.id+' ?').then(ok=>{ if(ok){ S.books.splice(i,1); draft=null; save(); render(); } }); }
 function addAcc(){ const code=$('naCode').value.trim(), name=$('naName').value.trim(); if(!code||!name) return toast('กรอกรหัสและชื่อบัญชี'); if(!/^[A-Za-z0-9._-]+$/.test(code)) return toast('รหัสใช้ได้เฉพาะตัวอักษรอังกฤษ ตัวเลข . _ -'); if(acc(code)) return toast('รหัสบัญชีซ้ำ'); S.accounts.push({code,name,type:$('naType').value}); save(); render(); }
-function renAcc(code){ const a=acc(code); const n=prompt('ชื่อบัญชีใหม่',a.name); if(n&&n.trim()){ a.name=n.trim(); save(); render(); } }
-function delAcc(code){ if(used(code)) return toast('บัญชีนี้ถูกใช้ในรายการหรือต้นแบบแล้ว ลบไม่ได้'); if(confirm('ลบบัญชี '+code+' ?')){ S.accounts=S.accounts.filter(a=>a.code!==code); save(); render(); } }
+function renAcc(code){ const a=acc(code); askPrompt('ชื่อบัญชีใหม่',a.name).then(n=>{ if(n&&n.trim()){ a.name=n.trim(); save(); render(); } }); }
+function delAcc(code){ if(used(code)) return toast('บัญชีนี้ถูกใช้ในรายการหรือต้นแบบแล้ว ลบไม่ได้'); askConfirm('ลบบัญชี '+code+' ?').then(ok=>{ if(ok){ S.accounts=S.accounts.filter(a=>a.code!==code); save(); render(); } }); }
 /* ---------- ข้อมูลตัวอย่าง (mock) ---------- */
 const MOCK = {
   small: {label:'ธุรกิจขนาดเล็ก', seed:11, sc:1, months:[[2026,6,30,150],[2026,7,31,150],[2026,8,31,150]], cap:[150000,450000,200000,60000]},
@@ -479,21 +522,24 @@ function loadMock(kind){
   const M=MOCK[kind];
   const need=['1100','1110','1200','1300','1500','2100','3100','3200','4100','4900','5100','5200','5300','5400','5900'].filter(c=>!acc(c));
   if(need.length) return toast('ผังบัญชีไม่ครบ ขาดรหัส: '+need.join(', '));
-  if(S.entries.length && !confirm('จะแทนที่รายการบัญชีทั้งหมด ('+S.entries.length+' รายการ) ด้วยข้อมูลตัวอย่าง "'+M.label+'" ดำเนินการต่อ?')) return;
-  const list=genMock(kind);
-  S.entries=[]; list.forEach((e,i)=>{ e.id='m'+i; e.docNo=nextDocNo(e.bookId,e.date); S.entries.push(e); });
-  if(!S.company) S.company='ธุรกิจตัวอย่าง (ข้อมูลทดสอบ)';
-  const last=list.reduce((m,e)=>e.date>m?e.date:m,'');
-  period={from:'2026-06-01',to:last}; draft=null; save(); go('journal'); toast('สร้างข้อมูลตัวอย่าง '+list.length+' รายการแล้ว');
+  const run=()=>{
+    const list=genMock(kind);
+    S.entries=[]; list.forEach((e,i)=>{ e.id='m'+i; e.docNo=nextDocNo(e.bookId,e.date); S.entries.push(e); });
+    if(!S.company) S.company='ธุรกิจตัวอย่าง (ข้อมูลทดสอบ)';
+    const last=list.reduce((m,e)=>e.date>m?e.date:m,'');
+    period={from:'2026-06-01',to:last}; draft=null; save(); go('journal'); toast('สร้างข้อมูลตัวอย่าง '+list.length+' รายการแล้ว');
+  };
+  if(S.entries.length) askConfirm('จะแทนที่รายการบัญชีทั้งหมด ('+S.entries.length+' รายการ) ด้วยข้อมูลตัวอย่าง "'+M.label+'" ดำเนินการต่อ?').then(ok=>ok&&run()); else run();
 }
-function clearEntries(){ if(S.entries.length && confirm('ลบรายการบัญชีทั้งหมด '+S.entries.length+' รายการ? (ผังบัญชี เล่ม และต้นแบบยังอยู่)')){ S.entries=[]; draft=null; save(); render(); toast('ลบรายการทั้งหมดแล้ว'); } }
-function backup(){ download('ledger-backup-'+today()+'.json', JSON.stringify(S), 'application/json'); }
-function restore(inp){
-  const f=inp.files[0]; if(!f) return; const r=new FileReader();
-  r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!d.accounts||!d.books||!d.entries) throw 0; if(!confirm('แทนที่ข้อมูลปัจจุบันด้วยไฟล์นี้?')) return; if(!d.templates) d.templates=[]; S=d; draft=null; save(); render(); toast('นำเข้าแล้ว'); }catch(e){ toast('ไฟล์ไม่ถูกต้อง'); } };
-  r.readAsText(f);
+function clearEntries(){ if(!S.entries.length) return; askConfirm('ลบรายการบัญชีทั้งหมด '+S.entries.length+' รายการ? (ผังบัญชี เล่ม และต้นแบบยังอยู่)').then(ok=>{ if(ok){ S.entries=[]; draft=null; save(); render(); toast('ลบรายการทั้งหมดแล้ว'); } }); }
+function backup(){ exportText('ข้อมูลสำรอง (JSON) — คัดลอกเก็บไว้ หรือดาวน์โหลดเป็นไฟล์','ledger-backup-'+today()+'.json',JSON.stringify(S),'application/json'); }
+function restoreText(text){
+  let d; try{ d=JSON.parse(text); if(!d.accounts||!d.books||!d.entries) throw 0; }catch(e){ return toast('ข้อมูลไม่ถูกต้อง'); }
+  askConfirm('แทนที่ข้อมูลปัจจุบันด้วยข้อมูลนี้?').then(ok=>{ if(!ok) return; if(!d.templates) d.templates=[]; S=d; draft=null; save(); render(); toast('นำเข้าแล้ว'); });
 }
-function resetAll(){ if(confirm('ล้างข้อมูลทั้งหมด? ย้อนกลับไม่ได้') && confirm('ยืนยันอีกครั้ง')){ S=defaults(); draft=null; save(); render(); } }
+function restore(inp){ const f=inp.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>restoreText(r.result); r.readAsText(f); inp.value=''; }
+function restorePaste(){ dlg('วางข้อมูลสำรอง (JSON) ที่คัดลอกไว้',{text:'',ph:'วางที่นี่',ok:'นำเข้า'}).then(v=>{ if(v) restoreText(v); }); }
+function resetAll(){ askConfirm('ล้างข้อมูลทั้งหมดและกลับเป็นค่าเริ่มต้น? ย้อนกลับไม่ได้').then(ok=>{ if(ok){ S=defaults(); draft=null; save(); render(); } }); }
 
 /* ---------- ต้นแบบรายการ ---------- */
 function findTpl(v){
@@ -523,11 +569,14 @@ function saveAsTpl(){
     lines.push({code,side:l.dr?'dr':'cr',note:l.note,amt:l.dr||l.cr});
   }
   if(lines.length<2) return toast('ต้องมีอย่างน้อย 2 บรรทัด');
-  const name=(prompt('ชื่อต้นแบบ',draft.desc||'')||'').trim(); if(!name) return;
-  if(S.templates.some(t=>t.name===name)) return toast('มีต้นแบบชื่อนี้แล้ว');
-  const same=new Set(lines.map(l=>l.amt)).size===1;   // ยอดเท่ากันทุกบรรทัด = ใช้ "จำนวนเงิน" ช่องเดียว
-  S.templates.push({name,bookId:draft.bookId,desc:draft.desc.trim()||name,lines:lines.map(l=>({code:l.code,side:l.side,note:l.note,fixed:same?0:l.amt}))});
-  save(); render(); toast('บันทึกต้นแบบแล้ว');
+  const bookId=draft.bookId, desc=draft.desc.trim();
+  askPrompt('ชื่อต้นแบบ',draft.desc||'').then(v=>{
+    const name=(v||'').trim(); if(!name) return;
+    if(S.templates.some(t=>t.name===name)) return toast('มีต้นแบบชื่อนี้แล้ว');
+    const same=new Set(lines.map(l=>l.amt)).size===1;   // ยอดเท่ากันทุกบรรทัด = ใช้ "จำนวนเงิน" ช่องเดียว
+    S.templates.push({name,bookId,desc:desc||name,lines:lines.map(l=>({code:l.code,side:l.side,note:l.note,fixed:same?0:l.amt}))});
+    save(); render(); toast('บันทึกต้นแบบแล้ว');
+  });
 }
 let tplEdit=null;
 function tplSummary(t){ return t.lines.map(l=>`${l.side==='dr'?'เดบิต':'เครดิต'} ${esc(accName(l.code))}${l.fixed?' ('+money(l.fixed)+')':''}`).join('<br>'); }
@@ -573,7 +622,7 @@ function tplSave(){
   if(e.idx<0) S.templates.push(t); else S.templates[e.idx]=t;
   tplEdit=null; save(); render(); toast('บันทึกต้นแบบแล้ว');
 }
-function delTpl(i){ if(confirm('ลบต้นแบบ '+S.templates[i].name+' ?')){ S.templates.splice(i,1); tplEdit=null; save(); render(); } }
+function delTpl(i){ askConfirm('ลบต้นแบบ '+S.templates[i].name+' ?').then(ok=>{ if(ok){ S.templates.splice(i,1); tplEdit=null; save(); render(); } }); }
 
 /* ---------- คีย์ลัด ---------- */
 function resolveAcc(inp){
@@ -603,6 +652,7 @@ function entryEnter(e){
   if(dr!==cr) addLine(); else $('bSave').focus();
 }
 document.addEventListener('keydown',e=>{
+  if($('dlg')) return;
   if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^Digit[1-6]$/.test(e.code)){ e.preventDefault(); go(TABS[+e.code.slice(5)-1][0]); return; }
   const typing=/INPUT|SELECT|TEXTAREA|BUTTON|A/.test(e.target.tagName);
   if(tab==='entry'){
@@ -616,11 +666,12 @@ document.addEventListener('keydown',e=>{
     if(e.key==='ArrowDown'||e.key==='j'){ e.preventDefault(); selJ(1); }
     else if(e.key==='ArrowUp'||e.key==='k'){ e.preventDefault(); selJ(-1); }
     else if(e.key==='e'||e.key==='Enter'){ const el=document.querySelectorAll('.entry')[jSel]; if(el){ e.preventDefault(); editEntry(el.dataset.id); } }
-    else if(e.key==='Delete'||e.key==='d'){ const el=document.querySelectorAll('.entry')[jSel]; if(el){ const i=jSel; delEntry(el.dataset.id); if(document.querySelectorAll('.entry').length){ jSel=Math.min(i,document.querySelectorAll('.entry').length-1); selJ(0);} } }
+    else if(e.key==='Delete'||e.key==='d'){ const el=document.querySelectorAll('.entry')[jSel]; if(el){ const i=jSel; delEntry(el.dataset.id).then(ok=>{ const n=document.querySelectorAll('.entry').length; if(ok&&n){ jSel=Math.min(i,n-1); selJ(0); } }); } }
   }
 });
 document.addEventListener('focusin',e=>{ if(e.target.closest&&e.target.closest('#lines')&&e.target.select) e.target.select(); });
 
+try{ if(window.claude) document.body.classList.add('inviewer'); }catch(e){}
 render();
 </script>
 </body>
