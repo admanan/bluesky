@@ -62,6 +62,9 @@
   th:first-child, td:first-child { text-align:left; }
   #skus td input, #fixedtbl td input { text-align:right; padding:8px 10px; min-width:90px; }
   #skus td:first-child input, #fixedtbl td:first-child input { text-align:left; min-width:150px; }
+  select { width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:10px; background:var(--surface-2); color:var(--text); font:inherit; }
+  select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--tint); }
+  .kpis.pair { margin:16px 0; }
   input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
   button { font:inherit; font-weight:600; font-size:.9rem; padding:9px 15px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); cursor:pointer; transition:background .15s, transform .05s; }
@@ -175,6 +178,23 @@
       <p class="note" id="fm2"></p>
     </section>
 
+    <section class="card" id="paircard">
+      <h2>ชดเชยกันระหว่าง 2 สินค้า</h2>
+      <p class="hint">ถ้าสินค้า A ขายได้เท่านี้ สินค้า B ต้องขายอีกกี่หน่วยถึงจะคุ้มทุน (คิดเฉพาะ 2 สินค้านี้ สินค้าอื่นไม่นับ)</p>
+      <div class="grid">
+        <div><label for="pairA">สินค้า A (แกนนอน)</label><select id="pairA"></select></div>
+        <div><label for="pairB">สินค้า B (ที่ต้องขายชดเชย)</label><select id="pairB"></select></div>
+        <div class="field"><label for="pairStart">เริ่มกราฟที่ A ขายได้</label><input id="pairStart" type="number" min="0" step="any" inputmode="decimal" value="0"><span class="unit">หน่วย</span></div>
+        <div class="field"><label for="pairEnd">ถึง <small>(เว้นว่าง = อัตโนมัติ)</small></label><input id="pairEnd" type="number" min="0" step="any" inputmode="decimal" placeholder="อัตโนมัติ"><span class="unit">หน่วย</span></div>
+      </div>
+      <div class="actions"><button id="swap">สลับ A ↔ B</button></div>
+      <p class="warn" id="pairmsg" style="margin:12px 0 0;font-weight:600"></p>
+      <div class="kpis pair" id="pairKpis"></div>
+      <div class="charthead"><div class="legend" id="legend3"></div></div>
+      <div class="chart" id="chart3" tabindex="0" role="img" aria-label="กราฟเส้นจำนวนสินค้า B ที่ต้องขายชดเชยตามจำนวนสินค้า A ที่ขาย"></div>
+      <p class="note" id="fm3"></p>
+    </section>
+
     <section class="card">
       <h2>ตารางสรุปแต่ละ SKU</h2>
       <div class="tablewrap" style="margin-top:10px"><table id="result"></table></div>
@@ -194,6 +214,7 @@
 const SAMPLE = [["เสื้อยืด",250,120,500],["กางเกงยีนส์",890,520,200],["หมวก",150,60,300]];
 const SAMPLE_FIXED = [["ค่าเช่า",20000],["เงินเดือน",25000],["ค่าไฟ น้ำ และอื่น ๆ",5000]];
 const KEY = "breakeven-v2";
+const pair = { a: 0, b: 1, start: "0", end: "" };
 const $ = id => document.getElementById(id);
 const tbody = $("skus").querySelector("tbody");
 const nf = (n, d = 2) => n.toLocaleString("th-TH", { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -246,11 +267,12 @@ function loadSample() {
   tbody.innerHTML = ""; SAMPLE.forEach(s => addRow(...s));
   fbody.innerHTML = ""; SAMPLE_FIXED.forEach(f => addFixed(...f));
   $("target").value = 0; $("expected").value = "";
+  Object.assign(pair, { a: 0, b: 1, start: "0", end: "" }); pairSig = ""; $("pairStart").value = "0"; $("pairEnd").value = "";
 }
 function save() {
   try {
     localStorage.setItem(KEY, JSON.stringify({
-      target: $("target").value, expected: $("expected").value,
+      target: $("target").value, expected: $("expected").value, pair,
       fixedRows: [...fbody.rows].map(tr => ["n", "a"].map(c => tr.querySelector("." + c).value)),
       rows: [...tbody.rows].map(tr => ["n", "p", "c", "m"].map(c => tr.querySelector("." + c).value)),
     }));
@@ -261,6 +283,7 @@ function restore() {
     const s = JSON.parse(localStorage.getItem(KEY) || "null");
     if (!s || !Array.isArray(s.rows) || !Array.isArray(s.fixedRows)) return false;
     $("target").value = s.target; $("expected").value = s.expected;
+    if (s.pair) { Object.assign(pair, s.pair); $("pairStart").value = pair.start; $("pairEnd").value = pair.end; }
     tbody.innerHTML = ""; s.rows.forEach(r => addRow(...r));
     fbody.innerHTML = ""; s.fixedRows.forEach(r => addFixed(...r));
     return true;
@@ -303,7 +326,8 @@ function drawChart(host, cfg) {
   const W = Math.max(host.clientWidth, 280), H = cfg.height;
   const m = { l: 66, r: W < 520 ? 18 : 84, t: 14, b: 38 };
   const pw = W - m.l - m.r, ph = H - m.t - m.b;
-  const X = x => m.l + (x / cfg.xMax) * pw;
+  const x0 = cfg.xMin || 0, xs = cfg.xMax - x0;
+  const X = x => m.l + ((x - x0) / xs) * pw;
   const Y = y => m.t + (1 - (y - cfg.yMin) / (cfg.yMax - cfg.yMin)) * ph;
   const NS = "http://www.w3.org/2000/svg";
   host.querySelectorAll("svg").forEach(s => s.remove());
@@ -321,12 +345,12 @@ function drawChart(host, cfg) {
     add("text", { x: m.l - 8, y: Y(v) + 4, "text-anchor": "end", "font-size": 11, fill: css("--muted") }, compact(v));
   });
   // x labels
-  niceTicks(0, cfg.xMax, W < 520 ? 4 : 7).forEach(v => {
+  niceTicks(x0, cfg.xMax, W < 520 ? 4 : 7).forEach(v => {
     add("text", { x: X(v), y: H - m.b + 18, "text-anchor": "middle", "font-size": 11, fill: css("--muted") }, ni(v));
   });
-  add("text", { x: m.l + pw / 2, y: H - 4, "text-anchor": "middle", "font-size": 11.5, fill: css("--text-2") }, "จำนวนที่ขาย (หน่วย)");
+  add("text", { x: m.l + pw / 2, y: H - 4, "text-anchor": "middle", "font-size": 11.5, fill: css("--text-2") }, cfg.xTitle || "จำนวนที่ขาย (หน่วย)");
 
-  const N = 80, pts = fn => Array.from({ length: N + 1 }, (_, i) => { const x = cfg.xMax * i / N; return [X(x), Y(fn(x))]; });
+  const N = 80, pts = fn => Array.from({ length: N + 1 }, (_, i) => { const x = x0 + xs * i / N; return [X(x), Y(fn(x))]; });
 
   // area tint (profit chart)
   if (cfg.areas) cfg.areas.forEach(a => {
@@ -336,7 +360,7 @@ function drawChart(host, cfg) {
   // vertical reference lines
   (cfg.vlines || []).forEach(v => {
     add("line", { x1: X(v.x), x2: X(v.x), y1: m.t, y2: H - m.b, stroke: v.color || css("--ref"), "stroke-width": 1.2, "stroke-dasharray": "4 4" });
-    add("text", { x: X(v.x) + (v.x > cfg.xMax * 0.75 ? -6 : 6), y: m.t + 11 + (v.row || 0) * 15, "text-anchor": v.x > cfg.xMax * 0.75 ? "end" : "start", "font-size": 11.5, "font-weight": 600, fill: css("--text") }, v.label);
+    add("text", { x: X(v.x) + ((v.x - x0) / xs > 0.75 ? -6 : 6), y: m.t + 11 + (v.row || 0) * 15, "text-anchor": (v.x - x0) / xs > 0.75 ? "end" : "start", "font-size": 11.5, "font-weight": 600, fill: css("--text") }, v.label);
   });
   // series lines
   cfg.series.forEach(s => {
@@ -363,13 +387,14 @@ function drawChart(host, cfg) {
   let tip = host.querySelector(".tip");
   if (!tip) { tip = el("div", { className: "tip" }); host.append(tip); }
   const show = x => {
-    x = Math.max(0, Math.min(cfg.xMax, x));
+    x = Math.max(x0, Math.min(cfg.xMax, x));
+    if (cfg.snap) x = Math.round(x);
     cross.setAttribute("x1", X(x)); cross.setAttribute("x2", X(x)); cross.setAttribute("opacity", 1);
     cfg.series.forEach((s, i) => { dots[i].setAttribute("cx", X(x)); dots[i].setAttribute("cy", Y(s.fn(x))); dots[i].setAttribute("opacity", 1); });
-    tip.replaceChildren(el("div", { className: "t", textContent: `ขาย ${ni(x)} หน่วย` }),
+    tip.replaceChildren(el("div", { className: "t", textContent: cfg.tipTitle ? cfg.tipTitle(x) : `ขาย ${ni(x)} หน่วย` }),
       ...cfg.series.map(s => el("div", { className: "r" }, [
         el("span", { className: "k" }, [Object.assign(el("i"), { style: `border-color:${s.color};${s.dash ? "border-top-style:dashed" : ""}` }), document.createTextNode(s.name)]),
-        el("b", { textContent: `${cfg.signed && s.fn(x) > 0 ? "+" : ""}฿${nf(s.fn(x), 0)}` })])));
+        el("b", { textContent: cfg.fmtVal ? cfg.fmtVal(s.fn(x)) : `${cfg.signed && s.fn(x) > 0 ? "+" : ""}฿${nf(s.fn(x), 0)}` })])));
     tip.classList.add("on");
     const left = X(x) + 14, tw = tip.offsetWidth;
     tip.style.left = (left + tw > W ? X(x) - tw - 14 : left) + "px";
@@ -377,14 +402,14 @@ function drawChart(host, cfg) {
     cfg.cur = x;
   };
   const hide = () => { cross.setAttribute("opacity", 0); dots.forEach(d => d.setAttribute("opacity", 0)); tip.classList.remove("on"); };
-  const toX = ev => { const r = svg.getBoundingClientRect(); return ((ev.clientX - r.left) / r.width * W - m.l) / pw * cfg.xMax; };
+  const toX = ev => { const r = svg.getBoundingClientRect(); return x0 + ((ev.clientX - r.left) / r.width * W - m.l) / pw * xs; };
   hit.addEventListener("pointermove", ev => show(toX(ev)));
   hit.addEventListener("pointerdown", ev => show(toX(ev)));
   hit.addEventListener("pointerleave", hide);
   host.onkeydown = ev => {
     if (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
     ev.preventDefault();
-    const step = cfg.xMax / 40, c = cfg.cur ?? cfg.bep ?? 0;
+    const step = cfg.snap ? Math.max(1, Math.round(xs / 40)) : xs / 40, c = cfg.cur ?? cfg.bep ?? x0;
     show(c + (ev.key === "ArrowRight" ? step : -step));
   };
   host.onblur = hide;
@@ -428,6 +453,65 @@ function explain(r, items, target, expected) {
   return steps;
 }
 
+const kpi = (v, l, f, main) => el("div", { className: "kpi" + (main ? " main" : "") }, [v, el("div", { className: "l", textContent: l }), el("div", { className: "f", textContent: f })]);
+const big = (txt, unit) => { const d = el("div", { className: "v", textContent: txt }); if (unit) d.append(el("small", { textContent: " " + unit })); return d; };
+
+/* ---------- ชดเชยกันระหว่าง 2 สินค้า ---------- */
+let pairSig = "";
+function syncPair(rows) {
+  const sig = rows.map(x => x.name).join("\u0001");
+  const sa = $("pairA"), sb = $("pairB");
+  if (sig !== pairSig) {
+    pairSig = sig;
+    [sa, sb].forEach(sel => sel.replaceChildren(...rows.map((x, i) => el("option", { value: String(i), textContent: `${i + 1}. ${x.name}` }))));
+    if (!(pair.a < rows.length)) pair.a = 0;
+    if (!(pair.b < rows.length) || pair.b === pair.a) pair.b = rows.length > 1 ? (pair.a === 0 ? 1 : 0) : 0;
+    sa.value = String(pair.a); sb.value = String(pair.b);
+  }
+  pair.a = +sa.value; pair.b = +sb.value; pair.start = $("pairStart").value; pair.end = $("pairEnd").value;
+}
+
+function renderPair(r, fixed) {
+  const kp = $("pairKpis"), chart = $("chart3"), pm = $("pairmsg");
+  kp.replaceChildren(); $("fm3").textContent = ""; $("legend3").replaceChildren(); pm.textContent = ""; chart.hidden = false;
+  const stop = t => { pm.textContent = t; chart.hidden = true; };
+  if (r.rows.length < 2) return stop("ต้องมี SKU อย่างน้อย 2 รายการ จึงจะดูการชดเชยกันได้");
+  const A = r.rows[pair.a], B = r.rows[pair.b];
+  if (pair.a === pair.b) return stop("เลือกสินค้า A และ B คนละรายการ");
+  if (!(B.cm > 0)) return stop(`${B.name} มี CM ≤ 0 ขายเท่าไรก็ชดเชยต้นทุนคงที่ไม่ได้ ลองสลับให้เป็นสินค้า A หรือเลือกสินค้าอื่นเป็น B`);
+
+  const start = Math.max(0, parseFloat($("pairStart").value) || 0);
+  const bNeed = x => Math.max(0, (fixed - x * A.cm) / B.cm);
+  const aOnly = A.cm > 0 ? fixed / A.cm : null, bOnly = fixed / B.cm;
+  const cross = A.cm + B.cm > 0 ? fixed / (A.cm + B.cm) : null;
+  let end = parseFloat($("pairEnd").value);
+  if (!(end > start)) end = Math.max(start * 1.5, start + 20, aOnly ? aOnly * 1.1 : 0);
+  const yMax = Math.max(bNeed(start), end) * 1.05 || 1;
+  const c1 = css("--s1"), c2 = css("--s2");
+  const short = (p, x) => p + ": " + (x.name.length > 8 ? x.name.slice(0, 8) + "…" : x.name);
+  const series = [
+    { name: `A (${A.name}) ที่ขาย`, short: short("A", A), fn: x => x, color: c1 },
+    { name: `B (${B.name}) ที่ต้องขายชดเชย`, short: short("B", B), fn: bNeed, color: c2 }];
+  legendInto($("legend3"), series);
+
+  const b0 = bNeed(start);
+  kp.append(
+    kpi(big(ni(ceilInt(b0)), "หน่วย"), `สินค้า B ต้องขาย เมื่อ A ขายได้ ${ni(start)} หน่วย`,
+      b0 > 0 ? `(${nfa(fixed)} − ${nfa(start)} × ${nf(A.cm)}) ÷ ${nf(B.cm)} = ${nf(b0)} → ปัดขึ้น` : `${nfa(start)} × ${nf(A.cm)} ≥ ${nfa(fixed)} : A ชดเชยต้นทุนคงที่ได้ครบแล้ว`, true),
+    kpi(big(aOnly ? ni(ceilInt(aOnly)) : "—", aOnly ? "หน่วย" : ""), "A อย่างเดียว คุ้มทุนที่", aOnly ? `${nfa(fixed)} ÷ ${nf(A.cm)} = ${nf(aOnly)}` : "A มี CM ≤ 0 จึงไม่คุ้มทุนด้วย A อย่างเดียว"),
+    kpi(big(ni(ceilInt(bOnly)), "หน่วย"), "B อย่างเดียว คุ้มทุนที่", `${nfa(fixed)} ÷ ${nf(B.cm)} = ${nf(bOnly)}`),
+    kpi(big(cross ? ni(ceilInt(cross)) : "—", cross ? "หน่วย" : ""), "ขาย A = B เท่ากัน คุ้มทุนที่ (ชนิดละ)", cross ? `${nfa(fixed)} ÷ (${nf(A.cm)} + ${nf(B.cm)}) = ${nf(cross)}` : "CM รวมของ A + B ≤ 0"));
+
+  const inRange = cross && cross > start && cross < end;
+  drawChart(chart, {
+    height: 300, xMin: start, xMax: end, yMin: 0, yMax, series, snap: true, bep: start,
+    xTitle: `จำนวนสินค้า A ที่ขาย — ${A.name} (หน่วย)`,
+    tipTitle: x => `A ขาย ${ni(x)} หน่วย`, fmtVal: v => `${ni(ceilInt(v))} หน่วย`,
+    vlines: inRange ? [{ x: cross, label: `A = B ที่ ${ni(ceilInt(cross))} หน่วย`, row: 0 }] : [],
+    markers: [{ x: start, y: b0, color: c2 }, ...(inRange ? [{ x: cross, y: cross, color: c1 }] : [])] });
+  $("fm3").textContent = `สูตร: B ที่ต้องขาย = (ต้นทุนคงที่ − A × CM ของ A) ÷ CM ของ B = (${nfa(fixed)} − A × ${nf(A.cm)}) ÷ ${nf(B.cm)} · ถ้าได้ค่าติดลบ แปลว่า A ชดเชยได้ครบแล้ว B = 0 · คิดเฉพาะ 2 สินค้านี้ ต้นทุนคงที่รวมทั้งหมดต้องถูกชดเชยด้วย A และ B เท่านั้น สินค้าอื่นไม่นับ`;
+}
+
 function calc() {
   save();
   const msg = $("msg"), kpis = $("kpis"), out = $("out");
@@ -447,8 +531,6 @@ function calc() {
   const r = calculate(skus, fixed, target, expected);
   if (!r.feasible) return info("⚠ CM เฉลี่ยถ่วงน้ำหนัก ≤ 0 : ราคาขายไม่พอครอบคลุมต้นทุนผันแปร จึงไม่มีจุดคุ้มทุน — ลองปรับราคา ต้นทุน หรือสัดส่วนสินค้า", "warn");
 
-  const kpi = (v, l, f, main) => el("div", { className: "kpi" + (main ? " main" : "") }, [v, el("div", { className: "l", textContent: l }), el("div", { className: "f", textContent: f })]);
-  const big = (txt, unit) => { const d = el("div", { className: "v", textContent: txt }); if (unit) d.append(el("small", { textContent: " " + unit })); return d; };
   kpis.append(
     kpi(big(ni(ceilInt(r.bep)), "หน่วย"), "จุดคุ้มทุนรวม (ขายเท่านี้จึงเริ่มมีกำไร)", `${nfa(fixed)} ÷ ${nf(r.wacm)} = ${nf(r.bep)} → ปัดขึ้น`, true),
     kpi(big("฿" + nf(r.bepRev, 0)), "ยอดขายที่จุดคุ้มทุน", `${nf(r.bep)} หน่วย × ราคาเฉลี่ย ${nf(r.avgPrice)}`),
@@ -502,6 +584,8 @@ function calc() {
     ...(showT ? [[ni(ceilInt(r.tgt)), `(${nfa(fixed)} + ${nfa(target)}) ÷ ${nf(r.wacm)}`], [nf(r.tgtRev), `${nf(r.tgt)} × ${nf(r.avgPrice)}`]] : [])])]);
   $("result").replaceChildren(head, body, foot);
 
+  syncPair(r.rows); renderPair(r, fixed);
+
   // ที่มาของตัวเลข
   $("how").replaceChildren(...explain(r, items, target, expected).flatMap(([t, lines]) =>
     [el("h3", { textContent: t }), ...lines.map(l => el("p", { textContent: l }))]));
@@ -510,6 +594,7 @@ function calc() {
 document.addEventListener("input", calc);
 $("add").onclick = () => { addRow(); save(); };
 $("addFixed").onclick = () => { addFixed(); save(); };
+$("swap").onclick = () => { const a = $("pairA").value; $("pairA").value = $("pairB").value; $("pairB").value = a; calc(); };
 $("reset").onclick = () => { loadSample(); calc(); };
 if (!restore()) loadSample();
 calc();
