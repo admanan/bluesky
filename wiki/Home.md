@@ -6,7 +6,7 @@
 
 | | 🟢 ง่าย | 🟡 กลาง | 🔴 ยาก |
 |---|---|---|---|
-| **ไพ่คำนวณ** (Self-Working: ใช้หลักคณิตศาสตร์/การจัดลำดับ ไม่ต้องใช้ฝีมือ) | [ไพ่คีย์, ไพ่ 9 ใบ, ไพ่สะกดชื่อ, เอซ 4 กอง, คว่ำ–หงาย (คู่–คี่)](Self-Working-Easy.md) | [ไพ่ 21 ใบ, Gilbreath (สี/ดอก), Si Stebbins, Kruskal Count, Binary Cards](Self-Working-Medium.md) | [Fitch–Cheney (+ฝึกถอดรหัส), Faro คณิตศาสตร์, Mnemonica, Monge's Shuffle](Self-Working-Hard.md) |
+| **ไพ่คำนวณ** (Self-Working: ใช้หลักคณิตศาสตร์/การจัดลำดับ ไม่ต้องใช้ฝีมือ) | [ไพ่คีย์, ไพ่ 9 ใบ, ไพ่สะกดชื่อ, เอซ 4 กอง, คว่ำ–หงาย (คู่–คี่), ไพ่ที่หายไป, เลขลับจากไพ่, แยกสีแจกสลับ, สมดุลสี, สี่เหลี่ยมมหัศจรรย์](Self-Working-Easy.md) | [ไพ่ 21 ใบ, Gilbreath (สี/ดอก), Si Stebbins, Kruskal Count, Binary Cards, เลข 1089, ไพ่ 27 ใบ (คุมตำแหน่ง), ไพ่ 25 ใบ, Stebbins ตำแหน่ง→ไพ่, โป๊กเกอร์ดีล](Self-Working-Medium.md) | [Fitch–Cheney (+ฝึกถอดรหัส), Faro คณิตศาสตร์, Mnemonica, Monge's Shuffle, Faro Binary, เศษหาร 9, Josephus Shuffle, สูตร n กอง k รอบ, Stebbins ย้อนกลับ](Self-Working-Hard.md) |
 | **ไพ่ฝีมือ** (Sleight of Hand: ใช้เทคนิคมือ) | [Overhand, Glimpse, Cross-Cut Force](Sleight-Easy.md) | [Double Lift, Hindu Force, Riffle & Bridge](Sleight-Medium.md) | [Classic Pass, Palm, Faro Shuffle](Sleight-Hard.md) |
 
 ## เริ่มตรงไหนดี?

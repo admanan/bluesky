@@ -715,23 +715,340 @@ def fitch_flow():
     s.save("fitch-flow.svg")
 
 
+# ---------------------------------------------------------------- ชุดที่ 2 (ง่าย/กลาง/ยาก อย่างละ 5)
+from verify_tricks import digits_of, josephus_top
+
+
+def box(s, x, y, w, h, title, lines, color=BLUE):
+    s.rect(x, y, w, h, PAPER, color, 2.5, 10)
+    s.text(x + w / 2, y + 24, title, 14, "middle", 700, color)
+    for i, ln in enumerate(lines):
+        s.text(x + w / 2, y + 50 + i * 22, ln, 13, "middle", 400 if i else 600)
+
+
+def missing_card():
+    s = Svg(760, 300, "ไพ่ที่หายไป (Missing Card): A–K ดอกเดียวกัน รวมกัน = 91")
+    names = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
+    for i, n in enumerate(names):
+        x = 22 + i * 56
+        if n == "6":
+            s.rect(x, 60, 50, 70, "#fff3cd", RED, 2.5, 6, 'stroke-dasharray="6 4"')
+            s.text(x + 25, 102, "?", 26, "middle", 700, RED)
+        else:
+            s.card(x, 60, n + "♠", 50, 70)
+    s.text(30, 156, "① ผู้ชมแอบหยิบไพ่ 1 ใบ (ที่ซ่อน)   ·   ทั้งชุดรวม 1+2+…+13 = 91", 14, "start", 600)
+    s.text(30, 182, "② บวกค่าไพ่ที่เหลือบนโต๊ะ (A=1, J=11, Q=12, K=13) = 85", 14, "start", 600)
+    s.rect(30, 214, 700, 62, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 240, "ไพ่ที่หาย = 91 − 85 = 6", 20, "middle", 700, GREEN)
+    s.text(380, 264, "ฝึกบวกเป็นคู่ที่รวม 13 (A+Q, 2+J, 3+10, 4+9, 5+8, 6+7) จะไวขึ้นมาก", 12, "middle", 400, MUTE)
+    s.save("missing-card.svg")
+
+
+def secret_number():
+    s = Svg(760, 340, "เลขลับจากไพ่: ผู้ชมคำนวณเงียบ ๆ คุณบอกไพ่ได้จากผลลัพธ์")
+    steps = [("เลือกไพ่ 1 ใบ", "7♥ (ค่า 7)"), ("× 2", "14"), ("+ 3", "17"), ("× 5", "85"), ("+ เลขดอก (♥ = 3)", "88")]
+    for i, (a, b) in enumerate(steps):
+        x = 24 + i * 146
+        s.rect(x, 56, 136, 70, PAPER, BLUE, 2, 10)
+        s.text(x + 68, 82, a, 12, "middle", 600)
+        s.text(x + 68, 110, b, 18, "middle", 700, BLUE)
+        if i < 4: s.line(x + 138, 91, x + 146, 91, MUTE, 2, arrow=True)
+    s.text(30, 156, "ผู้ชมบอกผลลัพธ์สุดท้าย = 88", 15, "start", 700)
+    s.rect(30, 172, 700, 52, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 196, "คุณลบ 15 → 88 − 15 = 73   →   หลักสิบ = ค่าไพ่ (7)   หลักหน่วย = เลขดอก (3 = ♥)", 14, "middle", 700, GREEN)
+    s.text(380, 214, "ได้ 7♥", 14, "middle", 700, GREEN)
+    s.text(30, 252, "เลขดอก:", 14, "start", 700)
+    for i, (n, c) in enumerate([("1", "♣"), ("2", "♦"), ("3", "♥"), ("4", "♠")]):
+        s.rect(120 + i * 110, 234, 100, 28, PAPER, "#9ca3af", 1.2, 6)
+        s.text(170 + i * 110, 254, f"{c} = {n}", 15, "middle", 700, RED if c in "♥♦" else INK)
+    s.text(380, 296, "สูตร: ((ค่า × 2) + 3) × 5 + ดอก = 10 × ค่า + 15 + ดอก  (J Q K ใช้ 11, 12, 13 ก็ได้ ผลสิบหลักเป็น 11–13)", 12, "middle", 400, MUTE)
+    s.text(380, 316, "ตรวจครบทุกค่า A–10 × 4 ดอกแล้ว", 12, "middle", 700, GREEN)
+    s.save("secret-number.svg")
+
+
+def alt_color_deal():
+    s = Svg(760, 340, "แยกสีด้วยการแจกสลับ: สำรับสลับ แดง–ดำ แล้วแจกเป็น 2 กอง")
+    deck = ["R", "B"] * 4
+    cut = 3
+    d2 = deck[cut:] + deck[:cut]
+    def col(x, y, seq, title, cut_at=None):
+        s.text(x + 30, y - 10, title, 12, "middle", 600)
+        for i, c in enumerate(seq):
+            s.rect(x, y + i * 24, 60, 20, "#fecaca" if c == "R" else "#d1d5db", "#6b7280", 1.2, 4)
+            s.text(x + 30, y + i * 24 + 15, "แดง" if c == "R" else "ดำ", 12, "middle", 700, RED if c == "R" else INK)
+        if cut_at:
+            s.line(x - 6, y + cut_at * 24 - 2, x + 66, y + cut_at * 24 - 2, RED, 3, dash="6 4")
+    col(40, 70, deck, "① จัดสลับ (8 ใบตัวอย่าง)", cut)
+    s.text(135, 130, "ผู้ชมตัด", 12, "start", 700, RED); s.text(135, 148, "ตรงไหนก็ได้", 12, "start", 700, RED)
+    s.line(220, 200, 270, 200, arrow=True)
+    col(285, 70, d2, "② หลังตัดยังสลับสีอยู่")
+    s.line(360, 200, 410, 200, arrow=True)
+    s.text(500, 80, "③ แจกสลับ ไปกอง A / กอง B", 12, "middle", 600)
+    for p, lab in enumerate(["กอง A", "กอง B"]):
+        x = 420 + p * 150
+        s.text(x + 30, 104, lab, 12, "middle", 600, MUTE)
+        for i, c in enumerate(d2[p::2]):
+            s.rect(x, 112 + i * 24, 60, 20, "#fecaca" if c == "R" else "#d1d5db", "#6b7280", 1.2, 4)
+            s.text(x + 30, 112 + i * 24 + 15, "แดง" if c == "R" else "ดำ", 12, "middle", 700, RED if c == "R" else INK)
+    s.rect(30, 280, 700, 44, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 308, "กอง A = แดงล้วน, กอง B = ดำล้วน  (สำรับ 52 ใบ ตัดกี่ครั้งก็ได้ แต่ห้ามสับ)", 14, "middle", 700, GREEN)
+    s.save("alt-color-deal.svg")
+
+
+def color_balance():
+    s = Svg(760, 330, "สมดุลสี: แจกครึ่งสำรับ → แดงในกอง A = ดำในกอง B เสมอ")
+    for k, (lab, red, blk) in enumerate([("กอง A (26 ใบ)", 15, 11), ("กอง B (26 ใบ)", 11, 15)]):
+        x = 60 + k * 340
+        s.text(x + 130, 66, lab, 14, "middle", 700)
+        s.rect(x, 80, 260 * red / 26, 40, "#fecaca", RED, 1.5, 4); s.text(x + 130 * red / 26, 106, f"แดง {red}", 14, "middle", 700, RED)
+        s.rect(x + 260 * red / 26, 80, 260 * blk / 26, 40, "#d1d5db", INK, 1.5, 4); s.text(x + 260 * red / 26 + 130 * blk / 26, 106, f"ดำ {blk}", 14, "middle", 700)
+    s.text(130, 156, "แดง 15", 20, "middle", 700, RED); s.text(470, 156, "ดำ 15", 20, "middle", 700)
+    s.text(300, 156, "=", 22, "middle", 700, GREEN)
+    s.rect(30, 190, 700, 110, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 218, "ทำไม? ทั้งสำรับมีแดง 26 ใบ", 14, "middle", 700, GREEN)
+    s.text(380, 244, "แดงที่ไม่ได้อยู่กอง A ต้องอยู่กอง B  →  แดงกอง B = 26 − แดงกอง A", 13, "middle")
+    s.text(380, 268, "และกอง B มี 26 ใบ  →  ดำกอง B = 26 − แดงกอง B = แดงกอง A", 13, "middle")
+    s.text(380, 290, "(ตัวเลขในภาพเป็นตัวอย่าง: ผลจริงจะเป็นเท่าไรก็ได้ แต่สองค่านี้เท่ากันเสมอ)", 11, "middle", 400, MUTE)
+    s.save("color-balance.svg")
+
+
+def magic_square():
+    s = Svg(760, 340, "สี่เหลี่ยมมหัศจรรย์ 3×3: ไพ่ A–9 เรียงให้ทุกแถว/สดมภ์/แนวทแยง = 15")
+    sq = [[2, 7, 6], [9, 5, 1], [4, 3, 8]]
+    for r in range(3):
+        for c in range(3):
+            n = sq[r][c]
+            s.card(60 + c * 70, 56 + r * 86, ("A" if n == 1 else str(n)) + "♠", 60, 76, hl=(r == 1 and c == 1))
+    for r in range(3):
+        s.text(280, 100 + r * 86, "= 15", 16, "start", 700, GREEN)
+    for c in range(3):
+        s.text(90 + c * 70, 326, "= 15", 13, "middle", 700, GREEN)
+    s.text(300, 96, "", 12)
+    box(s, 380, 56, 340, 120, "วิธีเล่น", ["ท่องตำแหน่งไว้ แล้ววางไพ่ 9 ใบให้ผู้ชมดู", "หมุน/กลับด้านได้รวม 8 แบบ (ยังรวม 15 เหมือนเดิม)", "ใบกลางต้องเป็น 5 เสมอ"], BLUE)
+    box(s, 380, 192, 340, 100, "จำง่าย", ["มุมทั้ง 4 = เลขคู่ (2 4 6 8)", "ขอบ = เลขคี่ (1 3 7 9), กลาง = 5"], GOLD)
+    s.save("magic-square.svg")
+
+
+def reverse_1089():
+    s = Svg(760, 340, "เลข 1089 ด้วยไพ่ 3 ใบ: ผลลัพธ์ 1089 เสมอ")
+    steps = [("① ไพ่ 3 ใบ เรียงเป็นเลข", "7  3  2  →  732", "(ไพ่ใบแรกกับใบสุดท้ายต้องต่างกัน; A=1…9)"),
+             ("② กลับด้านเป็น", "237", ""),
+             ("③ ลบ (ใหญ่ − เล็ก)", "732 − 237 = 495", "ถ้าได้ 2 หลัก ให้เติม 0 หน้า เช่น 099"),
+             ("④ กลับด้านผลลบ แล้วบวก", "495 + 594 = 1089", "")]
+    for i, (a, b, c) in enumerate(steps):
+        x, y = 30 + (i % 2) * 360, 56 + (i // 2) * 120
+        s.rect(x, y, 340, 104, PAPER, BLUE, 2, 10)
+        s.text(x + 170, y + 26, a, 13, "middle", 700, BLUE)
+        s.text(x + 170, y + 62, b, 20, "middle", 700)
+        s.text(x + 170, y + 88, c, 11, "middle", 400, MUTE)
+    s.rect(30, 300, 700, 30, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 321, "เพิ่มลูกเล่น: ให้บอกแค่ 'หลักร้อย' ของผลลบ (4) → คุณรู้ทั้งหมด 4 9 5 (หลักสิบเป็น 9 เสมอ, หลักหน่วย = 9 − หลักร้อย)", 12, "middle", 700, GREEN)
+    s.save("reverse-1089.svg")
+
+
+def ternary27():
+    s = Svg(760, 400, "ไพ่ 27 ใบ: คุมตำแหน่งปลายทางได้ทุกใบ (เลขฐาน 3)")
+    s.text(30, 62, "แต่ละรอบ: ผู้ชมบอกกองที่ไพ่อยู่ → คุณวางกองนั้นไว้ช่อง บน (0) / กลาง (1) / ล่าง (2)", 14, "start", 600)
+    s.text(30, 86, "ตำแหน่งปลายทาง t (นับจาก 0) = 9·ช่องรอบ3 + 3·ช่องรอบ2 + ช่องรอบ1", 14, "start", 700, BLUE)
+    heads = ["อยากให้ไพ่อยู่ใบที่", "รอบ 1", "รอบ 2", "รอบ 3"]
+    xs = [40, 300, 440, 580]
+    for x, h in zip(xs, heads): s.text(x, 122, h, 13, "start", 700, MUTE)
+    names = ["บน", "กลาง", "ล่าง"]
+    for i, pos in enumerate([1, 14, 21, 27]):
+        y = 134 + i * 44
+        s.rect(30, y, 700, 36, PAPER, "#9ca3af", 1.2, 6)
+        s.text(40, y + 24, f"ใบที่ {pos}" + ("  (บนสุด)" if pos == 1 else "  (กลางพอดี)" if pos == 14 else "  (ล่างสุด)" if pos == 27 else ""), 14, "start", 700)
+        d = digits_of(pos - 1, 3, 3)
+        for k in range(3):
+            s.text(xs[k + 1], y + 24, names[d[k]], 14, "start", 700, GREEN)
+    s.rect(30, 320, 700, 66, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 346, "ตรวจครบทุกตำแหน่งเริ่มต้น × ทุกตำแหน่งปลายทาง (27 × 27) แล้ว", 13, "middle", 700, GREEN)
+    s.text(380, 368, "แจกหงายทีละใบเป็น 3 กอง → พลิกแต่ละกองคว่ำทั้งก้อน → ซ้อนตามช่องที่ต้องการ", 12, "middle", 400)
+    s.save("ternary-27.svg")
+
+
+def five_piles():
+    s = Svg(760, 380, "ไพ่ 25 ใบ: 5 กอง × 5 ใบ แค่ 2 รอบ")
+    s.text(30, 62, "แจกหงาย 5 กอง (กองละ 5)  →  ผู้ชมบอกกอง  →  ซ้อนกองนั้นไว้ช่อง (บน=0 … ล่าง=4)", 14, "start", 600)
+    for p in range(5):
+        s.text(60 + p * 56, 92, "ABCDE"[p], 12, "middle", 700, MUTE)
+        for r in range(5):
+            n = r * 5 + p + 1
+            mid = n == 13
+            s.rect(38 + p * 56, 98 + r * 34, 44, 28, "#fff3cd" if mid else PAPER, GOLD if mid else "#9ca3af", 2.5 if mid else 1.2, 4)
+            s.text(60 + p * 56, 118 + r * 34, n, 14, "middle", 700)
+    s.text(350, 112, "ตำแหน่งปลายทาง t = 5 × ช่องรอบ2 + ช่องรอบ1", 14, "start", 700, BLUE)
+    for i, pos in enumerate([1, 8, 13, 25]):
+        d = digits_of(pos - 1, 5, 2)
+        y = 134 + i * 38
+        s.rect(350, y, 380, 30, PAPER, "#9ca3af", 1.2, 6)
+        s.text(360, y + 21, f"ใบที่ {pos}", 13, "start", 700)
+        s.text(470, y + 21, f"รอบ1 = ช่อง {d[0]}", 13, "start", 700, GREEN)
+        s.text(600, y + 21, f"รอบ2 = ช่อง {d[1]}", 13, "start", 700, GREEN)
+    s.rect(350, 296, 380, 56, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(540, 320, "ใบที่ 13 (กลางพอดี) = ช่อง 2 ทั้งสองรอบ", 13, "middle", 700, GREEN)
+    s.text(540, 340, "ตรวจทุกตำแหน่งเริ่ม × ปลายทางแล้ว", 12, "middle", 400)
+    s.save("five-piles-25.svg")
+
+
+def stebbins_formula():
+    seq = stebbins_seq()
+    s = Svg(760, 340, "Si Stebbins: ตำแหน่ง n → ไพ่ ได้ทันทีด้วยสูตร")
+    s.text(30, 66, "เลข = (3n − 2) mod 13   (ได้ 0 ให้ใช้ K)", 15, "start", 700, BLUE)
+    s.text(30, 92, "ดอก = ลำดับที่ (n − 1) mod 4  ในวงรอบ ♣ ♥ ♠ ♦", 15, "start", 700, BLUE)
+    for i, n in enumerate([20, 33, 52]):
+        x = 40 + i * 235
+        v = (3 * n - 2) % 13 or 13
+        card = seq[n - 1]
+        assert card[:-1] == {1: "A", 11: "J", 12: "Q", 13: "K"}.get(v, str(v))
+        s.rect(x, 116, 215, 160, PAPER, "#9ca3af", 1.5, 10)
+        s.text(x + 107, 142, f"ตำแหน่ง n = {n}", 14, "middle", 700)
+        s.text(x + 107, 168, f"เลข: 3·{n} − 2 = {3*n-2}", 12, "middle")
+        s.text(x + 107, 186, f"{3*n-2} mod 13 = {v}", 12, "middle")
+        s.text(x + 107, 208, f"ดอก: ({n}−1) mod 4 = {(n-1)%4}", 12, "middle")
+        s.card(x + 78, 220, card, 40, 50)
+    s.rect(30, 288, 700, 44, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 316, "ให้ผู้ชมบอกเลขตำแหน่ง 1–52 → คุณบอกไพ่ในตำแหน่งนั้นได้ทันที (ตรวจครบ 52 ตำแหน่ง)", 13, "middle", 700, GREEN)
+    s.save("stebbins-formula.svg")
+
+
+def poker_deal():
+    s = Svg(760, 360, "โป๊กเกอร์ดีล: เอซ 4 ใบอยู่ใบที่ 4, 8, 12, 16 → ตกกับผู้เล่นคนที่ 4 (คุณ)")
+    for p in range(4):
+        x = 40 + p * 175
+        s.text(x + 60, 66, f"ผู้เล่น {p+1}" + (" (คุณ)" if p == 3 else ""), 14, "middle", 700, GREEN if p == 3 else INK)
+        for r in range(5):
+            n = r * 4 + p + 1
+            ace = p == 3 and r < 4
+            s.rect(x, 78 + r * 40, 120, 32, "#fff3cd" if ace else PAPER, GOLD if ace else "#9ca3af", 2.5 if ace else 1.2, 6)
+            s.text(x + 14, 99 + r * 40, f"ใบที่ {n}", 12, "start", 400, MUTE)
+            s.text(x + 106, 99 + r * 40, "A" if ace else "?", 16, "end", 700, RED if ace else INK)
+    s.rect(30, 290, 700, 56, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 314, "แจกวนทีละใบให้ผู้เล่น 1 → 2 → 3 → 4 (คุณเป็นคนสุดท้าย) คนละ 5 ใบ", 13, "middle", 700, GREEN)
+    s.text(380, 334, "สำรับต้องไม่ถูกสับ/ตัดก่อนแจก  ·  เอซอยู่ใบที่ 4, 8, 12, 16 ของสำรับ", 12, "middle", 400)
+    s.save("poker-deal.svg")
+
+
+def faro_binary():
+    s = Svg(760, 380, "Faro Binary: นำไพ่บนสุดไปตำแหน่งใดก็ได้ ด้วย In/Out ตามเลขฐานสอง")
+    s.text(30, 62, "กฎ: In-shuffle = ตำแหน่ง → 2i + 1   ·   Out-shuffle = ตำแหน่ง → 2i   (i นับจาก 0, เมื่อ i < 26)", 13, "start", 700, BLUE)
+    s.text(30, 86, "เขียนตำแหน่งปลายทาง t (นับจาก 0) เป็นเลขฐานสอง  → บิต 1 = In, บิต 0 = Out (อ่านจากซ้ายไปขวา)", 13, "start", 600)
+    rows = [(27, "ใบที่ 27"), (12, "ใบที่ 12"), (40, "ใบที่ 40")]
+    for i, (pos, lab) in enumerate(rows):
+        tt = pos - 1; bits = bin(tt)[2:]
+        idx, path = 0, [0]
+        for ch in bits: idx = 2 * idx + int(ch); path.append(idx)
+        assert idx == tt
+        y = 112 + i * 62
+        s.rect(30, y, 700, 52, PAPER, "#9ca3af", 1.2, 8)
+        s.text(42, y + 22, f"{lab}  (t = {tt} = {bits}₂)", 14, "start", 700)
+        s.text(42, y + 42, "  →  ".join(("In" if c == "1" else "Out") for c in bits), 13, "start", 700, GREEN)
+        s.text(724, y + 42, "ตำแหน่งที่เปลี่ยน: " + " → ".join(str(x + 1) for x in path), 12, "end", 400, MUTE)
+    s.rect(30, 304, 700, 62, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 328, "ไพ่อยู่ตำแหน่ง p ไม่ใช่บนสุด? ตัดสำรับ (ย้ายบน p−1 ใบไปล่าง) ให้ไพ่ขึ้นบนก่อน แล้วค่อย Faro", 13, "middle", 700, GREEN)
+    s.text(380, 350, "ตรวจครบทุกตำแหน่ง 1–52 ด้วยการจำลอง Faro จริงบนสำรับ 52 ใบ", 12, "middle", 400)
+    s.save("faro-binary.svg")
+
+
+def mod9():
+    s = Svg(760, 360, "เศษหาร 9: ทายเลขที่ผู้ชมปิดไว้ จากผลรวมเลขที่เหลือ")
+    steps = [("① ไพ่ 5 ใบ (A=1…9) เรียงเป็นเลข", "5 3 8 2 1  →  53821"), ("② สลับลำดับไพ่ใหม่", "1 2 3 5 8  →  12358"),
+             ("③ ลบ (ใหญ่ − เล็ก)", "53821 − 12358 = 41463"), ("④ ผู้ชมปิดเลข 1 หลักที่ไม่ใช่ 0 (ตัวอย่าง: 6)", "บอกที่เหลือ: 4 1 4 3")]
+    for i, (a, b) in enumerate(steps):
+        x, y = 30 + (i % 2) * 360, 56 + (i // 2) * 96
+        s.rect(x, y, 340, 84, PAPER, BLUE, 2, 10)
+        s.text(x + 170, y + 26, a, 12, "middle", 700, BLUE)
+        s.text(x + 170, y + 62, b, 17, "middle", 700)
+    s.rect(30, 256, 700, 92, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 282, "คุณบวกเลขที่เหลือ: 4 + 1 + 4 + 3 = 12  →  12 หาร 9 เหลือเศษ 3", 14, "middle", 700, GREEN)
+    s.text(380, 308, "เลขที่ปิด = 9 − 3 = 6  (ถ้าเศษเป็น 0 เลขที่ปิดคือ 9)", 14, "middle", 700, GREEN)
+    s.text(380, 332, "เหตุผล: เลขที่สลับหลักกัน มีผลรวมหลักเท่ากัน → ผลต่างหารด้วย 9 ลงตัวเสมอ", 12, "middle", 400)
+    assert 53821 - 12358 == 41463 and (9 - (4 + 1 + 4 + 3) % 9) % 9 == 6
+    s.save("mod9.svg")
+
+
+def josephus():
+    s = Svg(760, 360, "Josephus Shuffle: ทิ้งใบบนสุด ย้ายใบถัดไปไปล่าง ทำซ้ำ → เหลือใบเดียว")
+    q = list(range(1, 11)); order = []
+    while len(q) > 1:
+        order.append(q.pop(0))
+        if len(q) > 1: q.append(q.pop(0))
+    surv = q[0]
+    assert surv == josephus_top(10) == 4
+    s.text(30, 62, "ตัวอย่าง 10 ใบ (เลข = ตำแหน่งเดิมนับจากบน) ลำดับที่ถูกทิ้ง:", 14, "start", 600)
+    for i, n in enumerate(range(1, 11)):
+        x = 30 + i * 70
+        k = order.index(n) + 1 if n in order else None
+        s.rect(x, 80, 62, 64, "#fff3cd" if n == surv else PAPER, GOLD if n == surv else "#9ca3af", 3 if n == surv else 1.2, 6)
+        s.text(x + 31, 108, n, 18, "middle", 700)
+        s.text(x + 31, 134, f"ทิ้งที่ {k}" if k else "รอด!", 11, "middle", 700, MUTE if k else GREEN)
+    s.rect(30, 170, 700, 64, "#eff6ff", BLUE, 1.2, 10)
+    s.text(380, 196, "สูตร (สำหรับ n ใบ, n > 1): ให้ m = 2 ยกกำลังสูงสุดที่ ≤ n − 1", 13, "middle", 600)
+    s.text(380, 220, "ใบที่รอด = 2 × (n − 1 − m) + 2  (นับจากบนสุดก่อนเริ่ม)", 16, "middle", 700, BLUE)
+    s.text(380, 262, "ตัวอย่าง: n = 10 → m = 8 → 2 × (9 − 8) + 2 = 4   ✓ (ภาพบน)", 14, "middle", 600)
+    s.rect(30, 280, 700, 64, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 306, "n = 52 → m = 32 → 2 × (51 − 32) + 2 = 40", 15, "middle", 700, GREEN)
+    s.text(380, 328, "ไพ่ใบที่ 40 จากบนสุดคือใบที่เหลือรอดเสมอ (ตรวจ n = 1–52 ด้วยการจำลองแล้ว)", 12, "middle", 400)
+    s.save("josephus.svg")
+
+
+def base_n():
+    s = Svg(760, 340, "สูตรทั่วไป: n กอง k รอบ = ไพ่ nᵏ ใบ  →  ตำแหน่งปลายทางเป็นเลขฐาน n")
+    heads = ["จำนวนไพ่", "กอง × รอบ", "ตำแหน่งปลายทาง t (จาก 0)", "ใบกลางพอดี = ช่อง"]
+    xs = [40, 190, 340, 580]
+    for x, h in zip(xs, heads): s.text(x, 66, h, 13, "start", 700, MUTE)
+    rows = [("9", "3 × 2", "3·ช่องรอบ2 + ช่องรอบ1", "กลาง, กลาง → ใบที่ 5"),
+            ("16", "4 × 2", "4·ช่องรอบ2 + ช่องรอบ1", "(ไม่มีช่องกลางตรง)"),
+            ("25", "5 × 2", "5·ช่องรอบ2 + ช่องรอบ1", "กลาง, กลาง → ใบที่ 13"),
+            ("27", "3 × 3", "9·ช่องรอบ3 + 3·ช่อง2 + ช่อง1", "กลาง ×3 → ใบที่ 14"),
+            ("36", "6 × 2", "6·ช่องรอบ2 + ช่องรอบ1", "(ไม่มีช่องกลางตรง)"),
+            ("49", "7 × 2", "7·ช่องรอบ2 + ช่องรอบ1", "กลาง, กลาง → ใบที่ 25")]
+    for i, r in enumerate(rows):
+        y = 76 + i * 38
+        s.rect(30, y, 700, 32, PAPER, "#9ca3af", 1.2, 6)
+        for x, v in zip(xs, r): s.text(x, y + 22, v, 13, "start", 600)
+    s.rect(30, 312 - 8, 700, 30, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 331 - 8, "ตรวจด้วยการจำลองจริง: (3,2) (4,2) (5,2) (3,3) — ทุกตำแหน่งเริ่ม × ทุกตำแหน่งปลายทาง", 12, "middle", 700, GREEN)
+    s.save("base-n.svg")
+
+
+def stebbins_crt():
+    seq = stebbins_seq()
+    n = seq.index("8♦") + 1
+    assert n == 12
+    s = Svg(760, 360, "Stebbins ย้อนกลับ: ไพ่ → ตำแหน่ง (Chinese Remainder)")
+    s.text(30, 62, "ตัวอย่าง: ผู้ชมหยิบ 8♦  → ไพ่นี้อยู่ตำแหน่งที่เท่าไร?", 15, "start", 700)
+    box(s, 30, 78, 340, 126, "① เลข → ตำแหน่งแบบวนรอบ 13", ["n ≡ 9 × (ค่า + 2)  (mod 13)", "ค่า = 8:  9 × 10 = 90  →  90 mod 13 = 12", "ตัวเลือก: n = 12, 25, 38, 51"], BLUE)
+    box(s, 390, 78, 340, 126, "② ดอก → ตำแหน่งแบบวนรอบ 4", ["ลำดับดอก ♣=0 ♥=1 ♠=2 ♦=3", "n ≡ ลำดับดอก + 1  (mod 4)", "♦: n ≡ 4 ≡ 0  (mod 4)"], GOLD)
+    s.rect(30, 216, 700, 56, PAPER, "#9ca3af", 1.2, 8)
+    for i, c in enumerate([12, 25, 38, 51]):
+        x = 60 + i * 170
+        ok = c % 4 == 0
+        s.text(x, 240, f"{c}  mod 4 = {c % 4}", 14, "start", 700, GREEN if ok else MUTE)
+        s.text(x, 260, "✓ ตรง" if ok else "✗", 12, "start", 700, GREEN if ok else MUTE)
+    s.rect(30, 288, 700, 52, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 312, "8♦ = ตำแหน่งที่ 12 ของสำรับ", 16, "middle", 700, GREEN)
+    s.text(380, 332, "ตรวจครบทุกใบ (52 ใบ) แล้ว: มีตัวเลือกเดียวเสมอ", 12, "middle", 400)
+    s.save("stebbins-crt.svg")
+
+
 # ---------------------------------------------------------------- overview
 def learning_path():
-    s = Svg(760, 440, "เส้นทางการเรียน: ไต่ระดับจากง่ายไปยาก")
-    levels = [("ง่าย", GREEN, ["ไพ่คีย์", "ไพ่ 9 ใบ", "ไพ่สะกดชื่อ", "เอซ 4 กอง", "คู่–คี่ คว่ำ/หงาย", "Overhand Shuffle", "Glimpse", "Cross-Cut Force"]),
-              ("กลาง", GOLD, ["ไพ่ 21 ใบ", "Gilbreath (สี/ดอก)", "Si Stebbins", "Kruskal Count", "Binary Cards", "Double Lift", "Hindu Shuffle Force", "Riffle + Bridge"]),
-              ("ยาก", RED, ["Fitch–Cheney 5 ใบ", "Mnemonica Stack", "Monge's Shuffle", "Faro คณิตศาสตร์", "Classic Pass", "Top-Card Palm", "Faro Shuffle จริง"])]
+    s = Svg(760, 500, "เส้นทางการเรียน: ไต่ระดับจากง่ายไปยาก")
+    levels = [("ง่าย", GREEN, ["ไพ่คีย์", "ไพ่ 9 ใบ", "ไพ่สะกดชื่อ", "เอซ 4 กอง", "คู่–คี่ คว่ำ/หงาย", "ไพ่ที่หายไป / เลขลับ", "แยกสี / สมดุลสี", "สี่เหลี่ยมมหัศจรรย์", "Overhand Shuffle", "Glimpse", "Cross-Cut Force"]),
+              ("กลาง", GOLD, ["ไพ่ 21 ใบ", "Gilbreath (สี/ดอก)", "Si Stebbins", "Kruskal Count", "Binary Cards", "เลข 1089 / ไพ่ 27, 25 ใบ", "โป๊กเกอร์ดีล", "Double Lift", "Hindu Shuffle Force", "Riffle + Bridge"]),
+              ("ยาก", RED, ["Fitch–Cheney 5 ใบ", "Mnemonica Stack", "Monge's Shuffle", "Faro คณิต + Faro Binary", "เศษหาร 9, Josephus", "n กอง k รอบ / Stebbins ย้อน", "Classic Pass", "Top-Card Palm", "Faro Shuffle จริง"])]
     for i, (name, c, items) in enumerate(levels):
         x = 30 + i * 240
         h = 62 + len(items) * 28
-        y = 420 - h
+        y = 480 - h
         s.rect(x, y, 220, h, "#fff", c, 2.5, 12)
         s.text(x + 110, y + 28, f"ระดับ{name}", 17, "middle", 700, c)
         for k, it in enumerate(items):
             s.rect(x + 16, y + 42 + k * 28, 188, 22, "#f8fafc", "#cbd5e1", 1, 5)
             s.text(x + 110, y + 58 + k * 28, it, 13, "middle", 600)
         if i < 2:
-            s.line(x + 224, 380, x + 236, 380, MUTE, 2, arrow=True)
+            s.line(x + 224, 440, x + 236, 440, MUTE, 2, arrow=True)
     s.save("learning-path.svg")
 
 
@@ -751,6 +1068,9 @@ if __name__ == "__main__":
     for fn in (keycard, nine_cards, twentyone, gilbreath, stebbins, fitch, faro_math, overhand, glimpse,
                crosscut, double_lift, hindu_force, riffle, classic_pass, palm, faro_physical,
                learning_path, cover, spelling, four_aces_deal, parity, kruskal, binary_cards_img,
-               gilbreath_suit, mnemonica, monge_img, fitch_flow):
+               gilbreath_suit, mnemonica, monge_img, fitch_flow,
+               missing_card, secret_number, alt_color_deal, color_balance, magic_square, reverse_1089,
+               ternary27, five_piles, stebbins_formula, poker_deal, faro_binary, mod9, josephus, base_n,
+               stebbins_crt):
         fn()
     print("สร้างภาพครบ", len(os.listdir(OUT)), "ไฟล์")
