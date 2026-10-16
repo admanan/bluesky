@@ -8,14 +8,14 @@
 
 | สัปดาห์ | หัวข้อ | เป้าหมาย |
 |---|---|---|
-| 1 | [พื้นฐาน](Basics.md), [ไพ่คีย์](Self-Working-Easy.md#keycard), [ไพ่ 9 ใบ](Self-Working-Easy.md#nine), [ไพ่สะกดชื่อ](Self-Working-Easy.md#spelling) | เล่นให้เพื่อนดู 2 กล พร้อมบทพูด |
-| 2 | [Overhand](Sleight-Easy.md#overhand), [Glimpse](Sleight-Easy.md#glimpse), [ไพ่ที่หายไป](Self-Working-Easy.md#missing), [เลขลับจากไพ่](Self-Working-Easy.md#secretnum) | ส่งใบบนสุด↔ล่างสุดได้ โดยไม่มองมือ · ทำ 2 กลคำนวณได้ไม่พลาด |
-| 3 | [Cross-Cut Force](Sleight-Easy.md#crosscut), [ไพ่ 21 ใบ](Self-Working-Medium.md#twentyone), [คว่ำ–หงาย](Self-Working-Easy.md#parity), [เอซ 4 กอง](Self-Working-Easy.md#fouraces), [แยกสีแจกสลับ](Self-Working-Easy.md#altdeal) | เล่นกลทำนายไพ่ได้ต่อเนื่อง 2 กล |
-| 4 | [Gilbreath](Self-Working-Medium.md#gilbreath) / [แบบดอก](Self-Working-Medium.md#gilbreath-suit), [Riffle & Bridge](Sleight-Medium.md#riffle), [สมดุลสี](Self-Working-Easy.md#balance), [สี่เหลี่ยมมหัศจรรย์](Self-Working-Easy.md#magicsq) | สับริฟเฟิลเรียบ ไม่กระเด็น |
-| 5 | [Double Lift](Sleight-Medium.md#doublelift), [Hindu Force](Sleight-Medium.md#pinkybreak), [เลข 1089](Self-Working-Medium.md#reverse1089) | พลิก 2 ใบเป็นใบเดียวให้เนียนต่อหน้ากระจก |
-| 6 | [Si Stebbins](Self-Working-Medium.md#stebbins), [ตำแหน่ง→ไพ่](Self-Working-Medium.md#stebbins-formula), [Kruskal Count](Self-Working-Medium.md#kruskal), [Binary Cards](Self-Working-Medium.md#binary) | คำนวณใบถัดไปได้ใน 2 วินาที / ทำ Binary Cards ให้คล่อง |
-| 7 | [ไพ่ 27 ใบ](Self-Working-Medium.md#ternary), [ไพ่ 25 ใบ](Self-Working-Medium.md#fivepiles), [โป๊กเกอร์ดีล](Self-Working-Medium.md#pokerdeal), [Fitch–Cheney](Self-Working-Hard.md#fitch) + [แบบฝึกถอดรหัส](Self-Working-Hard.md#fitch-drill) (ต้องมีเพื่อนช่วย) | คุมไพ่ไปตำแหน่งที่ต้องการได้ · ถอดถูก 10 ข้อติดใน 5 วินาที/ข้อ |
-| 8+ | [Mnemonica](Self-Working-Hard.md#mnemonica), [Monge](Self-Working-Hard.md#monge), [Faro Binary](Self-Working-Hard.md#faro-binary), [เศษหาร 9](Self-Working-Hard.md#mod9), [Josephus](Self-Working-Hard.md#josephus), [n กอง k รอบ](Self-Working-Hard.md#base-n), [Stebbins ย้อนกลับ](Self-Working-Hard.md#stebbins-crt), [Classic Pass](Sleight-Hard.md#pass), [Palm](Sleight-Hard.md#palm), [Faro](Sleight-Hard.md#faro) | ฝึกต่อเนื่องหลายเดือน |
+| 1 | [พื้นฐาน](Basics.md), [ไพ่คีย์](tricks/sw-easy-key-card.md), [ไพ่ 9 ใบ](tricks/sw-easy-nine-cards.md), [ไพ่สะกดชื่อ](tricks/sw-easy-spelling.md) | เล่นให้เพื่อนดู 2 กล พร้อมบทพูด |
+| 2 | [Overhand](tricks/sl-easy-overhand.md), [Glimpse](tricks/sl-easy-glimpse.md), [ไพ่ที่หายไป](tricks/sw-easy-missing-card.md), [เลขลับจากไพ่](tricks/sw-easy-secret-number.md) | ส่งใบบนสุด↔ล่างสุดได้ โดยไม่มองมือ · ทำ 2 กลคำนวณได้ไม่พลาด |
+| 3 | [Cross-Cut Force](tricks/sl-easy-cross-cut-force.md), [ไพ่ 21 ใบ](tricks/sw-medium-21-cards.md), [คว่ำ–หงาย](tricks/sw-easy-parity.md), [เอซ 4 กอง](tricks/sw-easy-four-aces.md), [แยกสีแจกสลับ](tricks/sw-easy-alternating-deal.md) | เล่นกลทำนายไพ่ได้ต่อเนื่อง 2 กล |
+| 4 | [Gilbreath](tricks/sw-medium-gilbreath.md) / [แบบดอก](tricks/sw-medium-gilbreath-suit.md), [Riffle & Bridge](tricks/sl-medium-riffle-bridge.md), [สมดุลสี](tricks/sw-easy-color-balance.md), [สี่เหลี่ยมมหัศจรรย์](tricks/sw-easy-magic-square.md) | สับริฟเฟิลเรียบ ไม่กระเด็น |
+| 5 | [Double Lift](tricks/sl-medium-double-lift.md), [Hindu Force](tricks/sl-medium-hindu-force.md), [เลข 1089](tricks/sw-medium-1089.md) | พลิก 2 ใบเป็นใบเดียวให้เนียนต่อหน้ากระจก |
+| 6 | [Si Stebbins](tricks/sw-medium-stebbins.md), [ตำแหน่ง→ไพ่](tricks/sw-medium-stebbins-formula.md), [Kruskal Count](tricks/sw-medium-kruskal.md), [Binary Cards](tricks/sw-medium-binary-cards.md) | คำนวณใบถัดไปได้ใน 2 วินาที / ทำ Binary Cards ให้คล่อง |
+| 7 | [ไพ่ 27 ใบ](tricks/sw-medium-27-cards.md), [ไพ่ 25 ใบ](tricks/sw-medium-25-cards.md), [โป๊กเกอร์ดีล](tricks/sw-medium-poker-deal.md), [Fitch–Cheney](tricks/sw-hard-fitch-cheney.md) + [แบบฝึกถอดรหัส](tricks/sw-hard-fitch-drill.md) (ต้องมีเพื่อนช่วย) | คุมไพ่ไปตำแหน่งที่ต้องการได้ · ถอดถูก 10 ข้อติดใน 5 วินาที/ข้อ |
+| 8+ | [Mnemonica](tricks/sw-hard-mnemonica.md), [Monge](tricks/sw-hard-monge.md), [Faro Binary](tricks/sw-hard-faro-binary.md), [เศษหาร 9](tricks/sw-hard-mod9.md), [Josephus](tricks/sw-hard-josephus.md), [n กอง k รอบ](tricks/sw-hard-base-n.md), [Stebbins ย้อนกลับ](tricks/sw-hard-stebbins-crt.md), [Classic Pass](tricks/sl-hard-classic-pass.md), [Palm](tricks/sl-hard-palm.md), [Faro](tricks/sl-hard-faro-shuffle.md) | ฝึกต่อเนื่องหลายเดือน |
 
 ## ข้อแนะนำ
 
