@@ -50,6 +50,6 @@
 
 ---
 
-⬅️ [🟡 โป๊กเกอร์ดีล](sw-medium-poker-deal.md)  ·  [📋 ไพ่คำนวณ · ระดับยาก ทั้งหมด](../Self-Working-Hard.md)  ·  [🔴 Faro: คณิตศาสตร์ตำแหน่ง](sw-hard-faro-math.md) ➡️
+⬅️ [🟡 กองถึง 10](sw-medium-pile-to-ten.md)  ·  [📋 ไพ่คำนวณ · ระดับยาก ทั้งหมด](../Self-Working-Hard.md)  ·  [🔴 Faro: คณิตศาสตร์ตำแหน่ง](sw-hard-faro-math.md) ➡️
 
 **กลที่เกี่ยวข้อง:** [🔴 Fitch–Cheney: ฝึกถอดรหัส](sw-hard-fitch-drill.md)

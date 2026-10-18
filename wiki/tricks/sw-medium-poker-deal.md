@@ -28,6 +28,6 @@
 
 ---
 
-⬅️ [🟡 Stebbins: ตำแหน่ง → ไพ่](sw-medium-stebbins-formula.md)  ·  [📋 ไพ่คำนวณ · ระดับกลาง ทั้งหมด](../Self-Working-Medium.md)  ·  [🔴 Fitch–Cheney 5 ใบ](sw-hard-fitch-cheney.md) ➡️
+⬅️ [🟡 Stebbins: ตำแหน่ง → ไพ่](sw-medium-stebbins-formula.md)  ·  [📋 ไพ่คำนวณ · ระดับกลาง ทั้งหมด](../Self-Working-Medium.md)  ·  [🟡 เกมจับไพ่ชนะเสมอ](sw-medium-nim-21.md) ➡️
 
 **กลที่เกี่ยวข้อง:** [🟢 เอซ 4 กอง](sw-easy-four-aces.md)

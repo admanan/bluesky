@@ -30,6 +30,6 @@
 
 ---
 
-⬅️ [🟢 สี่เหลี่ยมมหัศจรรย์](sw-easy-magic-square.md)  ·  [📋 ไพ่คำนวณ · ระดับกลาง ทั้งหมด](../Self-Working-Medium.md)  ·  [🟡 Gilbreath (สีไพ่)](sw-medium-gilbreath.md) ➡️
+⬅️ [🟢 คูณ 11 ทันที](sw-easy-multiply-11.md)  ·  [📋 ไพ่คำนวณ · ระดับกลาง ทั้งหมด](../Self-Working-Medium.md)  ·  [🟡 Gilbreath (สีไพ่)](sw-medium-gilbreath.md) ➡️
 
 **กลที่เกี่ยวข้อง:** [🟢 ไพ่ 9 ใบ](sw-easy-nine-cards.md) · [🟡 ไพ่ 27 ใบ](sw-medium-27-cards.md) · [🟡 ไพ่ 25 ใบ](sw-medium-25-cards.md)

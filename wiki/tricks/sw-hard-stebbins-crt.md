@@ -27,6 +27,6 @@
 
 ---
 
-⬅️ [🔴 สูตร n กอง k รอบ](sw-hard-base-n.md)  ·  [📋 ไพ่คำนวณ · ระดับยาก ทั้งหมด](../Self-Working-Hard.md)
+⬅️ [🔴 สูตร n กอง k รอบ](sw-hard-base-n.md)  ·  [📋 ไพ่คำนวณ · ระดับยาก ทั้งหมด](../Self-Working-Hard.md)  ·  [🔴 De Bruijn Deck](sw-hard-de-bruijn.md) ➡️
 
 **กลที่เกี่ยวข้อง:** [🟡 Stebbins: ตำแหน่ง → ไพ่](sw-medium-stebbins-formula.md) · [🟡 Si Stebbins Stack](sw-medium-stebbins.md)

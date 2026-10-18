@@ -197,6 +197,160 @@ def check_extra():
         assert q[0] == josephus_top(n), n
     print("ชุดยาก 5 กล OK")
 
+# =====================================================================
+#  ชุดที่ 3: กลเพิ่มเติมอีก 15 กล
+# =====================================================================
+import functools
+
+GL_SQUARE = [["A♠", "K♥", "Q♦", "J♣"], ["Q♣", "J♦", "A♥", "K♠"], ["J♥", "Q♠", "K♣", "A♦"], ["K♦", "A♣", "J♠", "Q♥"]]
+HAMMING_GROUPS = {1: (1, 3, 5, 7), 2: (2, 3, 6, 7), 4: (4, 5, 6, 7)}
+FANO_LINES = [(1, 2, 3), (1, 4, 5), (1, 6, 7), (2, 4, 6), (2, 5, 7), (3, 4, 7), (3, 5, 6)]
+
+
+def de_bruijn(k=2, n=5):
+    a = [0] * k * n; seq = []
+    def db(t, p):
+        if t > n:
+            if n % p == 0: seq.extend(a[1:p + 1])
+        else:
+            a[t] = a[t - p]; db(t + 1, p)
+            for j in range(a[t - p] + 1, k): a[t] = j; db(t + 1, t)
+    db(1, 1)
+    return seq
+
+
+def pile_to_ten(deck):
+    """คืน (จำนวนแถว P, ผลรวมไพ่หงาย S, จำนวนไพ่ที่เหลือ L)"""
+    val = lambda r: min(r, 10)
+    hand, P, S = list(deck), 0, 0
+    while hand:
+        c = hand.pop(0); need = 10 - val(c)
+        if len(hand) < need: return P, S, len(hand) + 1
+        del hand[:need]; P += 1; S += val(c)
+    return P, S, 0
+
+
+def nim_losing(n, misere=False):
+    @functools.lru_cache(None)
+    def win(k):                                  # ผู้ที่ถึงตาเดินเมื่อเหลือ k ใบ ชนะไหม
+        if k == 0: return misere                 # ปกติ: คนที่ถึงตาตอน 0 = แพ้ (อีกฝ่ายหยิบหมดแล้ว); misère: ชนะ
+        return any(not win(k - m) for m in (1, 2, 3) if m <= k)
+    return not win(n)
+
+
+def nim_sum_win(piles):
+    @functools.lru_cache(None)
+    def win(st):
+        if sum(st) == 0: return False
+        for i, p in enumerate(st):
+            for m in range(1, p + 1):
+                ns = list(st); ns[i] -= m
+                if not win(tuple(sorted(ns))): return True
+        return False
+    return win(tuple(sorted(piles)))
+
+
+def cross_gf2(a, b):
+    a1, a2, a3 = a >> 2 & 1, a >> 1 & 1, a & 1; b1, b2, b3 = b >> 2 & 1, b >> 1 & 1, b & 1
+    return (a2 & b3 ^ a3 & b2) << 2 | (a3 & b1 ^ a1 & b3) << 1 | (a1 & b2 ^ a2 & b1)
+
+
+def check_extra2():
+    random.seed(7)
+    # ---------- ง่าย ----------
+    for n in range(10, 40):                                   # ผลรวมหลัก: เหลือ 9a ใบ ใบบนสุดคือใบที่ 9a
+        deck = list(range(52)); P = deck[:n][::-1]; d = sum(map(int, str(n)))
+        rem = P[d:]; a = n // 10
+        assert len(rem) == 9 * a and rem[0] == 9 * a - 1 and rem[-1] == 0      # บนสุด = ใบที่ 9a, ล่างสุด = ใบที่ 1 เดิม
+    for _ in range(3000):                                     # หงายเท่ากัน
+        N = random.randint(6, 20); h = random.randint(0, N); up = [True] * h + [False] * (N - h); random.shuffle(up)
+        idx = set(random.sample(range(N), h)); A = [not up[i] for i in idx]; B = [up[i] for i in range(N) if i not in idx]
+        assert sum(A) == sum(B)
+    for t_ in range(16):                                      # 16 ใบ 2 กอง 4 รอบ → ไพ่ไปตำแหน่ง t
+        for p0 in range(16):
+            deck = list(range(16))
+            for r in range(4):
+                chosen = deck.index(p0) % 2; slot = t_ >> r & 1
+                order = [chosen, 1 - chosen] if slot == 0 else [1 - chosen, chosen]
+                deck = deal_gather(deck, 2, order)
+            assert deck.index(p0) == t_
+    rows = GL_SQUARE; cells = [[(r[c][:-1], r[c][-1]) for c in range(4)] for r in rows]
+    def ok(group): return len({g[0] for g in group}) == 4 and len({g[1] for g in group}) == 4
+    for i in range(4):
+        assert ok(cells[i]) and ok([cells[r][i] for r in range(4)])
+    assert ok([cells[i][i] for i in range(4)]) and ok([cells[i][3 - i] for i in range(4)])
+    assert ok([cells[0][0], cells[0][3], cells[3][0], cells[3][3]])
+    for r, c in ((0, 0), (0, 2), (2, 0), (2, 2), (1, 1)):       # บล็อก 2×2: มี 5 บล็อกที่ครบ (4 มุมใหญ่ + กลาง)
+        assert ok([cells[r][c], cells[r][c + 1], cells[r + 1][c], cells[r + 1][c + 1]])
+    assert not ok([cells[0][1], cells[0][2], cells[1][1], cells[1][2]])          # บล็อก 2×2 อื่นไม่ครบ
+    flat = {(r, c): cells[r][c] for r in range(4) for c in range(4)}
+    good = [g for g in itertools.combinations(flat, 4) if len({flat[x][0] for x in g}) == 4 and len({flat[x][1] for x in g}) == 4]
+    assert len(good) == 24                                                     # ทั้งหมด 24 กลุ่ม (ใน 1,820 แบบ)
+    assert len({x for row in rows for x in row}) == 16
+    for _ in range(2000):                                     # คูณ 11
+        L = random.randint(1, 6); n = random.randint(10 ** (L - 1), 10 ** L - 1); ds = [0] + [int(c) for c in str(n)] + [0]
+        carry, out = 0, []
+        for i in range(len(ds) - 1, 0, -1):
+            s = ds[i] + ds[i - 1] + carry; out.append(s % 10); carry = s // 10
+        if carry: out.append(carry)
+        assert int("".join(map(str, out[::-1]))) == n * 11
+    print("ชุดง่ายใหม่ 5 กล OK")
+    # ---------- กลาง ----------
+    for n in range(0, 61):
+        assert nim_losing(n) == (n % 4 == 0)
+        assert nim_losing(n, misere=True) == (n % 4 == 1)
+    for n in range(100, 1000):
+        assert int(f"{n}{n}") % 1001 == 0 and int(f"{n}{n}") // 7 // 11 // 13 == n
+    for a in range(1, 11):
+        for b in range(1, 11):
+            s = [a, b]
+            for _ in range(8): s.append(s[-1] + s[-2])
+            assert sum(s) == 11 * s[6] == 55 * a + 88 * b
+    for _ in range(3000):                                     # ตารางคู่–คี่ 5×5
+        g = [[random.random() < .5 for _ in range(5)] for _ in range(5)]
+        for i in range(4): g[i][4] = sum(g[i][:4]) % 2 == 1
+        for j in range(5): g[4][j] = sum(g[i][j] for i in range(4)) % 2 == 1
+        assert all(sum(r) % 2 == 0 for r in g) and all(sum(g[i][j] for i in range(5)) % 2 == 0 for j in range(5))
+        i, j = random.randrange(5), random.randrange(5); g[i][j] = not g[i][j]
+        odd_r = [r for r in range(5) if sum(g[r]) % 2]; odd_c = [c for c in range(5) if sum(g[r][c] for r in range(5)) % 2]
+        assert odd_r == [i] and odd_c == [j]
+    for _ in range(3000):                                     # กองถึง 10
+        d = [r for r in range(1, 14) for _ in range(4)]; random.shuffle(d)
+        P, S, L = pile_to_ten(d); assert L == 52 - 11 * P + S
+    print("ชุดกลางใหม่ 5 กล OK")
+    # ---------- ยาก ----------
+    seq = de_bruijn(); assert len(seq) == 32 and sum(seq) == 16
+    wins = {tuple(seq[(i + j) % 32] for j in range(5)) for i in range(32)}; assert len(wins) == 32
+    for data in range(16):                                    # Hamming 7 ใบ
+        bits = {3: data & 1, 5: data >> 1 & 1, 6: data >> 2 & 1, 7: data >> 3 & 1}
+        bits[1] = (bits[3] + bits[5] + bits[7]) % 2; bits[2] = (bits[3] + bits[6] + bits[7]) % 2; bits[4] = (bits[5] + bits[6] + bits[7]) % 2
+        for flip in range(0, 8):
+            b = dict(bits)
+            if flip: b[flip] ^= 1
+            syn = sum(g for g, mem in HAMMING_GROUPS.items() if sum(b[m] for m in mem) % 2)
+            assert syn == flip
+            xor = 0                                              # มุมมอง XOR: ตำแหน่งของไพ่หงายรวมกัน (XOR) = ตำแหน่งที่ถูกพลิก
+            for pos_, v_ in b.items():
+                if v_: xor ^= pos_
+            assert xor == flip
+    for _ in range(3000):                                     # เดาสีไพ่บนหน้าผาก
+        n = random.randint(2, 26); col = [random.randint(0, 1) for _ in range(n)]   # คนที่ 0 พูดก่อน เห็นทุกคนข้างหน้า
+        call0 = sum(col[1:]) % 2; said = [call0]
+        for i in range(1, n):
+            ahead = sum(col[i + 1:]); heard = sum(said[1:i])
+            said.append((call0 - ahead - heard) % 2)
+        assert said[1:] == col[1:]
+    for a in range(0, 8):                                     # Nim สามกอง
+        for b in range(a, 8):
+            for c in range(b, 8): assert nim_sum_win((a, b, c)) == (a ^ b ^ c != 0)
+    for x, y, z in FANO_LINES: assert x ^ y ^ z == 0
+    for i in range(7):
+        for j in range(i + 1, 7): assert len(set(FANO_LINES[i]) & set(FANO_LINES[j])) == 1
+    cards = {k: {s for s in range(1, 8) if bin(s & k).count("1") % 2 == 0} for k in range(1, 8)}
+    for a in range(1, 8):
+        for b in range(a + 1, 8): assert cards[a] & cards[b] == {cross_gf2(a, b)}
+    print("ชุดยากใหม่ 5 กล OK")
+
 
 def main():
     random.seed(1)
@@ -235,6 +389,7 @@ def main():
         if x == d: break
     assert k == 12; print("Monge วนครบ", k, "รอบ")
     check_extra()
+    check_extra2()
     if "--fitch" in sys.argv: print("Fitch–Cheney ตรวจครบ", check_fitch(), "มือ OK")
 
 if __name__ == "__main__":

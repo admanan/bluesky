@@ -31,6 +31,6 @@
 
 ---
 
-⬅️ [🟢 สมดุลสี](sw-easy-color-balance.md)  ·  [📋 ไพ่คำนวณ · ระดับง่าย ทั้งหมด](../Self-Working-Easy.md)  ·  [🟡 ไพ่ 21 ใบ](sw-medium-21-cards.md) ➡️
+⬅️ [🟢 สมดุลสี](sw-easy-color-balance.md)  ·  [📋 ไพ่คำนวณ · ระดับง่าย ทั้งหมด](../Self-Working-Easy.md)  ·  [🟢 ไพ่ใบที่ 9](sw-easy-digit-sum.md) ➡️
 
 **กลที่เกี่ยวข้อง:** [🟡 Binary Cards](sw-medium-binary-cards.md)

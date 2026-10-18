@@ -29,6 +29,12 @@ T = [
  ("sw-easy-alternating-deal", "sw", 1, "แยกสีแจกสลับ", "♥ ♠", "ตัดสำรับกี่ครั้งก็ได้ แจก 2 กอง ได้กองแดงล้วนกับดำล้วน", "15 นาที", ["stack"], ["sw-medium-gilbreath"]),
  ("sw-easy-color-balance", "sw", 1, "สมดุลสี", "=", "แดงในกองของผู้ชม = ดำในกองของคุณ เสมอ แม้ผู้ชมสับเอง", "10 นาที", ["shuf", "pred"], ["sw-medium-gilbreath"]),
  ("sw-easy-magic-square", "sw", 1, "สี่เหลี่ยมมหัศจรรย์", "15", "ไพ่ A–9 วาง 3×3 ทุกแถว สดมภ์ แนวทแยงรวม 15", "20 นาที", ["few", "mem"], ["sw-medium-binary-cards"]),
+
+ ("sw-easy-digit-sum", "sw", 1, "ไพ่ใบที่ 9", "n − d = 9", "ผู้ชมนับไพ่เอง บวกเลขสองหลัก หยิบออก เหลือ 9 ใบ — คุณทายไพ่ใบบนสุดได้", "15 นาที", ["pred"], ["sw-easy-key-card", "sl-easy-glimpse"]),
+ ("sw-easy-equal-faces", "sw", 1, "หงายเท่ากัน", "h → h", "แยกไพ่ 4 ใบแล้วพลิก ทั้งที่มองไม่เห็น — สองกองหงายเท่ากันพอดี", "10 นาที", ["few"], ["sw-easy-parity"]),
+ ("sw-easy-sixteen-cards", "sw", 1, "ไพ่ 16 ใบ ถาม 4 ครั้ง", "2⁴", "ตอบซ้าย/ขวา 4 ครั้ง ไพ่ที่คิดไว้ไปอยู่ตำแหน่งที่ต้องการ", "20 นาที", ["shuf", "few", "calc"], ["sw-easy-nine-cards", "sw-medium-27-cards", "sw-hard-base-n"]),
+ ("sw-easy-akqj-square", "sw", 1, "สี่เหลี่ยม A K Q J", "4 × 4", "ตาราง 16 ใบ ทุกกลุ่ม 4 ใบครบทั้ง 4 เลขและ 4 ดอก", "20 นาที", ["few", "mem"], ["sw-easy-magic-square"]),
+ ("sw-easy-multiply-11", "sw", 1, "คูณ 11 ทันที", "× 11", "ผู้ชมเรียงไพ่เป็นเลข คุณบอกผลคูณ 11 ได้ทันที", "15 นาที", ["few", "calc"], ["sw-medium-1089"]),
  # ---------- ไพ่คำนวณ: กลาง ----------
  ("sw-medium-21-cards", "sw", 2, "ไพ่ 21 ใบ", "21", "ถามแค่ 3 ครั้ง ไพ่ที่คิดไว้อยู่ใบที่ 11 เสมอ", "20 นาที", ["shuf"], ["sw-easy-nine-cards", "sw-medium-27-cards", "sw-medium-25-cards"]),
  ("sw-medium-gilbreath", "sw", 2, "Gilbreath (สีไพ่)", "♥♠♥♠", "ผู้ชมริฟเฟิลเอง แต่ทุกคู่มีแดง 1 ใบ ดำ 1 ใบ", "30 นาที", ["stack"], ["sw-medium-gilbreath-suit", "sw-easy-alternating-deal"]),
@@ -41,6 +47,12 @@ T = [
  ("sw-medium-25-cards", "sw", 2, "ไพ่ 25 ใบ", "25", "5 กอง 2 รอบ คุมตำแหน่งของไพ่ที่คิดไว้ได้", "30 นาที", ["shuf", "calc"], ["sw-medium-27-cards", "sw-hard-base-n"]),
  ("sw-medium-stebbins-formula", "sw", 2, "Stebbins: ตำแหน่ง → ไพ่", "n → ?", "ผู้ชมบอกเลข 1–52 คุณบอกไพ่ตำแหน่งนั้นได้ทันที", "1 วัน", ["stack", "mem", "calc"], ["sw-medium-stebbins", "sw-hard-stebbins-crt"]),
  ("sw-medium-poker-deal", "sw", 2, "โป๊กเกอร์ดีล", "A♠ ×4", "แจกไพ่ 4 มือตามปกติ แต่มือของคุณได้เอซครบ 4 ใบ", "10 นาที", ["stack"], ["sw-easy-four-aces"]),
+
+ ("sw-medium-nim-21", "sw", 2, "เกมจับไพ่ชนะเสมอ", "1·2·3", "ผลัดกันหยิบไพ่ 1–3 ใบ ใครหยิบใบสุดท้ายชนะ — คุณชนะทุกครั้ง", "20 นาที", ["calc"], ["sw-hard-nim-sum"]),
+ ("sw-medium-1001", "sw", 2, "เลข 1001", "7·11·13", "เลข 3 หลักจากไพ่ เขียนซ้ำ แล้วหาร 7, 11, 13 ได้เลขเดิมกลับมา", "15 นาที", ["few", "calc", "pred"], ["sw-medium-1089", "sw-easy-multiply-11"]),
+ ("sw-medium-fibonacci-sum", "sw", 2, "ผลรวม 10 ตัวเลข", "Σ = 11×", "ผู้ชมบวกต่อเป็นชุด 10 ตัว คุณบอกผลรวมก่อนเริ่มบวก", "15 นาที", ["few", "calc", "pred"], ["sw-medium-1001"]),
+ ("sw-medium-parity-grid", "sw", 2, "ตารางคู่–คี่ 5×5", "5 × 5", "ผู้ชมพลิกไพ่ 1 ใบในตาราง คุณชี้ได้ว่าใบไหนถูกพลิก", "30 นาที", ["calc"], ["sw-hard-hamming-7", "sw-easy-parity"]),
+ ("sw-medium-pile-to-ten", "sw", 2, "กองถึง 10", "Σ + 10", "ผู้ชมสับเองแล้วแจกเป็นแถว คุณทายจำนวนไพ่ที่เหลือจากไพ่หงายหัวแถว", "30 นาที", ["shuf", "calc", "pred"], ["sw-medium-kruskal"]),
  # ---------- ไพ่คำนวณ: ยาก ----------
  ("sw-hard-fitch-cheney", "sw", 3, "Fitch–Cheney 5 ใบ", "5 → 4", "ผู้ช่วยวางไพ่ 4 ใบ คุณบอกใบที่ 5 ที่ซ่อนอยู่", "2–3 วัน", ["shuf", "help", "calc", "mem"], ["sw-hard-fitch-drill"]),
  ("sw-hard-faro-math", "sw", 3, "Faro: คณิตศาสตร์ตำแหน่ง", "2i", "สูตรตำแหน่งไพ่หลัง In/Out-shuffle และข้อเท็จจริง 8/52/26 รอบ", "1 ชั่วโมง", ["calc"], ["sl-hard-faro-shuffle", "sw-hard-faro-binary"]),
@@ -52,6 +64,12 @@ T = [
  ("sw-hard-josephus", "sw", 3, "Josephus Shuffle", "40", "ทิ้ง-ย้ายไปเรื่อย ๆ ใบสุดท้ายที่เหลือคือไพ่ที่เลือก", "1 ชั่วโมง", ["stack", "calc"], ["sw-hard-faro-binary"]),
  ("sw-hard-base-n", "sw", 3, "สูตร n กอง k รอบ", "nᵏ", "สูตรทั่วไปของไพ่ 9/16/25/27/36/49 ใบ ใช้คุมตำแหน่งไพ่ได้ทุกแบบ", "1 ชั่วโมง", ["shuf", "calc"], ["sw-medium-27-cards", "sw-medium-25-cards"]),
  ("sw-hard-stebbins-crt", "sw", 3, "Stebbins ย้อนกลับ", "mod", "ไพ่ใบไหนก็ได้ → บอกได้ว่าอยู่ตำแหน่งที่เท่าไรในสำรับ", "1–2 วัน", ["stack", "mem", "calc"], ["sw-medium-stebbins-formula", "sw-medium-stebbins"]),
+
+ ("sw-hard-de-bruijn", "sw", 3, "De Bruijn Deck", "32", "ผู้ชม 5 คนบอกแค่สีไพ่ คุณบอกไพ่ทุกใบ", "1–2 สัปดาห์", ["stack", "mem"], ["sw-hard-mnemonica"]),
+ ("sw-hard-hamming-7", "sw", 3, "Hamming 7 ใบ", "1 2 4", "ผู้ชมพลิกไพ่ 1 ใบจาก 7 ใบ คุณบอกว่าใบที่เท่าไร", "1 วัน", ["few", "calc"], ["sw-medium-parity-grid"]),
+ ("sw-hard-parity-hats", "sw", 3, "เดาสีไพ่บนหน้าผาก", "R · B", "ทุกคนเดาสีไพ่บนหน้าผากตัวเอง ถูกหมดยกเว้นคนแรก", "1 วัน", ["help", "calc"], ["sw-easy-parity"]),
+ ("sw-hard-nim-sum", "sw", 3, "Nim สามกอง", "⊕", "ใช้ XOR เลขฐานสองหาท่าชนะเสมอในเกมหยิบไพ่สามกอง", "1–2 วัน", ["calc"], ["sw-medium-nim-21"]),
+ ("sw-hard-fano-plane", "sw", 3, "Fano Plane", "7 × 7", "ไพ่ 7 ใบ สองใบใดมีสัญลักษณ์ร่วมกัน 1 ตัวเสมอ และคุณบอกได้ก่อนเปิด", "2–3 วัน", ["few", "calc", "mem"], ["sw-hard-hamming-7"]),
  # ---------- ไพ่ฝีมือ: ง่าย ----------
  ("sl-easy-overhand", "sl", 1, "Overhand Shuffle", "⇅", "สับแบบมือ พร้อมส่งไพ่บนสุด↔ล่างสุดตามต้องการ", "3–7 วัน", ["skill"], ["sl-easy-glimpse", "sw-easy-four-aces"]),
  ("sl-easy-glimpse", "sl", 1, "Glimpse", "◉", "แอบดูไพ่ใบล่างสุดตอนเคาะสำรับให้เรียบ", "1–3 วัน", ["skill"], ["sw-easy-key-card", "sw-medium-stebbins"]),

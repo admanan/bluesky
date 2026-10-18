@@ -1032,6 +1032,348 @@ def stebbins_crt():
     s.save("stebbins-crt.svg")
 
 
+# ---------------------------------------------------------------- ชุดที่ 3 (อีก 15 กล)
+from verify_tricks import GL_SQUARE, de_bruijn, FANO_LINES, cross_gf2
+
+
+def digit_sum_pile():
+    s = Svg(760, 330, "ไพ่ใบที่ 9: นับ n ใบ (10–19) → เอาออกเท่าผลรวมหลัก → เหลือ 9 ใบเสมอ")
+    n = 14
+    s.text(30, 62, f"ตัวอย่าง n = {n}: แจกคว่ำ 14 ใบลงโต๊ะ (กองกลับลำดับ: ใบที่ 14 อยู่บน)  ·  ผลรวมหลัก 1 + 4 = 5", 14, "start", 600)
+    for i, c in enumerate(range(n, 0, -1)):
+        x = 30 + i * 50
+        removed = i < 5
+        hl = c == 9
+        s.rect(x, 90, 44, 56, "#e5e7eb" if removed else ("#fff3cd" if hl else PAPER), RED if removed else (GOLD if hl else "#9ca3af"), 2.5 if (hl or removed) else 1.2, 5)
+        s.text(x + 22, 124, c, 17, "middle", 700, MUTE if removed else INK)
+    s.text(30 + 2 * 50, 170, "↑ เอา 5 ใบบนสุดออก (ใบที่ 14 → 10)", 13, "start", 700, RED)
+    s.text(30 + 5 * 50, 192, "↑ เหลือ 9 ใบ  ใบบนสุดของกองที่เหลือ = 'ใบที่ 9' ของสำรับเดิม", 13, "start", 700, GREEN)
+    heads = ["n ที่เลือก", "เหลือกี่ใบ", "ใบบนสุดคือใบที่"]
+    xs = [60, 260, 460]
+    for x, h in zip(xs, heads): s.text(x, 226, h, 12, "start", 700, MUTE)
+    for i, (a, b, c) in enumerate([("10 – 19", "9", "9"), ("20 – 29", "18", "18"), ("30 – 39", "27", "27")]):
+        y = 234 + i * 28
+        s.rect(40, y, 680, 24, PAPER, "#9ca3af", 1.2, 5)
+        for x, v in zip(xs, (a, b, c)): s.text(x, y + 17, v, 13, "start", 700)
+    s.save("digit-sum-pile.svg")
+
+
+def equal_faces():
+    s = Svg(760, 396, "หงายเท่ากัน: 10 ใบ หงาย 4 ใบ → แยก 4 ใบแล้วพลิกทั้งกอง → หงายเท่ากัน")
+    up = [True, False, False, True, False, False, True, True, False, False]
+    A_idx = [0, 2, 5, 9]
+    def tok(x, y, u, w=40):
+        s.rect(x, y, w, 52, PAPER if u else "#2f4b8f", "#6b7280", 1.5, 5)
+        s.text(x + w / 2, y + 32, "หงาย" if u else "", 11, "middle", 700)
+    s.text(30, 62, "① ไพ่ 10 ใบ (หงาย 4)  ผู้ชมผสมตำแหน่งให้คุณ (คุณไม่เห็น)", 13, "start", 700)
+    for i, u in enumerate(up): tok(30 + i * 50, 74, u)
+    s.text(30, 150, "② คุณหยิบ 4 ใบ (เท่ากับจำนวนหงายที่รู้) แบบไหนก็ได้ ไปเป็นกอง A", 13, "start", 700)
+    A = [up[i] for i in A_idx]; B = [up[i] for i in range(10) if i not in A_idx]
+    s.text(30, 178, f"กอง A (4 ใบ) หงาย {sum(A)} ใบ", 12, "start", 700, BLUE)
+    for i, u in enumerate(A): tok(30 + i * 50, 186, u)
+    s.text(300, 178, f"กอง B (6 ใบ) หงาย {sum(B)} ใบ", 12, "start", 700, BLUE)
+    for i, u in enumerate(B): tok(300 + i * 50, 186, u)
+    s.text(30, 262, "③ พลิกกอง A ทั้งกอง", 13, "start", 700, RED)
+    for i, u in enumerate(A): tok(30 + i * 50, 270, not u)
+    s.text(300, 292, f"กอง B เหมือนเดิม หงาย {sum(B)} ใบ", 12, "start", 700, BLUE)
+    s.rect(30, 336, 700, 48, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 358, f"พลิกแล้ว กอง A หงาย {4 - sum(A)} ใบ  =  กอง B หงาย {sum(B)} ใบ", 15, "middle", 700, GREEN)
+    s.text(380, 376, "สรุป: เหลือ h ใบหงายรวม → แยก h ใบ พลิก → สองกองหงายเท่ากันเสมอ", 12, "middle", 400)
+    assert 4 - sum(A) == sum(B)
+    s.save("equal-faces.svg")
+
+
+def sixteen_cards():
+    s = Svg(760, 340, "ไพ่ 16 ใบ: ถาม 'กองซ้ายหรือขวา' 4 ครั้ง → ไพ่ที่คิดไว้ไปอยู่ตำแหน่งที่ต้องการ")
+    s.text(30, 62, "แต่ละรอบ: แจกหงายสลับ 2 กอง (กองละ 8) → ผู้ชมบอกกอง → พลิกแต่ละกองคว่ำ → วางกองนั้นไว้ 'บน' หรือ 'ล่าง'", 13, "start", 600)
+    s.text(30, 86, "ตำแหน่งปลายทาง t (นับจาก 0) เป็นเลขฐาน 2: บิตขวาสุด = รอบ 1 · บิต 0 = วางกองไว้บน, บิต 1 = วางไว้ล่าง", 13, "start", 700, BLUE)
+    heads = ["อยากให้ไพ่เป็นใบที่", "รอบ 1", "รอบ 2", "รอบ 3", "รอบ 4"]
+    xs = [40, 270, 380, 490, 600]
+    for x, h in zip(xs, heads): s.text(x, 122, h, 13, "start", 700, MUTE)
+    for i, pos in enumerate([1, 6, 9, 16]):
+        y = 132 + i * 40
+        s.rect(30, y, 700, 32, PAPER, "#9ca3af", 1.2, 6)
+        s.text(40, y + 22, f"ใบที่ {pos}" + ("  (บนสุด)" if pos == 1 else "  (ล่างสุด)" if pos == 16 else ""), 14, "start", 700)
+        for r in range(4): s.text(xs[r + 1], y + 22, "ล่าง" if (pos - 1) >> r & 1 else "บน", 14, "start", 700, GREEN)
+    s.rect(30, 300, 700, 32, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 321, "อยากได้ 'ไพ่บนสุด' ง่ายสุด: วางกองที่ผู้ชมบอกไว้ 'บน' ทั้ง 4 รอบ (ตรวจครบ 16 × 16 แล้ว)", 13, "middle", 700, GREEN)
+    s.save("sixteen-cards.svg")
+
+
+def akqj_square():
+    s = Svg(760, 380, "สี่เหลี่ยม 4×4 ของ A K Q J: ทุกกลุ่ม 4 ใบ มีครบ 4 เลข และครบ 4 ดอก")
+    for r in range(4):
+        for c in range(4):
+            corner = (r in (0, 3)) and (c in (0, 3))
+            s.card(30 + c * 70, 50 + r * 82, GL_SQUARE[r][c], 60, 74, hl=corner)
+    s.text(330, 66, "กลุ่มที่ใช้ได้ (24 กลุ่ม ตรวจด้วยโค้ดแล้ว)", 14, "start", 700, BLUE)
+    items = ["• 4 แถว และ 4 สดมภ์", "• 2 แนวทแยง", "• 4 มุมของตาราง (กรอบทองในภาพ)", "• 4 ช่องแต่ละมุมใหญ่ (2×2) ทั้ง 4 มุม",
+             "• 4 ช่องกลาง (2×2)", "• 4 ช่อง: แถวที่ 1, 3 × สดมภ์ที่ 1, 3", "• อีก 7 รูปแบบ (ทั้งหมดรวม 24 กลุ่ม)"]
+    for i, it in enumerate(items): s.text(330, 94 + i * 26, it, 13, "start", 600 if i < 5 else 400)
+    s.rect(330, 290, 400, 66, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(530, 316, "บล็อก 2×2 อื่น ๆ (เช่น ตรงกลางแถวบน) ใช้ไม่ได้", 12, "middle", 700, RED)
+    s.text(530, 338, "ให้ผู้ชมเลือกจาก 24 กลุ่มข้างบนเท่านั้น", 12, "middle", 400)
+    s.save("akqj-square.svg")
+
+
+def multiply_11():
+    s = Svg(760, 352, "คูณ 11 ทันที: บวกเลขที่อยู่ติดกัน (มี 0 ที่หัวและท้าย) จากขวาไปซ้าย")
+    ex = [("53 × 11", "0 5 3 0", ["3", "5+3=8", "0+5=5"], "583"),
+          ("78 × 11", "0 7 8 0", ["8", "7+8=15 → 5 ทด 1", "0+7+1=8"], "858"),
+          ("246 × 11", "0 2 4 6 0", ["6", "4+6=10 → 0 ทด 1", "2+4+1=7", "0+2=2"], "2706")]
+    for i, (q, d, steps, ans) in enumerate(ex):
+        y = 52 + i * 90
+        s.rect(30, y, 700, 80, PAPER, "#9ca3af", 1.2, 10)
+        s.text(46, y + 28, q, 18, "start", 700, BLUE)
+        s.text(46, y + 56, f"เติม 0: {d}", 13, "start", 600, MUTE)
+        s.text(250, y + 28, "  →  ".join(steps), 13, "start", 600)
+        s.text(250, y + 56, f"เขียนตัวเลขที่ได้จากขวาไปซ้าย → {ans}", 14, "start", 700, GREEN)
+        s.text(720, y + 56, f"= {ans}", 20, "end", 700, GREEN)
+        assert int(q.split()[0]) * 11 == int(ans)
+    s.text(380, 336, "ใช้ได้กับเลขกี่หลักก็ได้ — ให้ผู้ชมเลือกไพ่ A–9 กี่ใบก็ได้ เรียงเป็นเลข", 12, "middle", 600, MUTE)
+    s.save("multiply-11.svg")
+
+
+def nim_21():
+    s = Svg(760, 340, "เกมจับไพ่ชนะเสมอ: ผลัดกันหยิบ 1–3 ใบ  ผู้หยิบใบสุดท้ายชนะ")
+    s.text(30, 62, "กลยุทธ์ (หยิบใบสุดท้ายชนะ): หยิบให้เหลือ 'จำนวนที่หาร 4 ลงตัว' ทุกครั้ง", 15, "start", 700, BLUE)
+    chain = [20, 16, 12, 8, 4, 0]
+    for i, n in enumerate(chain):
+        x = 40 + i * 118
+        s.rect(x, 84, 100, 56, "#ecfdf5" if True else PAPER, GREEN, 2, 8)
+        s.text(x + 50, 118, "เหลือ " + str(n), 15, "middle", 700, GREEN)
+        if i < 5: s.line(x + 102, 112, x + 116, 112, MUTE, 2, arrow=True)
+    s.text(40, 166, "คู่ต่อสู้หยิบ x ใบ (1–3) → คุณหยิบ 4 − x ใบ  (รวมแต่ละรอบ = 4 ใบ)", 14, "start", 600)
+    s.rect(30, 186, 340, 130, PAPER, "#9ca3af", 1.5, 10)
+    s.text(200, 212, "เริ่มต้นกี่ใบดี?", 14, "middle", 700, BLUE)
+    s.text(48, 240, "• เริ่ม 20 หรือ 24 ใบ (หาร 4 ลงตัว): ให้ผู้ชมเดินก่อน", 12, "start")
+    s.text(48, 262, "• เริ่ม 21 ใบ: คุณเดินก่อน หยิบ 1 ใบ", 12, "start")
+    s.text(48, 284, "• เริ่ม 22 / 23 ใบ: คุณเดินก่อน หยิบ 2 / 3 ใบ", 12, "start")
+    s.rect(390, 186, 340, 130, PAPER, GOLD, 1.5, 10)
+    s.text(560, 212, "แบบกลับกัน: ใครหยิบใบสุดท้าย 'แพ้'", 14, "middle", 700, "#b45309")
+    s.text(408, 240, "• ต้องเหลือ  4k + 1  (1, 5, 9, 13, 17, 21)", 12, "start")
+    s.text(408, 262, "• เริ่ม 21 ใบ: ให้ผู้ชมเดินก่อน แล้วคุณทำรอบละ 4", 12, "start")
+    s.text(408, 284, "• ตรวจด้วยโปรแกรมทุกจำนวนถึง 60 ใบ", 12, "start", 400, MUTE)
+    s.save("nim-21.svg")
+
+
+def t1001():
+    s = Svg(760, 320, "เลข 1001: ไพ่ 3 ใบ เขียนซ้ำ แล้วหาร 7, 11, 13 → ได้ไพ่เดิมกลับมา")
+    steps = [("① ไพ่ 3 ใบ", "4  7  2  →  472"), ("② เขียนซ้ำ", "472472"), ("③ ÷ 7", "472472 ÷ 7 = 67496"),
+             ("④ ÷ 11", "67496 ÷ 11 = 6136"), ("⑤ ÷ 13", "6136 ÷ 13 = 472")]
+    assert 472472 // 7 == 67496 and 67496 // 11 == 6136 and 6136 // 13 == 472
+    for i, (a, b) in enumerate(steps):
+        x = 24 + i * 146
+        s.rect(x, 60, 136, 90, PAPER, BLUE if i < 4 else GREEN, 2.5, 10)
+        s.text(x + 68, 86, a, 13, "middle", 700, BLUE if i < 4 else GREEN)
+        for k, part in enumerate(b.split(" = ") if "=" in b else [b]):
+            s.text(x + 68, 114 + k * 22, part, 13, "middle", 700)
+        if i < 4: s.line(x + 138, 105, x + 146, 105, MUTE, 2, arrow=True)
+    s.rect(30, 176, 700, 122, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 204, "ทำไมถึงได้ผล: เลขซ้ำ 6 หลัก = เลข 3 หลัก × 1001", 14, "middle", 700, GREEN)
+    s.text(380, 232, "และ 1001 = 7 × 11 × 13", 16, "middle", 700, GREEN)
+    s.text(380, 262, "จึงหารด้วย 7, 11, 13 ทีละตัว (ลำดับไหนก็ได้) ลงตัวทุกครั้ง ผลสุดท้ายคือเลขเดิม", 13, "middle")
+    s.text(380, 284, "(ตรวจทุกเลข 100–999 แล้ว)", 12, "middle", 400, MUTE)
+    s.save("1001.svg")
+
+
+def fibonacci_sum():
+    s = Svg(760, 320, "ผลรวม 10 ตัวเลข: ผลรวมทั้งหมด = 11 × ตัวที่ 7")
+    a, b = 3, 5
+    seq = [a, b]
+    for _ in range(8): seq.append(seq[-1] + seq[-2])
+    assert sum(seq) == 605 == 11 * seq[6]
+    s.text(30, 62, f"ผู้ชมเลือกไพ่ 2 ใบเป็นเลขเริ่มต้น ({a} และ {b}) แล้วบวกต่อไปจนครบ 10 ตัว", 14, "start", 600)
+    for i, v in enumerate(seq):
+        x = 30 + i * 70
+        hl = i == 6
+        s.rect(x, 84, 62, 56, "#fff3cd" if hl else PAPER, GOLD if hl else "#9ca3af", 3 if hl else 1.2, 6)
+        s.text(x + 31, 108, v, 17, "middle", 700)
+        s.text(x + 31, 130, f"ตัวที่ {i + 1}", 10, "middle", 400, MUTE)
+    s.text(30, 172, "คุณมองแค่ตัวที่ 7 (55) แล้วคูณ 11 → 605  ·  ผู้ชมบวกทั้ง 10 ตัวได้ 605 เท่ากัน", 15, "start", 700, GREEN)
+    s.rect(30, 196, 700, 100, "#eff6ff", BLUE, 1.2, 10)
+    s.text(380, 224, "ไม่อยากรอเห็นตัวที่ 7? คำนวณได้จากสองตัวแรก: ตัวที่ 7 = 5·a + 8·b  (5·3 + 8·5 = 55)", 13, "middle", 700)
+    s.text(380, 250, "ผลรวมทั้งหมด = 11 × (5a + 8b) = 55a + 88b", 14, "middle", 700, BLUE)
+    s.text(380, 276, "ตรวจครบทุก a, b ตั้งแต่ 1 ถึง 10 แล้ว", 12, "middle", 400, MUTE)
+    s.save("fibonacci-sum.svg")
+
+
+def parity_grid():
+    rnd = random.Random(4)
+    g = [[rnd.random() < .5 for _ in range(5)] for _ in range(5)]
+    for i in range(4): g[i][4] = sum(g[i][:4]) % 2 == 1
+    for j in range(5): g[4][j] = sum(g[i][j] for i in range(4)) % 2 == 1
+    fr, fc = 2, 3
+    g[fr][fc] = not g[fr][fc]
+    odd_r = [r for r in range(5) if sum(g[r]) % 2]; odd_c = [c for c in range(5) if sum(g[r][c] for r in range(5)) % 2]
+    assert odd_r == [fr] and odd_c == [fc]
+    s = Svg(760, 400, "ตารางคู่–คี่ 5×5: ผู้ชมพลิกไพ่ 1 ใบ คุณหาเจอ")
+    for r in range(5):
+        for c in range(5):
+            x, y = 90 + c * 62, 60 + r * 62
+            border = r == 4 or c == 4
+            hl = (r, c) == (fr, fc)
+            if g[r][c]: s.rect(x, y, 54, 54, "#fff", GOLD if hl else "#6b7280", 4 if hl else 1.5, 6)
+            else: s.rect(x, y, 54, 54, "#2f4b8f", GOLD if hl else "#1e2f5c", 4 if hl else 1.5, 6)
+            if border: s.text(x + 27, y + 12, "คุม", 9, "middle", 700, MUTE if g[r][c] else "#cbd5e1")
+        cnt = sum(g[r]); s.text(90 + 5 * 62 + 4, 60 + r * 62 + 33, f"{cnt} {'(คี่)' if cnt % 2 else ''}", 13, "start", 700, RED if cnt % 2 else MUTE)
+    for c in range(5):
+        cnt = sum(g[r][c] for r in range(5)); s.text(90 + c * 62 + 27, 60 + 5 * 62 + 14, f"{cnt}" + (" (คี่)" if cnt % 2 else ""), 13, "middle", 700, RED if cnt % 2 else MUTE)
+    s.text(500, 100, "ขาว = หงาย · น้ำเงิน = คว่ำ", 12, "start", 400, MUTE)
+    s.text(500, 130, "แถวล่าง/สดมภ์ขวา = ไพ่ 'คุม' ที่คุณเติม", 12, "start", 600)
+    s.text(500, 156, "ตัวเลขข้างแถว/ใต้สดมภ์ = จำนวนไพ่หงาย", 12, "start", 600)
+    s.rect(500, 190, 230, 140, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(615, 218, f"แถวที่ {fr + 1} เป็นคี่ และ", 13, "middle", 700, GREEN)
+    s.text(615, 242, f"สดมภ์ที่ {fc + 1} เป็นคี่", 13, "middle", 700, GREEN)
+    s.text(615, 272, f"→ ไพ่ที่ถูกพลิกคือ", 13, "middle", 700, GREEN)
+    s.text(615, 296, f"แถว {fr + 1} สดมภ์ {fc + 1} (กรอบทอง)", 13, "middle", 700, GREEN)
+    s.save("parity-grid.svg")
+
+
+def pile_to_ten():
+    s = Svg(760, 330, "กองถึง 10: ทายจำนวนไพ่ที่เหลือจากผลรวมไพ่หงาย")
+    vals = [4, 6, 3, 2, 6, 10, 4, 2]
+    P, S = len(vals), sum(vals)
+    assert 52 - 11 * P + S == 1
+    s.text(30, 62, "แต่ละแถว: ไพ่หงาย v ใบ + ไพ่คว่ำอีก (10 − v) ใบ (แถวละ 11 − v ใบ) · A ได้แถวยาวสุด 10 ใบ, 10 ได้แถวสั้นสุด 1 ใบ", 13, "start", 600)
+    for i, v in enumerate(vals):
+        y = 78 + i * 28
+        s.rect(30, y, 34, 24, PAPER, "#6b7280", 1.5, 4); s.text(47, y + 17, v, 13, "middle", 700)
+        for k in range(10 - v): s.rect(70 + k * 24, y, 20, 24, "#2f4b8f", "#1e2f5c", 1, 3)
+    s.text(420, 100, f"แถว (P) = {P}", 16, "start", 700, BLUE)
+    s.text(420, 128, f"ผลรวมไพ่หงาย (S) = {'+'.join(map(str, vals))} = {S}", 14, "start", 700, BLUE)
+    s.rect(420, 150, 310, 140, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(575, 178, "ไพ่ที่เหลือ = 52 − 11 × P + S", 15, "middle", 700, GREEN)
+    s.text(575, 208, f"= 52 − 11 × {P} + {S}", 14, "middle", 700, GREEN)
+    s.text(575, 238, f"= {52 - 11 * P + S} ใบ", 18, "middle", 700, GREEN)
+    s.text(575, 268, "ไพ่ที่ 'นับไม่ครบ' ก็นับเป็นไพ่ที่เหลือ", 12, "middle", 400)
+    s.text(30, 316, "J Q K = 10 · A = 1  ·  ตรวจกับสำรับสุ่ม 3,000 ชุดแล้ว", 12, "start", 600, MUTE)
+    s.save("pile-to-ten.svg")
+
+
+def de_bruijn_img():
+    import math
+    seq = de_bruijn()
+    s = Svg(760, 420, "De Bruijn Deck: ทุก 5 ใบติดกัน มีลำดับสีไม่ซ้ำกันใน 32 ใบ")
+    cx, cy, R = 200, 230, 130
+    for i, b in enumerate(seq):
+        a = 2 * math.pi * i / 32 - math.pi / 2
+        x, y = cx + R * math.cos(a), cy + R * math.sin(a)
+        hl = i < 5
+        s.circle(x, y, 13 if hl else 10, RED if b else INK)
+        if hl: s.parts.append(f'<circle cx="{x}" cy="{y}" r="17" fill="none" stroke="{GOLD}" stroke-width="3.5"/>')
+        s.text(x, y + 4, i + 1 if hl else "", 10, "middle", 700, "#fff")
+    s.text(cx, cy - 6, "32 ใบ", 16, "middle", 700); s.text(cx, cy + 16, "แดง 16 · ดำ 16", 12, "middle", 400, MUTE)
+    bits = "".join(map(str, seq))
+    s.text(400, 80, "ลำดับสี (บน → ล่าง) 1 = แดง, 0 = ดำ", 13, "start", 700, BLUE)
+    s.text(400, 106, bits, 17, "start", 700)
+    s.text(400, 146, "วงรอบ: ใบที่ 32 ต่อกับใบที่ 1 (ตัดสำรับก็ยังเป็นวงเดิม)", 13, "start", 600)
+    s.text(400, 182, "วิธีใช้:", 13, "start", 700, BLUE)
+    for i, ln in enumerate(["• ผู้ชมตัดสำรับ แล้วหยิบ 5 ใบบนสุด (คนละใบ)", "• แต่ละคนบอกแค่ 'สี' ของใบตัวเอง",
+                            "• 5 สีนั้นบอกตำแหน่งเริ่มต้นในวงรอบ ได้ 1 แบบเท่านั้น", "• → รู้ว่าทั้ง 5 ใบคืออะไร (ถ้ามีตารางสำรับ)"]):
+        s.text(400, 208 + i * 24, ln, 13, "start")
+    s.rect(400, 320, 330, 70, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(565, 348, "รูปแบบสี 5 ตัวมีได้ 2⁵ = 32 แบบ", 13, "middle", 700, GREEN)
+    s.text(565, 370, "ตรงกับ 32 ตำแหน่งเริ่มต้นพอดี (ตรวจแล้ว)", 13, "middle", 700, GREEN)
+    s.save("de-bruijn.svg")
+
+
+def hamming7():
+    s = Svg(760, 370, "Hamming 7 ใบ: ไพ่ 7 ใบ คุมคู่–คี่ 3 กลุ่ม → ผู้ชมพลิก 1 ใบ คุณบอกได้ว่าใบไหน")
+    bits = {1: 0, 2: 1, 3: 1, 4: 0, 5: 0, 6: 1, 7: 1}
+    def draw(y, b, title, flipped=None):
+        s.text(30, y - 8, title, 13, "start", 700)
+        for p in range(1, 8):
+            x = 40 + (p - 1) * 98
+            hl = p == flipped
+            s.rect(x, y, 80, 70, "#fff" if b[p] else "#2f4b8f", GOLD if hl else "#6b7280", 4 if hl else 1.5, 8)
+            s.text(x + 40, y + 28, f"ใบที่ {p}", 12, "middle", 700, INK if b[p] else "#fff")
+            s.text(x + 40, y + 52, "หงาย" if b[p] else "คว่ำ", 12, "middle", 400, INK if b[p] else "#cbd5e1")
+            if p in (1, 2, 4): s.text(x + 40, y + 88, "ไพ่คุม", 10, "middle", 700, GREEN)
+    draw(76, bits, "① จัดไพ่: ใบที่ 3, 5, 6, 7 ตามใจ  ·  ใบที่ 1, 2, 4 = ไพ่คุม (ทำให้แต่ละกลุ่มมีหงายเป็นเลขคู่)")
+    after = dict(bits); after[6] ^= 1
+    draw(196, after, "② ผู้ชมพลิกไพ่ใบที่ 6", flipped=6)
+    s.text(30, 316, "กลุ่ม A = {1,3,5,7}: หงาย 2 (คู่ ✓)  ·  กลุ่ม B = {2,3,6,7}: หงาย 3 (คี่ ✗)  ·  กลุ่ม C = {4,5,6,7}: หงาย 1 (คี่ ✗)", 12, "start", 700, MUTE)
+    s.rect(30, 328, 700, 32, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 349, "คี่ที่กลุ่ม B (=2) และ C (=4) → ตำแหน่ง 2 + 4 = 6  (ตรวจครบ 16 × 8 กรณีแล้ว)", 13, "middle", 700, GREEN)
+    ga = sum(after[p] for p in (1, 3, 5, 7)); gb = sum(after[p] for p in (2, 3, 6, 7)); gc = sum(after[p] for p in (4, 5, 6, 7))
+    assert (ga % 2, gb % 2, gc % 2) == (0, 1, 1)
+    s.save("hamming-7.svg")
+
+
+def parity_hats():
+    s = Svg(760, 400, "เดาสีไพ่บนหน้าผาก: คนแรกพูดเป็นรหัส ที่เหลือเดาถูกหมด")
+    col = [1, 0, 0, 1, 0, 1]
+    n = len(col)
+    call0 = sum(col[1:]) % 2; said = [call0]
+    for i in range(1, n):
+        said.append((call0 - sum(col[i + 1:]) - sum(said[1:i])) % 2)
+    assert said[1:] == col[1:]
+    s.text(30, 62, "ลำดับพูด: คนที่ 1 (เห็นทุกคน) → คนที่ 2 → … → คนที่ 6 (ไม่เห็นใคร)  ·  แดง = 1, ดำ = 0", 13, "start", 600)
+    for i in range(n):
+        x = 30 + i * 118
+        s.rect(x, 80, 100, 56, "#fecaca" if col[i] else "#d1d5db", RED if col[i] else INK, 2, 8)
+        s.text(x + 50, 104, f"คนที่ {i + 1}", 12, "middle", 700); s.text(x + 50, 126, "แดง" if col[i] else "ดำ", 14, "middle", 700, RED if col[i] else INK)
+        s.text(x + 50, 156, "พูด: " + ("แดง" if said[i] else "ดำ"), 13, "middle", 700, GREEN if i else GOLD)
+    s.text(30, 190, "คนที่ 1 พูด 'รหัส': ถ้าเห็นไพ่แดง (ของคนที่ 2–6) เป็นเลขคี่ → พูด 'แดง' · เป็นเลขคู่ → พูด 'ดำ'  (ตัวเองอาจผิด)", 13, "start", 700, BLUE)
+    s.rect(30, 206, 700, 134, PAPER, "#9ca3af", 1.2, 10)
+    s.text(46, 230, "คนที่ 2: รหัส 'ดำ' = แดงของคนที่ 2–6 รวมกันเป็นเลขคู่  ·  เห็นแดงข้างหน้า 2 ใบ (คนที่ 4, 6)", 12, "start", 600)
+    s.text(46, 252, "  → 2 (คู่) ครบแล้ว ตัวเองต้องไม่เพิ่มแดง → 'ดำ' ✓", 12, "start")
+    s.text(46, 280, "คนที่ 4: ได้ยินคนที่ 2, 3 พูด 'ดำ' (แดง 0)  ·  เห็นแดงข้างหน้า 1 ใบ (คนที่ 6)", 12, "start", 600)
+    s.text(46, 302, "  → 0 + 1 = 1 (คี่) แต่ต้องรวมเป็นคู่ → ตัวเองต้อง 'แดง' ✓", 12, "start")
+    s.text(46, 326, "ทุกคนใช้: รหัส − (แดงที่ได้ยินจากคนก่อนหน้า) − (แดงที่เห็นข้างหน้า)  → คู่ = ดำ, คี่ = แดง", 12, "start", 700, GREEN)
+    s.rect(30, 350, 700, 38, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 374, "คนที่ 2 ถึงคนสุดท้ายถูกต้อง 100% · คนที่ 1 ถูก 50% (ตรวจกับการสุ่ม 3,000 ชุดแล้ว)", 13, "middle", 700, GREEN)
+    s.save("parity-hats.svg")
+
+
+def nim_sum():
+    s = Svg(760, 360, "Nim สามกอง: เขียนจำนวนไพ่เป็นเลขฐาน 2 แล้ว XOR — ถ้าเป็น 0 ใครเดินต่อก็แพ้")
+    piles = [3, 4, 5]
+    s.text(30, 62, "กติกา: ผลัดกันหยิบไพ่ (กี่ใบก็ได้) จาก 'กองเดียว' ผู้หยิบใบสุดท้ายชนะ", 14, "start", 700)
+    s.text(30, 92, "ตัวอย่างกอง 3, 4, 5", 13, "start", 700, BLUE)
+    for i, p in enumerate(piles):
+        y = 106 + i * 30
+        s.text(40, y + 20, f"กอง {i + 1}: {p}", 13, "start", 700)
+        for k, ch in enumerate(f"{p:03b}"):
+            s.rect(180 + k * 46, y, 40, 26, "#fff3cd" if ch == "1" else PAPER, "#9ca3af", 1.2, 4); s.text(200 + k * 46, y + 19, ch, 14, "middle", 700)
+    x = piles[0] ^ piles[1] ^ piles[2]
+    s.text(40, 206, "XOR ทั้งหมด", 13, "start", 700, RED)
+    for k, ch in enumerate(f"{x:03b}"):
+        s.rect(180 + k * 46, 188, 40, 26, "#fecaca" if ch == "1" else PAPER, RED, 1.5, 4); s.text(200 + k * 46, 207, ch, 14, "middle", 700, RED)
+    s.text(380, 126, "ถึงตาคุณ และ XOR ≠ 0  →  หาทางเดินให้ XOR = 0", 13, "start", 700, GREEN)
+    s.text(380, 152, f"หากอง p ที่ p XOR {x} < p:  3 XOR 2 = 1  (< 3)  ✓", 13, "start", 600)
+    s.text(380, 176, "→ ลดกอง 1 จาก 3 เหลือ 1 (หยิบ 2 ใบ)", 13, "start", 700, GREEN)
+    s.text(380, 204, "กองใหม่ 1, 4, 5 → XOR = 1 ⊕ 4 ⊕ 5 = 0 ✓", 13, "start", 700, GREEN)
+    assert 1 ^ 4 ^ 5 == 0
+    s.rect(30, 240, 700, 100, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 268, "XOR = 0 → ฝ่ายที่ต้องเดินต่อ 'แพ้' ถ้าอีกฝ่ายเล่นถูก · XOR ≠ 0 → ฝ่ายที่ต้องเดินต่อ 'ชนะ'", 13, "middle", 700, GREEN)
+    s.text(380, 294, "ตรวจทุกกอง (a, b, c ≤ 7) ด้วยการค้นหาเกมเต็มแล้ว", 12, "middle")
+    s.text(380, 318, "หมายเหตุ: กติกา 'ผู้หยิบใบสุดท้ายแพ้' (misère) กลยุทธ์ต่างออกไป", 12, "middle", 400, MUTE)
+    s.save("nim-sum.svg")
+
+
+def fano_plane():
+    s = Svg(760, 400, "Fano Plane: ไพ่ 7 ใบ สองใบใดมีสัญลักษณ์ร่วมกัน 1 ตัวเสมอ")
+    cards = {k: [x for x in range(1, 8) if bin(x & k).count("1") % 2 == 0] for k in range(1, 8)}
+    sym = {1: "A", 2: "B", 3: "C", 4: "D", 5: "E", 6: "F", 7: "G"}
+    for k in range(1, 8):
+        x = 30 + (k - 1) * 100
+        s.rect(x, 56, 90, 100, PAPER, "#6b7280", 1.5, 8)
+        s.text(x + 45, 80, f"ใบที่ {k}", 13, "middle", 700, BLUE)
+        s.text(x + 45, 112, " ".join(sym[v] for v in cards[k]), 20, "middle", 700)
+        s.text(x + 45, 140, f"({k:03b}₂)", 11, "middle", 400, MUTE)
+    s.text(30, 190, "ตัวอย่าง: ใบที่ 3 {C D G} กับใบที่ 5 {B E G} → ร่วมกันคือ G (= 7)", 14, "start", 700, GREEN)
+    assert set(cards[3]) & set(cards[5]) == {7} and cross_gf2(3, 5) == 7
+    s.text(30, 222, "สูตรหาตัวร่วมของใบ a และ b: 'ผลคูณไขว้' ของเลขฐาน 2 (mod 2)", 13, "start", 700, BLUE)
+    s.text(30, 248, "a = (a₁ a₂ a₃), b = (b₁ b₂ b₃)  →  ตัวร่วม = (a₂b₃ ⊕ a₃b₂ , a₃b₁ ⊕ a₁b₃ , a₁b₂ ⊕ a₂b₁)", 13, "start", 600)
+    s.text(30, 274, "3 = 011, 5 = 101  →  (1·1 ⊕ 1·0 , 1·1 ⊕ 0·1 , 0·0 ⊕ 1·1) = (1, 1, 1) = 7 = G ✓", 13, "start", 600)
+    s.rect(30, 300, 700, 84, "#ecfdf5", GREEN, 1.5, 10)
+    s.text(380, 328, "ใช้บัตรเปล่า 7 ใบเขียนสัญลักษณ์เอง (หรือใช้ไพ่ที่ติดสติกเกอร์)", 13, "middle", 700, GREEN)
+    s.text(380, 354, "ให้ผู้ชมหยิบ 2 ใบใดก็ได้ → คุณบอกตัวร่วม  (ตรวจครบ 21 คู่แล้ว)", 13, "middle", 700, GREEN)
+    s.save("fano-plane.svg")
+
+
 # ---------------------------------------------------------------- overview
 def learning_path():
     s = Svg(760, 500, "เส้นทางการเรียน: ไต่ระดับจากง่ายไปยาก")
@@ -1071,6 +1413,7 @@ if __name__ == "__main__":
                gilbreath_suit, mnemonica, monge_img, fitch_flow,
                missing_card, secret_number, alt_color_deal, color_balance, magic_square, reverse_1089,
                ternary27, five_piles, stebbins_formula, poker_deal, faro_binary, mod9, josephus, base_n,
-               stebbins_crt):
+               stebbins_crt, digit_sum_pile, equal_faces, sixteen_cards, akqj_square, multiply_11, nim_21, t1001,
+               fibonacci_sum, parity_grid, pile_to_ten, de_bruijn_img, hamming7, parity_hats, nim_sum, fano_plane):
         fn()
     print("สร้างภาพครบ", len(os.listdir(OUT)), "ไฟล์")

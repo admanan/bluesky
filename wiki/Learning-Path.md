@@ -22,3 +22,13 @@
 - เลือก **1 ไพ่คำนวณ + 1 ไพ่ฝีมือ** ต่อสัปดาห์ ผสมกันจะไม่เบื่อ
 - ซ้อมการแสดงจริง (พูด + ทำ) อย่างน้อย 5 รอบก่อนเล่นให้ใครดู
 - จดว่าผู้ชมแต่ละคนตอบสนองอย่างไร แล้วปรับบทพูด
+
+## กลเสริม (เลือกเพิ่มตามความสนใจ)
+
+| ระดับ | กล |
+|---|---|
+| 🟢 ง่าย | [ไพ่ใบที่ 9](tricks/sw-easy-digit-sum.md), [หงายเท่ากัน](tricks/sw-easy-equal-faces.md), [ไพ่ 16 ใบ ถาม 4 ครั้ง](tricks/sw-easy-sixteen-cards.md), [สี่เหลี่ยม A K Q J](tricks/sw-easy-akqj-square.md), [คูณ 11 ทันที](tricks/sw-easy-multiply-11.md) |
+| 🟡 กลาง | [เกมจับไพ่ชนะเสมอ](tricks/sw-medium-nim-21.md), [เลข 1001](tricks/sw-medium-1001.md), [ผลรวม 10 ตัวเลข](tricks/sw-medium-fibonacci-sum.md), [ตารางคู่–คี่ 5×5](tricks/sw-medium-parity-grid.md), [กองถึง 10](tricks/sw-medium-pile-to-ten.md) |
+| 🔴 ยาก | [De Bruijn Deck](tricks/sw-hard-de-bruijn.md), [Hamming 7 ใบ](tricks/sw-hard-hamming-7.md), [เดาสีไพ่บนหน้าผาก](tricks/sw-hard-parity-hats.md), [Nim สามกอง](tricks/sw-hard-nim-sum.md), [Fano Plane](tricks/sw-hard-fano-plane.md) |
+
+> ทุกกลเปิดอ่านได้จาก [หน้าแรก](Home.md) พร้อมตัวกรองตามเงื่อนไข (ผู้ชมสับได้ / ต้องจัดสำรับ / ต้องท่องจำ ฯลฯ)
