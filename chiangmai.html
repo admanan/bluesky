@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>เชียงใหม่ 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap">
+<style>
+  :root {
+    --glass: rgba(18, 22, 28, 0.62);
+    --line: rgba(255, 255, 255, 0.14);
+    --text: #f4f1ea;
+    --muted: #b9b4a8;
+    --accent: #e0b24a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0e1116; color: var(--text);
+    font-family: "Sarabun", system-ui, sans-serif; -webkit-user-select: none; user-select: none; touch-action: none; }
+  canvas#view { display: block; width: 100vw; height: 100vh; }
+  .glass { background: var(--glass); border: 1px solid var(--line); border-radius: 12px;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+
+  #hud-top { position: fixed; top: 12px; left: 12px; padding: 10px 14px; max-width: min(360px, calc(100vw - 230px)); }
+  #hud-top h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: .2px; }
+  #hud-top .sub { font-size: 13px; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+  #street { font-size: 14px; color: var(--accent); margin-top: 6px; min-height: 18px; }
+
+  #minimap-wrap { position: fixed; top: 12px; right: 12px; padding: 6px; }
+  #minimap { display: block; width: 180px; height: 180px; border-radius: 8px; cursor: pointer; }
+
+  #bar { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 8px;
+    align-items: center; padding: 8px 10px; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 24px); }
+  #bar select, #bar button { font: inherit; font-size: 14px; color: var(--text); background: rgba(255,255,255,.08);
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+  #bar select option { color: #111; }
+  #bar button.on { background: var(--accent); color: #1b1b1b; border-color: var(--accent); }
+  #bar label { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  #bar input[type=range] { width: 110px; accent-color: var(--accent); }
+
+  #help { position: fixed; left: 12px; bottom: 12px; font-size: 12.5px; color: var(--muted); padding: 8px 12px; line-height: 1.5; }
+  #help b { color: var(--text); font-weight: 600; }
+
+  #crosshair { position: fixed; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%;
+    background: rgba(255,255,255,.75); box-shadow: 0 0 0 1px rgba(0,0,0,.35); pointer-events: none; }
+
+  #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8,10,14,.55); z-index: 10; padding: 16px; }
+  #overlay .card { padding: 22px 24px; width: min(440px, 100%); text-align: center; }
+  #overlay h2 { margin: 0 0 6px; font-size: 24px; }
+  #overlay p { margin: 6px 0; color: var(--muted); font-size: 14.5px; line-height: 1.5; }
+  #progress { height: 6px; background: rgba(255,255,255,.12); border-radius: 3px; overflow: hidden; margin: 14px 0 8px; }
+  #progress > div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  #status { font-size: 13.5px; color: var(--text); min-height: 20px; }
+  #start { display: none; margin-top: 14px; font: inherit; font-size: 17px; font-weight: 600; padding: 10px 26px;
+    border-radius: 10px; border: none; background: var(--accent); color: #1b1b1b; cursor: pointer; }
+  #fallbackBtn { display: none; margin-top: 10px; font: inherit; font-size: 13px; background: none; border: none; color: var(--muted); text-decoration: underline; cursor: pointer; }
+
+  #bigmap { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(8,10,14,.7); z-index: 5; }
+  #bigmap canvas { width: min(88vmin, 900px); height: min(88vmin, 900px); border-radius: 12px; cursor: crosshair; border: 1px solid var(--line); }
+  #bigmap .hint { position: absolute; top: 16px; left: 0; right: 0; text-align: center; color: var(--text); font-size: 15px; }
+
+  #attrib { position: fixed; right: 12px; bottom: 12px; font-size: 11px; color: rgba(255,255,255,.75); text-shadow: 0 1px 2px #000; }
+  #attrib a { color: inherit; }
+
+  /* touch controls */
+  #joy { position: fixed; left: 28px; bottom: 90px; width: 120px; height: 120px; border-radius: 50%; display: none;
+    background: rgba(255,255,255,.08); border: 1px solid var(--line); z-index: 3; }
+  #joy > div { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%;
+    background: rgba(255,255,255,.35); }
+  body.touch #joy { display: block; }
+  body.touch #help, body.touch #crosshair { display: none; }
+  #jumpBtn { display: none; }
+  body.touch #jumpBtn { display: inline-block; }
+
+  @media (max-width: 640px) {
+    #hud-top { max-width: calc(100vw - 150px); padding: 8px 10px; }
+    #hud-top h1 { font-size: 16px; }
+    #hud-top .sub { display: none; }
+    #minimap { width: 120px; height: 120px; }
+    #bar { bottom: 8px; padding: 6px; gap: 6px; }
+    #bar input[type=range] { width: 80px; }
+    #attrib { bottom: auto; top: 150px; }
+    #joy { bottom: 120px; left: 20px; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="crosshair"></div>
+
+<div id="hud-top" class="glass">
+  <h1>เชียงใหม่ 3D</h1>
+  <div class="sub">เมืองเก่าเชียงใหม่ สร้างจากข้อมูลแผนที่ OpenStreetMap จริง</div>
+  <div id="street"></div>
+</div>
+
+<div id="minimap-wrap" class="glass"><canvas id="minimap" width="360" height="360" title="กด M เพื่อเปิดแผนที่ใหญ่"></canvas></div>
+
+<div id="help" class="glass">
+  <b>W A S D</b> เดิน · <b>เมาส์</b> มองรอบ · <b>Shift</b> วิ่ง · <b>Space</b> กระโดด<br>
+  <b>F</b> โหมดบิน · <b>M</b> แผนที่ (คลิกเพื่อวาร์ป) · <b>Esc</b> ปล่อยเมาส์
+</div>
+
+<div id="bar" class="glass">
+  <select id="tp" aria-label="วาร์ปไปยังสถานที่"><option value="">📍 ไปที่…</option></select>
+  <label>🕒 <input id="time" type="range" min="6" max="18.5" step="0.1" value="9"><span id="timeLabel">09:00</span></label>
+  <button id="runBtn" type="button">วิ่ง</button>
+  <button id="jumpBtn" type="button">กระโดด</button>
+  <button id="flyBtn" type="button">บิน</button>
+  <button id="mapBtn" type="button">แผนที่</button>
+</div>
+
+<div id="joy"><div></div></div>
+
+<div id="bigmap"><div class="hint">คลิกตรงไหนก็ได้บนแผนที่เพื่อวาร์ปไปที่นั่น · กด M หรือ Esc เพื่อปิด</div><canvas id="bigmapCanvas" width="1200" height="1200"></canvas></div>
+
+<div id="attrib">ข้อมูลแผนที่ © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a></div>
+
+<div id="overlay">
+  <div class="card glass">
+    <h2>เชียงใหม่ 3D</h2>
+    <p>กำลังดาวน์โหลดอาคาร ถนน คูเมือง วัด และต้นไม้ของเมืองเก่าเชียงใหม่จาก OpenStreetMap — ครั้งแรกอาจใช้เวลาราว 10–60 วินาที</p>
+    <div id="progress"><div></div></div>
+    <div id="status">กำลังเริ่ม…</div>
+    <button id="start" type="button">เริ่มเดินเล่น</button><br>
+    <button id="fallbackBtn" type="button">ข้ามการดาวน์โหลด ใช้แบบจำลองโดยประมาณแทน</button>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { Sky } from 'three/addons/objects/Sky.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+// ---------------------------------------------------------------------------
+// Geography
+// ---------------------------------------------------------------------------
+const BBOX = { s: 18.7770, w: 98.9745, n: 18.7995, e: 99.0045 };   // old city + Tha Phae + Ping River
+const LAT0 = 18.7883, LON0 = 98.9860;
+const MX = 111320 * Math.cos(LAT0 * Math.PI / 180), MZ = 110574;
+const proj = (lat, lon) => [(lon - LON0) * MX, -(lat - LAT0) * MZ];      // x = east, z = south (metres)
+const unproj = (x, z) => [LAT0 - z / MZ, LON0 + x / MX];
+const [MINX, MAXZ] = proj(BBOX.s, BBOX.w), [MAXX, MINZ] = proj(BBOX.n, BBOX.e);
+
+const LANDMARKS = [
+  { name: 'ประตูท่าแพ', lat: 18.78775, lon: 98.99372, yaw: Math.PI / 2 },
+  { name: 'วัดเจดีย์หลวง', lat: 18.78760, lon: 98.98653, yaw: Math.PI, chedi: true },
+  { name: 'วัดพระสิงห์', lat: 18.78850, lon: 98.98290, yaw: Math.PI / 2 },
+  { name: 'อนุสาวรีย์สามกษัตริย์', lat: 18.78990, lon: 98.98720, yaw: 0 },
+  { name: 'ประตูช้างเผือก', lat: 18.79600, lon: 98.98640, yaw: Math.PI },
+  { name: 'ประตูเชียงใหม่', lat: 18.78050, lon: 98.98840, yaw: 0 },
+  { name: 'ประตูสวนดอก', lat: 18.78845, lon: 98.97870, yaw: -Math.PI / 2 },
+  { name: 'สวนบวกหาด', lat: 18.78260, lon: 98.98050, yaw: 0 },
+  { name: 'ถนนท่าแพ', lat: 18.78785, lon: 98.99700, yaw: Math.PI / 2 },
+  { name: 'ไนท์บาซาร์', lat: 18.78560, lon: 99.00060, yaw: 0 },
+  { name: 'แม่น้ำปิง (สะพานนวรัฐ)', lat: 18.78790, lon: 99.00200, yaw: -Math.PI / 2 },
+];
+const CHEDI_LUANG = proj(18.78695, 98.98653);
+
+// ---------------------------------------------------------------------------
+// Small helpers
+// ---------------------------------------------------------------------------
+const $ = id => document.getElementById(id);
+function rng(seed) { let a = seed >>> 0 || 1; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const hash01 = n => rng(n * 2654435761)();
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+function signedArea(r) { let a = 0; for (let i = 0, n = r.length; i < n; i++) { const p = r[i], q = r[(i + 1) % n]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; }
+function centroid(r) { let x = 0, z = 0; for (const p of r) { x += p[0]; z += p[1]; } return [x / r.length, z / r.length]; }
+function pointInRing(x, z, r) { let inside = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+  const xi = r[i][0], zi = r[i][1], xj = r[j][0], zj = r[j][1];
+  if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside = !inside; } return inside; }
+function segDist2(px, pz, ax, az, bx, bz) { const dx = bx - ax, dz = bz - az, l = dx * dx + dz * dz;
+  let t = l ? ((px - ax) * dx + (pz - az) * dz) / l : 0; t = clamp(t, 0, 1);
+  const ex = ax + t * dx - px, ez = az + t * dz - pz; return ex * ex + ez * ez; }
+function bboxOf(r) { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
+  for (const p of r) { if (p[0] < a) a = p[0]; if (p[1] < b) b = p[1]; if (p[0] > c) c = p[0]; if (p[1] > d) d = p[1]; } return [a, b, c, d]; }
+function cleanRing(r) { const out = [];
+  for (const p of r) { const q = out[out.length - 1]; if (!q || Math.abs(q[0] - p[0]) > 0.01 || Math.abs(q[1] - p[1]) > 0.01) out.push(p); }
+  if (out.length > 1) { const a = out[0], b = out[out.length - 1]; if (Math.abs(a[0] - b[0]) < 0.01 && Math.abs(a[1] - b[1]) < 0.01) out.pop(); }
+  return out; }
+const col = s => { const c = new THREE.Color(); try { c.setStyle(s); } catch (e) { c.set('#ddd'); } return c; };
+function tagColor(v) { if (!v) return null; v = String(v).trim(); if (!/^(#[0-9a-f]{3,6}|[a-z]+)$/i.test(v)) return null;
+  const c = new THREE.Color(); const warn = console.warn; console.warn = () => {}; c.setStyle(v); console.warn = warn; return c; }
+
+// value noise for terrain/textures
+function h2(x, y) { const h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return h - Math.floor(h); }
+function vnoise(x, y) { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = h2(xi, yi), b = h2(xi + 1, yi), c = h2(xi, yi + 1), d = h2(xi + 1, yi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }
+function fbm(x, y, o = 5) { let s = 0, a = 0.5, f = 1; for (let i = 0; i < o; i++) { s += a * vnoise(x * f, y * f); f *= 2.03; a *= 0.5; } return s; }
+
+// ---------------------------------------------------------------------------
+// UI: loading
+// ---------------------------------------------------------------------------
+const setStatus = (t, p) => { $('status').textContent = t; if (p != null) $('progress').firstElementChild.style.width = (p * 100).toFixed(0) + '%'; };
+
+// ---------------------------------------------------------------------------
+// OSM download (Overpass) with IndexedDB cache
+// ---------------------------------------------------------------------------
+const CACHE_KEY = 'cm3d-osm-v1';
+const QUERY = (() => { const b = `${BBOX.s},${BBOX.w},${BBOX.n},${BBOX.e}`; return `[out:json][timeout:120];
+(
+  way["building"](${b}); relation["building"](${b});
+  way["highway"](${b});
+  way["waterway"](${b}); way["natural"="water"](${b}); relation["natural"="water"](${b}); way["water"](${b});
+  way["landuse"~"^(reservoir|basin|grass|forest|meadow|recreation_ground|village_green|religious)$"](${b});
+  relation["landuse"~"^(grass|forest|religious)$"](${b});
+  way["leisure"~"^(park|garden|pitch|playground)$"](${b}); relation["leisure"~"^(park|garden)$"](${b});
+  way["natural"~"^(wood|scrub|grassland)$"](${b});
+  way["amenity"~"^(place_of_worship|parking)$"](${b}); relation["amenity"="place_of_worship"](${b});
+  node["amenity"="place_of_worship"](${b});
+  way["barrier"~"^(city_wall|wall)$"](${b}); way["historic"~"^(city_wall|city_gate)$"](${b});
+  node["natural"="tree"](${b}); node["man_made"="stupa"](${b}); way["man_made"="stupa"](${b});
+);
+out geom qt;`; })();
+const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+
+function idb() { return new Promise((res, rej) => { const r = indexedDB.open('cm3d', 1);
+  r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function cacheGet(k) { try { const db = await idb(); return await new Promise(res => {
+  const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => res(null); }); } catch (e) { return null; } }
+async function cachePut(k, v) { try { const db = await idb(); db.transaction('kv', 'readwrite').objectStore('kv').put(v, k); } catch (e) { /* ignore */ } }
+
+let skipDownload = null;
+async function downloadOSM() {
+  const cached = new URLSearchParams(location.search).has('refresh') ? null : await cacheGet(CACHE_KEY);   // ?refresh re-downloads
+  if (cached) { setStatus('โหลดข้อมูลแผนที่จากแคชในเครื่อง…', 0.5); return JSON.parse(cached); }
+  const skip = new Promise(res => { skipDownload = res; });
+  setTimeout(() => { $('fallbackBtn').style.display = 'inline-block'; }, 4000);
+  for (const url of ENDPOINTS) {
+    const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 150000);
+    try {
+      setStatus(`กำลังขอข้อมูลจาก ${new URL(url).host} …`, 0.05);
+      const job = (async () => {
+        const r = await fetch(url, { method: 'POST', body: 'data=' + encodeURIComponent(QUERY), signal: ctl.signal,
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const reader = r.body.getReader(); const chunks = []; let got = 0;
+        for (;;) { const { done, value } = await reader.read(); if (done) break; chunks.push(value); got += value.length;
+          setStatus(`กำลังดาวน์โหลด… ${(got / 1048576).toFixed(1)} MB`, 0.1 + 0.6 * (1 - Math.exp(-got / 8e6))); }
+        const text = new TextDecoder().decode(await new Blob(chunks).arrayBuffer());
+        const json = JSON.parse(text);
+        if (!json.elements || json.elements.length < 50) throw new Error('empty');
+        cachePut(CACHE_KEY, text);
+        return json;
+      })();
+      const res = await Promise.race([job, skip]);
+      clearTimeout(timer);
+      if (res === 'skip') { ctl.abort(); return null; }
+      return res;
+    } catch (e) { clearTimeout(timer); console.warn('Overpass failed', url, e); }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// OSM → features
+// ---------------------------------------------------------------------------
+const ROAD = {
+  motorway: [16, 6, 'car'], trunk: [14, 6, 'car'], primary: [12, 5, 'car'], secondary: [10, 4, 'car'], tertiary: [8, 3, 'car'],
+  unclassified: [6, 2, 'car'], residential: [6, 2, 'car'], living_street: [5, 2, 'car'], service: [4, 1, 'car'],
+  primary_link: [8, 5, 'car'], secondary_link: [7, 4, 'car'], tertiary_link: [6, 3, 'car'], trunk_link: [8, 6, 'car'],
+  pedestrian: [5, 1, 'foot'], footway: [2.2, 0, 'foot'], path: [1.8, 0, 'foot'], steps: [2, 0, 'foot'],
+  cycleway: [2.2, 0, 'foot'], track: [3, 0, 'foot'],
+};
+const isTempleName = n => n && /(^|\s)(วัด|wat\s)/i.test(n);
+const isChediName = n => n && /(เจดีย์|chedi|stupa)/i.test(n) && !/^(วัด|wat\s)/i.test(n.trim());
+
+function joinRings(segs) {
+  segs = segs.filter(s => s.length > 1).map(s => s.slice()); const rings = [];
+  const eq = (a, b) => Math.abs(a[0] - b[0]) < 0.05 && Math.abs(a[1] - b[1]) < 0.05;
+  while (segs.length) {
+    let cur = segs.shift();
+    for (let guard = 0; guard < 2000 && !eq(cur[0], cur[cur.length - 1]); guard++) {
+      const end = cur[cur.length - 1]; let found = -1, rev = false;
+      for (let i = 0; i < segs.length; i++) { if (eq(segs[i][0], end)) { found = i; break; } if (eq(segs[i][segs[i].length - 1], end)) { found = i; rev = true; break; } }
+      if (found < 0) break;
+      const s = segs.splice(found, 1)[0]; if (rev) s.reverse(); cur = cur.concat(s.slice(1));
+    }
+    const r = cleanRing(cur); if (r.length >= 3) rings.push(r);
+  }
+  return rings;
+}
+// [{outer, holes}]
+function polysOf(el) {
+  if (el.type === 'way') { const r = cleanRing(el.geometry.map(g => proj(g.lat, g.lon))); return r.length >= 3 ? [{ outer: r, holes: [] }] : []; }
+  const outers = joinRings(el.members.filter(m => m.type === 'way' && m.geometry && m.role !== 'inner').map(m => m.geometry.map(g => proj(g.lat, g.lon))));
+  const inners = joinRings(el.members.filter(m => m.type === 'way' && m.geometry && m.role === 'inner').map(m => m.geometry.map(g => proj(g.lat, g.lon))));
+  const polys = outers.map(o => ({ outer: o, holes: [] }));
+  for (const h of inners) { const p = polys.find(pp => pointInRing(h[0][0], h[0][1], pp.outer)); if (p) p.holes.push(h); }
+  return polys;
+}
+
+function heightOf(t, id) {
+  let h = parseFloat(t.height);
+  if (!(h > 0) && t['building:levels']) h = parseFloat(t['building:levels']) * 3.2 + 0.6;
+  if (!(h > 0)) {
+    const r = hash01(id), ty = t.building;
+    if (ty === 'house' || ty === 'residential' || ty === 'detached') h = 4 + r * 4;
+    else if (ty === 'garage' || ty === 'shed' || ty === 'roof' || ty === 'kiosk' || ty === 'hut') h = 3 + r;
+    else if (ty === 'apartments' || ty === 'hotel' || ty === 'commercial' || ty === 'office') h = 9 + r * 14;
+    else h = 4.5 + r * r * 11;
+  }
+  return clamp(h, 2.5, 140);
+}
+
+function parseOSM(data) {
+  const F = { buildings: [], roads: [], areas: [], walls: [], trees: [], stupas: [], labels: [] };
+  const grounds = [];
+  for (const el of data.elements) {
+    const t = el.tags || {};
+    if (el.type === 'node') {
+      const [x, z] = proj(el.lat, el.lon);
+      if (t.natural === 'tree') F.trees.push([x, z]);
+      else if (t.man_made === 'stupa') F.stupas.push({ x, z, r: 4, h: parseFloat(t.height) || 14, id: el.id });
+      if (t.amenity === 'place_of_worship' && t.name) F.labels.push({ x, z, text: t.name, y: 22 });
+      continue;
+    }
+    if (el.type === 'way' && !el.geometry) continue;
+    const name = t['name:th'] || t.name || '';
+    const area = t.area === 'yes';
+    const closed = el.type === 'relation' || (el.geometry.length > 3 &&
+      el.geometry[0].lat === el.geometry[el.geometry.length - 1].lat && el.geometry[0].lon === el.geometry[el.geometry.length - 1].lon);
+
+    if (t.building && t.building !== 'no' && !t['building:part'] && closed) {
+      const stupa = t.building === 'stupa' || t.building === 'chedi' || t.man_made === 'stupa' || isChediName(name);
+      for (const p of polysOf(el)) {
+        const [cx, cz] = centroid(p.outer), a = Math.abs(signedArea(p.outer));
+        if (stupa) { const r = Math.sqrt(a) / 2; F.stupas.push({ x: cx, z: cz, r, h: parseFloat(t.height) || r * 3.2, id: el.id, name, ring: p.outer }); continue; }
+        const temple = t.building === 'temple' || t.building === 'wat' || t.amenity === 'place_of_worship' || t.religion === 'buddhist';
+        F.buildings.push({ outer: p.outer, holes: p.holes, h: heightOf(t, el.id), id: el.id, kind: temple ? 'temple' : 'normal',
+          type: t.building, wall: tagColor(t['building:colour']), roof: tagColor(t['roof:colour']), area: a, cx, cz });
+      }
+      if (t.amenity === 'place_of_worship' && name) { const p = polysOf(el)[0]; if (p) { const [x, z] = centroid(p.outer); F.labels.push({ x, z, text: name, y: 24 }); } }
+      continue;
+    }
+    if (t.man_made === 'stupa' && closed) { for (const p of polysOf(el)) { const [cx, cz] = centroid(p.outer), r = Math.sqrt(Math.abs(signedArea(p.outer))) / 2;
+      F.stupas.push({ x: cx, z: cz, r, h: parseFloat(t.height) || r * 3.2, id: el.id, name, ring: p.outer }); } continue; }
+    if (t.highway) {
+      const w = ROAD[t.highway];
+      if (closed && el.type === 'way' && (area || (t.highway === 'pedestrian' && closed))) { for (const p of polysOf(el)) F.areas.push({ ...p, kind: 'plaza' }); continue; }
+      if (!w || el.type !== 'way') continue;
+      const width = parseFloat(t.width) > 1 ? Math.min(parseFloat(t.width), 24) : w[0];
+      F.roads.push({ pts: el.geometry.map(g => proj(g.lat, g.lon)), width, rank: w[1], kind: w[2], name: t['name:th'] || t.name || t['name:en'] || '', bridge: !!t.bridge });
+      continue;
+    }
+    if (t.barrier === 'city_wall' || t.historic === 'city_wall' || t.historic === 'city_gate') {
+      if (el.type === 'way') F.walls.push({ pts: el.geometry.map(g => proj(g.lat, g.lon)), thick: 4.5, h: 5.5, color: col('#8f4f36'), closed });
+      if (t.historic === 'city_gate' && name) { const [x, z] = centroid(el.geometry.map(g => proj(g.lat, g.lon))); F.labels.push({ x, z, text: name, y: 12, big: true }); }
+      continue;
+    }
+    if (t.barrier === 'wall') { if (el.type === 'way') F.walls.push({ pts: el.geometry.map(g => proj(g.lat, g.lon)), thick: 0.35, h: 2, color: col('#d9d2c3'), closed }); continue; }
+    if (t.waterway) {
+      if (t.waterway === 'riverbank' && closed) { for (const p of polysOf(el)) F.areas.push({ ...p, kind: 'water' }); continue; }
+      if (el.type !== 'way') continue;
+      const W = { river: 50, canal: 8, stream: 4, drain: 2, ditch: 2 }[t.waterway] || 3;
+      F.roads.push({ pts: el.geometry.map(g => proj(g.lat, g.lon)), width: parseFloat(t.width) || W, rank: -1, kind: 'water' });
+      continue;
+    }
+    if (!closed) continue;
+    let kind = null;
+    if (t.natural === 'water' || t.water || t.landuse === 'reservoir' || t.landuse === 'basin') kind = 'water';
+    else if (t.leisure === 'pitch' || t.leisure === 'playground') kind = 'pitch';
+    else if (t.leisure === 'park' || t.leisure === 'garden' || /^(grass|meadow|recreation_ground|village_green|forest)$/.test(t.landuse || '') || /^(wood|scrub|grassland)$/.test(t.natural || '')) kind = (t.landuse === 'forest' || t.natural === 'wood') ? 'wood' : 'green';
+    else if (t.amenity === 'place_of_worship' || t.landuse === 'religious') kind = 'temple';
+    else if (t.amenity === 'parking') kind = 'plaza';
+    if (!kind) continue;
+    for (const p of polysOf(el)) {
+      F.areas.push({ ...p, kind });
+      if (kind === 'temple') { grounds.push({ ring: p.outer, bb: bboxOf(p.outer), buddhist: !t.religion || t.religion === 'buddhist' || isTempleName(name) });
+        if (name) { const [x, z] = centroid(p.outer); F.labels.push({ x, z, text: name, y: 24 }); } }
+    }
+  }
+  // Large buildings inside Buddhist temple grounds get the Lanna temple treatment.
+  for (const b of F.buildings) {
+    if (b.kind !== 'normal' || b.area < 90 || /^(house|residential|apartments|school|dormitory)$/.test(b.type)) continue;
+    for (const g of grounds) if (g.buddhist && b.cx > g.bb[0] && b.cx < g.bb[2] && b.cz > g.bb[1] && b.cz < g.bb[3] && pointInRing(b.cx, b.cz, g.ring)) { b.kind = 'temple'; break; }
+  }
+  ensureChediLuang(F);
+  return F;
+}
+
+// OSM rarely tags the great ruined chedi as a stupa; make sure it stands where it should.
+function ensureChediLuang(F) {
+  const [x, z] = CHEDI_LUANG;
+  if (F.stupas.some(s => Math.hypot(s.x - x, s.z - z) < 60)) return;
+  let at = [x, z], r = 26;
+  const i = F.buildings.findIndex(b => b.area > 600 && pointInRing(x, z, b.outer));
+  if (i >= 0) { const b = F.buildings.splice(i, 1)[0]; at = [b.cx, b.cz]; r = Math.min(32, Math.sqrt(b.area) / 2); }
+  F.buildings = F.buildings.filter(b => Math.hypot(b.cx - at[0], b.cz - at[1]) > r * 0.9);
+  F.stupas.push({ x: at[0], z: at[1], r, h: 42, ruin: true, name: 'เจดีย์หลวง' });
+}
+
+// ---------------------------------------------------------------------------
+// Approximate model if Overpass is unreachable
+// ---------------------------------------------------------------------------
+function fakeCity() {
+  const R = rng(7);
+  const F = { buildings: [], roads: [], areas: [], walls: [], trees: [], stupas: [], labels: [] };
+  const [x0, z0] = proj(18.7955, 98.9790), [x1, z1] = proj(18.7808, 98.9937);
+  const sq = (a, b, c, d) => [[a, b], [c, b], [c, d], [a, d]];
+  F.areas.push({ outer: sq(x0 - 24, z0 - 24, x1 + 24, z1 + 24), holes: [sq(x0, z0, x1, z1)], kind: 'water' });
+  const ix0 = x0 + 4, iz0 = z0 + 4, ix1 = x1 - 4, iz1 = z1 - 4, gx = (ix0 + ix1) / 2, gz = (iz0 + iz1) / 2;
+  const [thx, thz] = proj(18.78775, 98.9937);
+  const walls = [[[ix0, iz0], [gx - 12, iz0]], [[gx + 12, iz0], [ix1, iz0]], [[ix1, iz0], [ix1, thz - 12]], [[ix1, thz + 12], [ix1, iz1]],
+    [[ix1, iz1], [gx + 12, iz1]], [[gx - 12, iz1], [ix0, iz1]], [[ix0, iz1], [ix0, gz + 12]], [[ix0, gz - 12], [ix0, iz0]]];
+  for (const w of walls) F.walls.push({ pts: w, thick: 4.5, h: 5.5, color: col('#8f4f36') });
+  const road = (pts, width, rank, name) => F.roads.push({ pts, width, rank, kind: 'car', name: name || '' });
+  road([[x0 - 34, z0 - 34], [x1 + 34, z0 - 34], [x1 + 34, z1 + 34], [x0 - 34, z1 + 34], [x0 - 34, z0 - 34]], 12, 5, 'ถนนรอบคูเมือง');
+  road([[x0 + 14, z0 + 14], [x1 - 14, z0 + 14], [x1 - 14, z1 - 14], [x0 + 14, z1 - 14], [x0 + 14, z0 + 14]], 6, 2, 'ถนนมูลเมือง');
+  road([[x0 - 40, thz], [x1 + 40, thz]], 9, 4, 'ถนนราชดำเนิน');
+  road([[gx, z0 - 40], [gx, z1 + 40]], 9, 4, 'ถนนพระปกเกล้า');
+  const [rx] = proj(18.788, 99.0025);
+  road([[x1 + 34, thz], [rx - 30, thz]], 12, 5, 'ถนนท่าแพ');
+  const [ckx] = proj(18.788, 99.0005);
+  road([[ckx, z0 - 200], [ckx, z1 + 200]], 10, 4, 'ถนนช้างคลาน');
+  for (let x = x0 + 140; x < x1 - 60; x += 150) if (Math.abs(x - gx) > 40) road([[x, z0 + 14], [x, z1 - 14]], 5, 2);
+  for (let z = z0 + 130; z < z1 - 60; z += 140) if (Math.abs(z - thz) > 40) road([[x0 + 14, z], [x1 - 14, z]], 5, 2);
+  const river = []; for (let z = MINZ - 100; z <= MAXZ + 100; z += 40) river.push([rx + 25 * Math.sin(z / 260), z]);
+  F.areas.push({ outer: river.map(p => [p[0] - 38, p[1]]).concat(river.slice().reverse().map(p => [p[0] + 38, p[1]])), holes: [], kind: 'water' });
+  const [px, pz] = proj(18.7826, 98.9805); F.areas.push({ outer: sq(px - 90, pz - 80, px + 90, pz + 80), holes: [], kind: 'green' });
+  for (let i = 0; i < 160; i++) F.trees.push([px - 85 + R() * 170, pz - 75 + R() * 150]);
+  const roadsNear = (x, z, pad) => F.roads.some(r => { for (let i = 0; i < r.pts.length - 1; i++)
+    if (segDist2(x, z, r.pts[i][0], r.pts[i][1], r.pts[i + 1][0], r.pts[i + 1][1]) < (r.width / 2 + pad) ** 2) return true; return false; });
+  const inWater = (x, z) => F.areas.some(a => a.kind === 'water' && pointInRing(x, z, a.outer) && !a.holes.some(h => pointInRing(x, z, h)));
+  const parkBB = [px - 90, pz - 80, px + 90, pz + 80];
+  let id = 1;
+  for (let x = MINX + 60; x < rx - 60; x += 11) for (let z = MINZ + 40; z < MAXZ - 40; z += 16) {
+    if (R() < 0.18) continue;
+    const w = 6 + R() * 6, d = 9 + R() * 6, cx = x + R() * 3, cz = z + R() * 3;
+    if (cx > parkBB[0] && cx < parkBB[2] && cz > parkBB[1] && cz < parkBB[3]) continue;
+    if (Math.hypot(cx - CHEDI_LUANG[0], cz - CHEDI_LUANG[1]) < 60) continue;
+    let ok = true; for (const c of [[cx - w / 2, cz - d / 2], [cx + w / 2, cz - d / 2], [cx - w / 2, cz + d / 2], [cx + w / 2, cz + d / 2]])
+      if (roadsNear(c[0], c[1], 2) || inWater(c[0], c[1]) || (c[0] > x0 - 32 && c[0] < x1 + 32 && c[1] > z0 - 32 && c[1] < z1 + 32 && !(c[0] > x0 + 22 && c[0] < x1 - 22 && c[1] > z0 + 22 && c[1] < z1 - 22))) { ok = false; break; }
+    if (!ok) continue;
+    const outer = sq(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2);
+    F.buildings.push({ outer, holes: [], h: heightOf({}, id++), id, kind: 'normal', area: w * d, cx, cz });
+  }
+  for (const [lat, lon, n] of [[18.7885, 98.9822, 'วัดพระสิงห์'], [18.7930, 98.9890, 'วัดเชียงมั่น'], [18.7838, 98.9900, 'วัดพันเตา']]) {
+    const [cx, cz] = proj(lat, lon);
+    F.buildings = F.buildings.filter(b => Math.abs(b.cx - cx) > 45 || Math.abs(b.cz - cz) > 45);
+    F.areas.push({ outer: sq(cx - 42, cz - 42, cx + 42, cz + 42), holes: [], kind: 'temple' });
+    F.buildings.push({ outer: sq(cx - 9, cz - 16, cx + 9, cz + 16), holes: [], h: 6, id: id++, kind: 'temple', area: 576, cx, cz });
+    F.stupas.push({ x: cx, z: cz + 28, r: 6, h: 20, id: id++ });
+    F.labels.push({ x: cx, z: cz, text: n, y: 24 });
+  }
+  F.buildings = F.buildings.filter(b => Math.hypot(b.cx - CHEDI_LUANG[0], b.cz - CHEDI_LUANG[1]) > 50);
+  F.areas.push({ outer: sq(CHEDI_LUANG[0] - 50, CHEDI_LUANG[1] - 60, CHEDI_LUANG[0] + 50, CHEDI_LUANG[1] + 50), holes: [], kind: 'temple' });
+  F.stupas.push({ x: CHEDI_LUANG[0], z: CHEDI_LUANG[1], r: 26, h: 42, ruin: true, name: 'เจดีย์หลวง' });
+  F.labels.push({ x: CHEDI_LUANG[0], z: CHEDI_LUANG[1], text: 'วัดเจดีย์หลวง', y: 50 });
+  return F;
+}
+
+// ---------------------------------------------------------------------------
+// Renderer, scene, sky
+// ---------------------------------------------------------------------------
+const canvas = $('view');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.55;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0xbcc9d3, 0.0001);
+const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 60000);
+camera.rotation.order = 'YXZ';
+
+const sky = new Sky(); sky.scale.setScalar(100000); scene.add(sky);
+Object.assign(sky.material.uniforms.turbidity, { value: 6 });
+sky.material.uniforms.rayleigh.value = 1.6;
+sky.material.uniforms.mieCoefficient.value = 0.006;
+sky.material.uniforms.mieDirectionalG.value = 0.82;
+
+const hemi = new THREE.HemisphereLight(0xcfe3ff, 0x6d6150, 1.1); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 3); scene.add(sun, sun.target);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -140, right: 140, top: 140, bottom: -140, near: 1, far: 900 });
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.06;
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+const envScene = new THREE.Scene();
+let envRT = null;
+const sunDir = new THREE.Vector3();
+function setTime(hour) {
+  const a = (hour - 6) / 12.3 * Math.PI;                      // 06:00 east → ~18:20 west
+  sunDir.set(Math.cos(a), Math.max(Math.sin(a), -0.05) * 0.97, 0.32 * Math.max(Math.sin(a), 0)).normalize();
+  sky.material.uniforms.sunPosition.value.copy(sunDir);
+  const el = sunDir.y, day = smooth(-0.02, 0.25, el), warm = 1 - smooth(0.05, 0.4, el);
+  sun.intensity = 2.7 * day;
+  sun.color.setRGB(1, 1 - 0.28 * warm, 1 - 0.55 * warm);
+  hemi.intensity = 0.35 + 0.85 * day;
+  scene.fog.color.setRGB(0.74 + 0.16 * warm, 0.79 - 0.05 * warm, 0.83 - 0.22 * warm).multiplyScalar(0.35 + 0.65 * day);
+  renderer.toneMappingExposure = 0.45 + 0.2 * (1 - day);
+  const hh = Math.floor(hour), mm = Math.round((hour - hh) * 60);
+  $('timeLabel').textContent = `${String(hh).padStart(2, '0')}:${String(mm % 60).padStart(2, '0')}`;
+  scene.remove(sky); envScene.add(sky);
+  if (envRT) envRT.dispose();
+  envRT = pmrem.fromScene(envScene, 0.04);
+  envScene.remove(sky); scene.add(sky);
+  scene.environment = envRT.texture;
+}
+
+// ---------------------------------------------------------------------------
+// Procedural textures
+// ---------------------------------------------------------------------------
+function canvasTex(size, draw, srgb = true) {
+  const c = document.createElement('canvas'); c.width = c.height = size; draw(c.getContext('2d'), size);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t;
+}
+// One façade cell 4 m wide × 3.2 m tall. UV (0.05,0.05) is plain wall.
+const facadeTex = canvasTex(128, (g, s) => {
+  g.fillStyle = '#fff'; g.fillRect(0, 0, s, s);
+  g.fillStyle = '#ece8e2'; g.fillRect(0, s * 0.9, s, s * 0.1);
+  g.fillStyle = '#4f5d68'; g.fillRect(s * 0.28, s * 0.22, s * 0.44, s * 0.48);
+  g.fillStyle = '#7d8d98'; g.fillRect(s * 0.3, s * 0.24, s * 0.4, s * 0.12);
+  g.fillStyle = '#d7d2c9'; g.fillRect(s * 0.25, s * 0.7, s * 0.5, s * 0.04);
+  g.fillStyle = '#e9e5de'; g.fillRect(s * 0.49, s * 0.22, s * 0.02, s * 0.48);
+});
+const grainTex = canvasTex(256, (g, s) => {
+  const img = g.createImageData(s, s);
+  for (let i = 0; i < s * s; i++) { const x = i % s, y = (i / s) | 0;
+    const v = 205 + 50 * (0.55 * fbm(x / 22, y / 22, 3) + 0.45 * h2(x, y)) | 0;
+    img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = Math.min(255, v); img.data[i * 4 + 3] = 255; }
+  g.putImageData(img, 0, 0);
+});
+const waterNormal = canvasTex(256, (g, s) => {
+  const img = g.createImageData(s, s), TAU = Math.PI * 2;
+  const H = (x, y) => Math.sin(TAU * (2 * x + 3 * y) / s) + 0.6 * Math.sin(TAU * (5 * x - 4 * y) / s) + 0.35 * Math.sin(TAU * (9 * x + 7 * y) / s) + 0.2 * Math.sin(TAU * (-13 * x + 11 * y) / s);
+  for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
+    const dx = (H(x + 1, y) - H(x - 1, y)) * 2.2, dy = (H(x, y + 1) - H(x, y - 1)) * 2.2, l = Math.hypot(dx, dy, 1), i = (y * s + x) * 4;
+    img.data[i] = (-dx / l * 0.5 + 0.5) * 255; img.data[i + 1] = (-dy / l * 0.5 + 0.5) * 255; img.data[i + 2] = (1 / l * 0.5 + 0.5) * 255; img.data[i + 3] = 255; }
+  g.putImageData(img, 0, 0);
+}, false);
+
+// ---------------------------------------------------------------------------
+// Geometry accumulator (growable typed arrays)
+// ---------------------------------------------------------------------------
+class Acc {
+  constructor() { this.n = 0; this.cap = 0; this.grow(4096); }
+  grow(c) { const P = new Float32Array(c * 3), N = new Float32Array(c * 3), C = new Float32Array(c * 3), U = new Float32Array(c * 2);
+    if (this.n) { P.set(this.P.subarray(0, this.n * 3)); N.set(this.N.subarray(0, this.n * 3)); C.set(this.C.subarray(0, this.n * 3)); U.set(this.U.subarray(0, this.n * 2)); }
+    this.P = P; this.N = N; this.C = C; this.U = U; this.cap = c; }
+  v(a, nx, ny, nz, c) { if (this.n >= this.cap) this.grow(this.cap * 2); const i = this.n++, j = i * 3;
+    this.P[j] = a[0]; this.P[j + 1] = a[1]; this.P[j + 2] = a[2]; this.N[j] = nx; this.N[j + 1] = ny; this.N[j + 2] = nz;
+    this.C[j] = c.r; this.C[j + 1] = c.g; this.C[j + 2] = c.b; this.U[i * 2] = a[3]; this.U[i * 2 + 1] = a[4]; }
+  // a,b,c = [x,y,z,u,v]; ref = direction the face should look toward
+  tri(a, b, c, color, ref) {
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const l = Math.hypot(nx, ny, nz);
+    if (l < 1e-9) return; nx /= l; ny /= l; nz /= l;
+    if (ref && nx * ref[0] + ny * ref[1] + nz * ref[2] < 0) { const t = b; b = c; c = t; nx = -nx; ny = -ny; nz = -nz; }
+    this.v(a, nx, ny, nz, color); this.v(b, nx, ny, nz, color); this.v(c, nx, ny, nz, color);
+  }
+  quad(a, b, c, d, color, ref) { this.tri(a, b, c, color, ref); this.tri(a, c, d, color, ref); }
+  geometry() { const g = new THREE.BufferGeometry(), n = this.n;
+    g.setAttribute('position', new THREE.BufferAttribute(this.P.slice(0, n * 3), 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(this.N.slice(0, n * 3), 3));
+    g.setAttribute('color', new THREE.BufferAttribute(this.C.slice(0, n * 3), 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(this.U.slice(0, n * 2), 2));
+    g.computeBoundingSphere(); g.computeBoundingBox(); return g; }
+}
+const UP = [0, 1, 0];
+const PLAIN = [0.05, 0.05];
+
+function flatPoly(acc, outer, holes, y, color, uvScale = 0, up = UP) {
+  const contour = outer.map(p => new THREE.Vector2(p[0], p[1])), hs = holes.map(h => h.map(p => new THREE.Vector2(p[0], p[1])));
+  const all = outer.concat(...holes);
+  let faces; try { faces = THREE.ShapeUtils.triangulateShape(contour, hs); } catch (e) { return; }
+  const V = i => { const p = all[i]; return uvScale ? [p[0], y, p[1], p[0] / uvScale, p[1] / uvScale] : [p[0], y, p[1], PLAIN[0], PLAIN[1]]; };
+  for (const f of faces) acc.tri(V(f[0]), V(f[1]), V(f[2]), color, up);
+}
+function walls(acc, ring, y0, y1, color, isHole, uvW = 4, uvH = 3.2, plain = false) {
+  const A = signedArea(ring), sgn = (A > 0) !== isHole ? 1 : -1; let u = 0;
+  for (let i = 0; i < ring.length; i++) {
+    const p = ring[i], q = ring[(i + 1) % ring.length], dx = q[0] - p[0], dz = q[1] - p[1], len = Math.hypot(dx, dz);
+    if (len < 0.01) continue;
+    const ref = [sgn * dz, 0, -sgn * dx], u2 = u + len / uvW;
+    const uv = plain ? [PLAIN, PLAIN, PLAIN, PLAIN] : [[u, y0 / uvH], [u2, y0 / uvH], [u2, y1 / uvH], [u, y1 / uvH]];
+    acc.quad([p[0], y0, p[1], ...uv[0]], [q[0], y0, q[1], ...uv[1]], [q[0], y1, q[1], ...uv[2]], [p[0], y1, p[1], ...uv[3]], color, ref);
+    u = u2;
+  }
+}
+// thick polyline strip (roads, rivers); returns nothing
+function ribbon(acc, pts, width, y, color, uvScale) {
+  const n = pts.length; if (n < 2) return; const h = width / 2, L = [], Rr = [];
+  for (let i = 0; i < n; i++) {
+    const a = pts[Math.max(0, i - 1)], b = pts[i], c = pts[Math.min(n - 1, i + 1)];
+    let d1x = b[0] - a[0], d1z = b[1] - a[1], d2x = c[0] - b[0], d2z = c[1] - b[1];
+    const l1 = Math.hypot(d1x, d1z) || 1, l2 = Math.hypot(d2x, d2z) || 1; d1x /= l1; d1z /= l1; d2x /= l2; d2z /= l2;
+    if (i === 0) { d1x = d2x; d1z = d2z; } if (i === n - 1) { d2x = d1x; d2z = d1z; }
+    let tx = d1x + d2x, tz = d1z + d2z; const tl = Math.hypot(tx, tz) || 1; tx /= tl; tz /= tl;
+    const nx = -tz, nz = tx, m = h / Math.max(0.35, nx * -d2z + nz * d2x);
+    L.push([b[0] + nx * m, b[1] + nz * m]); Rr.push([b[0] - nx * m, b[1] - nz * m]);
+  }
+  const V = p => [p[0], y, p[1], p[0] / uvScale, p[1] / uvScale];
+  for (let i = 0; i < n - 1; i++) acc.quad(V(L[i]), V(L[i + 1]), V(Rr[i + 1]), V(Rr[i]), color, UP);
+}
+
+// minimum-area oriented box of a ring
+function obbOf(ring) {
+  let best = null;
+  for (let i = 0; i < ring.length; i++) {
+    const p = ring[i], q = ring[(i + 1) % ring.length], l = Math.hypot(q[0] - p[0], q[1] - p[1]); if (l < 0.5) continue;
+    const ux = (q[0] - p[0]) / l, uz = (q[1] - p[1]) / l; let a = Infinity, b = -Infinity, c = Infinity, d = -Infinity;
+    for (const r of ring) { const s = r[0] * ux + r[1] * uz, t = -r[0] * uz + r[1] * ux; a = Math.min(a, s); b = Math.max(b, s); c = Math.min(c, t); d = Math.max(d, t); }
+    const area = (b - a) * (d - c);
+    if (!best || area < best.area) best = { area, ux, uz, s: (a + b) / 2, t: (c + d) / 2, L: (b - a) / 2, W: (d - c) / 2 };
+  }
+  if (!best) return null;
+  let { ux, uz, L, W } = best; const cx = best.s * ux - best.t * uz, cz = best.s * uz + best.t * ux;
+  if (W > L) { [L, W] = [W, L]; [ux, uz] = [-uz, ux]; }
+  return { cx, cz, ux, uz, L, W };
+}
+// Lanna-style stacked gable roof
+function gableRoof(acc, o, y0, rise, over, cRoof, cGable) {
+  const vx = -o.uz, vz = o.ux;
+  const P = (sl, sw, L, W, y) => [o.cx + o.ux * sl * L + vx * sw * W, y, o.cz + o.uz * sl * L + vz * sw * W, PLAIN[0], PLAIN[1]];
+  const both = (a, b, c, color, ref) => { acc.tri(a, b, c, color, ref); acc.tri(a, b, c, color, ref.map(v => -v)); };
+  const tier = (L, W, yb, r, Lr) => {
+    const top = yb + r;
+    const R1 = P(1, 0, Lr, 0, top), R0 = P(-1, 0, Lr, 0, top);
+    for (const sw of [-1, 1]) {
+      const a = P(-1, sw, L, W, yb), b = P(1, sw, L, W, yb), ref = [vx * sw, 0.6, vz * sw];
+      both(a, b, R1, cRoof, ref); both(a, R1, R0, cRoof, ref);
+    }
+    for (const sl of [-1, 1]) {
+      const R = sl > 0 ? R1 : R0, a = P(sl, -1, L, W, yb), b = P(sl, 1, L, W, yb);
+      both(a, b, R, cRoof, [o.ux * sl, 0, o.uz * sl]);
+      // gilded gable panel set just inside the eave line
+      const k = 0.82, g1 = P(sl * k, -0.55, L, W, yb + r * 0.2), g2 = P(sl * k, 0.55, L, W, yb + r * 0.2), g3 = P(sl * k, 0, L, 0, top - r * 0.08);
+      both(g1, g2, g3, cGable, [o.ux * sl, 0, o.uz * sl]);
+    }
+  };
+  const L = o.L + over, W = o.W + over;
+  tier(L, W, y0, rise, L * 0.92);
+  tier(L * 0.78, W * 0.72, y0 + rise * 0.42, rise * 0.85, L * 0.7);
+  if (o.L * o.W > 220) tier(L * 0.55, W * 0.48, y0 + rise * 0.82, rise * 0.75, L * 0.5);
+}
+
+// ---------------------------------------------------------------------------
+// Collision grid
+// ---------------------------------------------------------------------------
+const CELL = 24, grid = new Map(), PR = 0.32;
+const gkey = (x, z) => Math.floor(x / CELL) * 100003 + Math.floor(z / CELL);
+function gridAdd(item, bb) {
+  for (let gx = Math.floor(bb[0] / CELL); gx <= Math.floor(bb[2] / CELL); gx++)
+    for (let gz = Math.floor(bb[1] / CELL); gz <= Math.floor(bb[3] / CELL); gz++) {
+      const k = gx * 100003 + gz; let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(item); }
+}
+function blocked(x, z) {
+  const items = grid.get(gkey(x, z)); if (!items) return false;
+  for (const it of items) {
+    if (it.r) { if ((x - it.x) ** 2 + (z - it.z) ** 2 < (it.r + PR) ** 2) return true; continue; }
+    const b = it.bb; if (x < b[0] - PR || x > b[2] + PR || z < b[1] - PR || z > b[3] + PR) continue;
+    if (pointInRing(x, z, it.ring)) return true;
+    const r = it.ring; for (let i = 0, j = r.length - 1; i < r.length; j = i++) if (segDist2(x, z, r[j][0], r[j][1], r[i][0], r[i][1]) < PR * PR) return true;
+  }
+  return false;
+}
+function findFree(x, z) {
+  if (!blocked(x, z)) return [x, z];
+  for (let r = 2; r < 120; r += 2) for (let a = 0; a < 16; a++) { const px = x + Math.cos(a / 16 * Math.PI * 2) * r, pz = z + Math.sin(a / 16 * Math.PI * 2) * r; if (!blocked(px, pz)) return [px, pz]; }
+  return [x, z];
+}
+
+// ---------------------------------------------------------------------------
+// Build the world
+// ---------------------------------------------------------------------------
+const WALLS = ['#efe9dc', '#e6dccb', '#f3f0ea', '#d9cfbf', '#e8d9b5', '#cfd4d6', '#e9c9a7', '#d6e0d0', '#f0e2c8', '#c9c2b5', '#e4d1c0', '#f5efe0'].map(col);
+const ROOFS = ['#8d8a85', '#7b7772', '#9b5a3c', '#a39c90', '#6f6a64', '#8a4a35'].map(col);
+const C = {
+  green: col('#5d7d38'), wood: col('#46682c'), pitch: col('#6e9a43'), temple: col('#b3a688'), plaza: col('#9d978a'),
+  water: col('#ffffff'), car: col('#45474b'), foot: col('#9a9283'), mark: col('#f2efe6'), templeWall: col('#f4efe2'),
+  templeRoof: col('#9e2f22'), gable: col('#c99a2e'), gold: col('#d6aa3c'), white: col('#f1ede4'), brick: col('#94573c'),
+};
+const AREA_Y = { green: 0.03, wood: 0.035, pitch: 0.04, temple: 0.045, plaza: 0.06, water: 0.05 };
+const roadNameSegs = new Map();
+const labelSprites = [];
+let mapBounds = null;
+
+const mats = {
+  bld: new THREE.MeshStandardMaterial({ vertexColors: true, map: facadeTex, roughness: 0.86, metalness: 0 }),
+  ground: new THREE.MeshStandardMaterial({ vertexColors: true, map: grainTex, roughness: 0.97 }),
+  water: new THREE.MeshStandardMaterial({ color: 0x2c5a63, roughness: 0.06, metalness: 0.35, normalMap: waterNormal, normalScale: new THREE.Vector2(0.35, 0.35), envMapIntensity: 1.2 }),
+  mark: new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.7 }),
+};
+
+function buildWorld(F) {
+  const root = new THREE.Group(); scene.add(root);
+  const R = rng(42);
+  // base ground
+  const gTex = grainTex.clone(); gTex.needsUpdate = true; gTex.repeat.set(1500, 1500);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(60000, 60000, 200, 200), new THREE.MeshStandardMaterial({ color: 0x7a7a62, map: gTex, roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; root.add(ground);
+
+  // flat areas
+  const areaAcc = new Acc(), waterAcc = new Acc();
+  for (const a of F.areas) {
+    if (a.kind === 'water') { flatPoly(waterAcc, a.outer, a.holes, AREA_Y.water, C.water, 14); continue; }
+    const c = C[a.kind].clone().multiplyScalar(0.92 + R() * 0.16);
+    flatPoly(areaAcc, a.outer, a.holes, AREA_Y[a.kind], c, 9);
+  }
+  // roads (+ waterway lines)
+  const roadAcc = new Acc(), markAcc = new Acc();
+  for (const r of F.roads) {
+    if (r.kind === 'water') { ribbon(waterAcc, r.pts, r.width, AREA_Y.water + 0.004, C.water, 14); continue; }
+    const y = 0.08 + r.rank * 0.012 + (r.bridge ? 0.01 : 0);
+    ribbon(roadAcc, r.pts, r.width, y, r.kind === 'car' ? C.car : C.foot, 7);
+    if (r.kind === 'car' && r.width >= 8) {   // dashed centre line
+      for (let i = 0; i < r.pts.length - 1; i++) { const a = r.pts[i], b = r.pts[i + 1], len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        for (let s = 2; s + 3 < len; s += 9) { const t0 = s / len, t1 = (s + 3) / len;
+          ribbon(markAcc, [[a[0] + (b[0] - a[0]) * t0, a[1] + (b[1] - a[1]) * t0], [a[0] + (b[0] - a[0]) * t1, a[1] + (b[1] - a[1]) * t1]], 0.15, y + 0.01, C.mark, 1); } }
+    }
+    if (r.name) for (let i = 0; i < r.pts.length - 1; i++) { const a = r.pts[i], b = r.pts[i + 1];
+      const seg = { a, b, name: r.name, w: r.width }; const bb = [Math.min(a[0], b[0]) - 10, Math.min(a[1], b[1]) - 10, Math.max(a[0], b[0]) + 10, Math.max(a[1], b[1]) + 10];
+      for (let gx = Math.floor(bb[0] / CELL); gx <= Math.floor(bb[2] / CELL); gx++) for (let gz = Math.floor(bb[1] / CELL); gz <= Math.floor(bb[3] / CELL); gz++) {
+        const k = gx * 100003 + gz; let arr = roadNameSegs.get(k); if (!arr) roadNameSegs.set(k, arr = []); arr.push(seg); } }
+  }
+  const addFlat = (acc, mat) => { if (!acc.n) return; const m = new THREE.Mesh(acc.geometry(), mat); m.receiveShadow = true; root.add(m); return m; };
+  addFlat(areaAcc, mats.ground); addFlat(roadAcc, mats.ground); addFlat(markAcc, mats.mark); addFlat(waterAcc, mats.water);
+
+  // buildings, chunked for frustum culling
+  const chunks = new Map(); const chunkOf = (x, z) => { const k = Math.floor(x / 300) + ':' + Math.floor(z / 300); let a = chunks.get(k); if (!a) chunks.set(k, a = new Acc()); return a; };
+  for (const b of F.buildings) {
+    const acc = chunkOf(b.cx, b.cz), r = hash01(b.id || 1);
+    gridAdd({ ring: b.outer, bb: bboxOf(b.outer) }, bboxOf(b.outer));
+    if (b.kind === 'temple') {
+      const o = obbOf(b.outer); const wallH = Math.min(b.h, 4.5 + Math.min(3, b.area / 200));
+      walls(acc, b.outer, 0, wallH, C.templeWall, false, 4, 3.2, true);
+      for (const h of b.holes) walls(acc, h, 0, wallH, C.templeWall, true, 4, 3.2, true);
+      if (o && o.W > 1.5) gableRoof(acc, o, wallH, Math.min(14, o.W * 1.25 + 2), 1.2, C.templeRoof.clone().multiplyScalar(0.9 + r * 0.2), C.gable);
+      else flatPoly(acc, b.outer, b.holes, wallH, C.templeRoof);
+      continue;
+    }
+    const wc = (b.wall || WALLS[(r * WALLS.length) | 0]).clone().multiplyScalar(0.93 + hash01((b.id || 1) + 7) * 0.12);
+    const rc = b.roof || ROOFS[(hash01((b.id || 1) + 3) * ROOFS.length) | 0];
+    walls(acc, b.outer, 0, b.h, wc, false);
+    for (const h of b.holes) walls(acc, h, 0, b.h, wc, true);
+    flatPoly(acc, b.outer, b.holes, b.h, rc);
+    if (b.h > 6 && b.area > 60) {  // parapet
+      walls(acc, b.outer, b.h, b.h + 0.8, wc.clone().multiplyScalar(0.95), false, 4, 3.2, true);
+    }
+  }
+  // city walls & garden walls
+  for (const w of F.walls) {
+    const acc = chunkOf(w.pts[0][0], w.pts[0][1]), pts = w.pts, h = w.thick / 2;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i], b = pts[i + 1], dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz); if (l < 0.05) continue;
+      const nx = -dz / l * h, nz = dx / l * h, ex = dx / l * h * 0.5, ez = dz / l * h * 0.5;
+      const ring = [[a[0] + nx - ex, a[1] + nz - ez], [b[0] + nx + ex, b[1] + nz + ez], [b[0] - nx + ex, b[1] - nz + ez], [a[0] - nx - ex, a[1] - nz - ez]];
+      walls(acc, ring, 0, w.h, w.color, false, 4, 3.2, true);
+      flatPoly(acc, ring, [], w.h, w.color.clone().multiplyScalar(0.85));
+      if (w.thick > 2) for (let s = 1; s < l - 1; s += 3) {   // crenellations
+        const t = s / l, cx = a[0] + dx * t, cz = a[1] + dz * t, ux = dx / l * 0.7, uz = dz / l * 0.7, vx = -dz / l * 0.6, vz = dx / l * 0.6;
+        for (const side of [1, -1]) { const ox = cx + nx * 0.8 * side, oz = cz + nz * 0.8 * side;
+          const rr = [[ox - ux - vx, oz - uz - vz], [ox + ux - vx, oz + uz - vz], [ox + ux + vx, oz + uz + vz], [ox - ux + vx, oz - uz + vz]];
+          walls(acc, rr, w.h, w.h + 0.9, w.color, false, 4, 3.2, true); flatPoly(acc, rr, [], w.h + 0.9, w.color.clone().multiplyScalar(0.85)); }
+      }
+      gridAdd({ ring, bb: bboxOf(ring) }, bboxOf(ring));
+    }
+  }
+  for (const acc of chunks.values()) { const m = new THREE.Mesh(acc.geometry(), mats.bld); m.castShadow = m.receiveShadow = true; root.add(m); }
+
+  // stupas (chedi)
+  const bell = new THREE.LatheGeometry([[0, 0], [0.62, 0], [0.64, 0.08], [0.58, 0.14], [0.6, 0.22], [0.66, 0.5], [0.62, 0.8], [0.5, 1.02], [0.3, 1.14], [0.16, 1.2], [0, 1.22]].map(p => new THREE.Vector2(p[0], p[1])), 24);
+  const tiers = [new THREE.BoxGeometry(2, 0.35, 2).translate(0, 0.175, 0), new THREE.BoxGeometry(1.7, 0.3, 1.7).translate(0, 0.5, 0),
+    new THREE.BoxGeometry(1.4, 0.28, 1.4).translate(0, 0.79, 0), new THREE.CylinderGeometry(0.72, 0.8, 0.22, 24).translate(0, 1.04, 0)];
+  const bodyGeo = mergeGeometries([...tiers.map(g => g.toNonIndexed()), bell.translate(0, 1.15, 0).toNonIndexed()].map(g => { g.deleteAttribute('uv'); return g; }));
+  const spireGeo = mergeGeometries([new THREE.CylinderGeometry(0.1, 0.1, 0.2, 12).translate(0, 2.47, 0), new THREE.ConeGeometry(0.12, 1.3, 12).translate(0, 3.22, 0)]);
+  const ruinGeo = mergeGeometries([...tiers.map(g => g.clone().toNonIndexed()),
+    new THREE.LatheGeometry([[0, 0], [0.62, 0], [0.64, 0.1], [0.58, 0.3], [0.5, 0.55], [0.36, 0.72], [0.22, 0.8], [0, 0.82]].map(p => new THREE.Vector2(p[0], p[1])), 20).translate(0, 1.15, 0).toNonIndexed()].map(g => { g.deleteAttribute('uv'); return g; }));
+  const sMat = { gold: new THREE.MeshStandardMaterial({ color: C.gold, metalness: 0.85, roughness: 0.32 }),
+    white: new THREE.MeshStandardMaterial({ color: C.white, roughness: 0.6 }), brick: new THREE.MeshStandardMaterial({ color: C.brick, roughness: 0.95, flatShading: true }) };
+  for (const s of F.stupas) {
+    const scale = s.r, hs = (s.h || s.r * 3.2) / (s.ruin ? 2 : 3.7);
+    const kind = s.ruin ? 'brick' : hash01((s.id || 3) + 11) < 0.55 ? 'gold' : 'white';
+    const body = new THREE.Mesh(s.ruin ? ruinGeo : bodyGeo, sMat[kind]);
+    body.position.set(s.x, 0, s.z); body.scale.set(scale, hs, scale); body.castShadow = body.receiveShadow = true; root.add(body);
+    if (!s.ruin) { const sp = new THREE.Mesh(spireGeo, sMat.gold); sp.position.copy(body.position); sp.scale.copy(body.scale); sp.castShadow = true; root.add(sp); }
+    const ring = s.ring || [[s.x - s.r, s.z - s.r], [s.x + s.r, s.z - s.r], [s.x + s.r, s.z + s.r], [s.x - s.r, s.z + s.r]];
+    gridAdd({ ring, bb: bboxOf(ring) }, bboxOf(ring));
+  }
+
+  // trees
+  const trees = F.trees.slice();
+  const areaTrees = (ring, holes, per, cap) => { const bb = bboxOf(ring), A = Math.abs(signedArea(ring)), n = Math.min(cap, Math.floor(A / per));
+    for (let i = 0, tries = 0; i < n && tries < n * 6; tries++) { const x = bb[0] + R() * (bb[2] - bb[0]), z = bb[1] + R() * (bb[3] - bb[1]);
+      if (pointInRing(x, z, ring) && !holes.some(h => pointInRing(x, z, h))) { trees.push([x, z]); i++; } } };
+  for (const a of F.areas) { if (a.kind === 'green') areaTrees(a.outer, a.holes, 160, 500); else if (a.kind === 'wood') areaTrees(a.outer, a.holes, 70, 800); else if (a.kind === 'temple') areaTrees(a.outer, a.holes, 500, 30); }
+  for (const a of F.areas) a._bb = bboxOf(a.outer);
+  const onWater = (x, z) => F.areas.some(a => a.kind === 'water' && x > a._bb[0] && x < a._bb[2] && z > a._bb[1] && z < a._bb[3] &&
+    pointInRing(x, z, a.outer) && !a.holes.some(h => pointInRing(x, z, h)));
+  for (const r of F.roads) { if (r.kind !== 'car' || r.rank < 2) continue;
+    for (let i = 0; i < r.pts.length - 1; i++) { const a = r.pts[i], b = r.pts[i + 1], len = Math.hypot(b[0] - a[0], b[1] - a[1]); if (len < 1) continue;
+      const nx = -(b[1] - a[1]) / len, nz = (b[0] - a[0]) / len;
+      for (let s = 6; s < len; s += 16) { if (R() > 0.33) continue; const side = R() < 0.5 ? -1 : 1, off = r.width / 2 + 2.2;
+        trees.push([a[0] + (b[0] - a[0]) * s / len + nx * off * side, a[1] + (b[1] - a[1]) * s / len + nz * off * side]); } } }
+  const placed = [];
+  for (const [x, z] of trees) { if (placed.length >= 12000) break; if (blocked(x, z) || onWater(x, z)) continue; placed.push([x, z]); }
+  const crownGeo = new THREE.IcosahedronGeometry(1, 1), trunkGeo = new THREE.CylinderGeometry(0.14, 0.22, 1, 6).translate(0, 0.5, 0);
+  const crowns = new THREE.InstancedMesh(crownGeo, new THREE.MeshStandardMaterial({ flatShading: true, roughness: 0.9 }), placed.length);
+  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: 0x5b4636, roughness: 1 }), placed.length);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), tc = new THREE.Color();
+  placed.forEach(([x, z], i) => {
+    const s = 0.75 + R() * 0.9, cr = 2.4 * s, th = 2.6 * s;
+    q.setFromEuler(new THREE.Euler(0, R() * 6.3, 0));
+    m4.compose(new THREE.Vector3(x, th + cr * 0.55, z), q, new THREE.Vector3(cr, cr * (0.75 + R() * 0.3), cr)); crowns.setMatrixAt(i, m4);
+    m4.compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(s, th + cr * 0.3, s)); trunks.setMatrixAt(i, m4);
+    tc.setHSL(0.22 + R() * 0.08, 0.38 + R() * 0.2, 0.2 + R() * 0.1); crowns.setColorAt(i, tc);
+    gridAdd({ x, z, r: 0.25 * s }, [x, z, x, z]);
+  });
+  for (const m of [crowns, trunks]) { m.castShadow = true; m.receiveShadow = true; root.add(m); }
+
+  buildSuburbs(root);
+  buildMountains(root);
+  buildLabels(root, F);
+  // the sky environment is for reflections; keep it from washing out diffuse surfaces
+  root.traverse(o => { if (o.material && o.material !== mats.water && !o.material.metalness) o.material.envMapIntensity = 0.3; });
+  drawMaps(F);
+  return { buildings: F.buildings.length, roads: F.roads.length, trees: placed.length, stupas: F.stupas.length };
+}
+
+// Low-detail city sprawl beyond the downloaded area so the horizon isn't empty
+function buildSuburbs(root) {
+  const R = rng(99), M = [], pad = 60, reach = 4500;
+  for (let x = MINX - reach; x < MAXX + reach; x += 34) for (let z = MINZ - reach; z < MAXZ + reach; z += 34) {
+    if (x > MINX - pad && x < MAXX + pad && z > MINZ - pad && z < MAXZ + pad) continue;
+    if (mountainH(x, z) > -1 || R() < 0.45) continue;
+    const d = Math.max(MINX - x, x - MAXX, MINZ - z, z - MAXZ);
+    if (R() < d / (reach * 1.6)) continue;
+    M.push([x + R() * 14, z + R() * 14, 8 + R() * 14, 8 + R() * 14, R() < 0.06 ? 14 + R() * 30 : 4 + R() * 9, R()]);
+  }
+  const box = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
+  const im = new THREE.InstancedMesh(box, new THREE.MeshStandardMaterial({ roughness: 0.9 }), M.length);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color();
+  M.forEach(([x, z, w, d, h, r], i) => { m4.compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(w, h, d)); im.setMatrixAt(i, m4);
+    im.setColorAt(i, c.copy(WALLS[(r * WALLS.length) | 0]).multiplyScalar(0.8)); });
+  im.receiveShadow = true; root.add(im);
+}
+
+// Doi Suthep – Doi Pui range to the west, as a hazy backdrop
+function mountainH(x, z) {
+  const d = -x - 3500; if (d <= 0) return -2;
+  const t = smooth(0, 6500, d) ** 1.3;
+  let h = 1350 * t * (0.78 + 0.22 * Math.cos(z / 8000));
+  h += (fbm(x / 1400, z / 1400, 5) - 0.5) * 520 * smooth(0, 2500, d);
+  h *= 1 - 0.35 * smooth(0, 7000, -x - 12500);
+  return h - 2;
+}
+function buildMountains(root) {
+  const g = new THREE.PlaneGeometry(26000, 36000, 200, 280); g.rotateX(-Math.PI / 2); g.translate(-3200 - 13000, 0, 0);
+  const pos = g.attributes.position, colors = new Float32Array(pos.count * 3), c = new THREE.Color();
+  const lo = col('#5b6440'), mid = col('#3f5a2a'), hi = col('#355024');
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i), h = mountainH(x, z); pos.setY(i, h);
+    const n = fbm(x / 600, z / 600, 3);
+    c.copy(lo).lerp(mid, smooth(20, 300, h)).lerp(hi, smooth(500, 1200, h) * 0.8).multiplyScalar(0.8 + n * 0.4);
+    colors.set([c.r, c.g, c.b], i * 3);
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3)); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 })); root.add(m);
+  // Wat Phra That Doi Suthep, a golden glint on the mountainside
+  const [x, z] = proj(18.8048, 98.9216), y = mountainH(x, z);
+  const gold = new THREE.Mesh(new THREE.ConeGeometry(14, 60, 16), new THREE.MeshStandardMaterial({ color: C.gold, metalness: 0.9, roughness: 0.25, emissive: 0x3a2a05 }));
+  gold.position.set(x, y + 28, z); root.add(gold);
+  labelSprites.push(makeLabel('วัดพระธาตุดอยสุเทพ', x, y + 90, z, 99999, true));
+  root.add(labelSprites[labelSprites.length - 1]);
+}
+
+// ---------------------------------------------------------------------------
+// Labels
+// ---------------------------------------------------------------------------
+function makeLabel(text, x, y, z, range, big) {
+  const c = document.createElement('canvas'), g = c.getContext('2d'), fs = big ? 40 : 32;
+  g.font = `600 ${fs}px Sarabun, sans-serif`; const w = Math.ceil(g.measureText(text).width) + 28, h = fs + 20;
+  c.width = w; c.height = h; g.font = `600 ${fs}px Sarabun, sans-serif`;
+  g.fillStyle = 'rgba(16,18,22,.66)'; g.beginPath(); g.roundRect(0, 0, w, h, 12); g.fill();
+  g.fillStyle = big ? '#f3cf74' : '#fff'; g.textBaseline = 'middle'; g.fillText(text, 14, h / 2 + 1);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, sizeAttenuation: false, transparent: true, fog: false }));
+  const sh = big ? 0.045 : 0.036; s.scale.set(sh * w / h, sh, 1); s.position.set(x, y, z); s.renderOrder = 10; s.userData.range = range;
+  return s;
+}
+function buildLabels(root, F) {
+  const seen = [];
+  const add = (text, x, z, y, range, big) => {
+    if (seen.some(s => s.t === text && Math.hypot(s.x - x, s.z - z) < 150) || seen.some(s => Math.hypot(s.x - x, s.z - z) < 25)) return;
+    seen.push({ t: text, x, z }); const s = makeLabel(text, x, y, z, range, big); labelSprites.push(s); root.add(s);
+  };
+  for (const l of LANDMARKS) { const [x, z] = proj(l.lat, l.lon); add(l.name, x, z, l.chedi ? 52 : 16, 650, true); }
+  for (const l of F.labels) add(l.text, l.x, l.z, l.y || 20, 260, l.big);
+}
+
+// ---------------------------------------------------------------------------
+// 2D maps (minimap + big teleport map)
+// ---------------------------------------------------------------------------
+let mapImg = null; const MAPS = 0.5; // px per metre
+function drawMaps(F) {
+  const pad = 150; mapBounds = [MINX - pad, MINZ - pad, MAXX + pad, MAXZ + pad];
+  const W = Math.ceil((mapBounds[2] - mapBounds[0]) * MAPS), H = Math.ceil((mapBounds[3] - mapBounds[1]) * MAPS);
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+  const X = x => (x - mapBounds[0]) * MAPS, Z = z => (z - mapBounds[1]) * MAPS;
+  g.fillStyle = '#ebe6da'; g.fillRect(0, 0, W, H);
+  const poly = (a, fill) => { g.beginPath(); for (const r of [a.outer, ...a.holes]) { r.forEach((p, i) => i ? g.lineTo(X(p[0]), Z(p[1])) : g.moveTo(X(p[0]), Z(p[1]))); g.closePath(); } g.fillStyle = fill; g.fill('evenodd'); };
+  const fills = { green: '#c5dba6', wood: '#a9c98a', pitch: '#bfe0a0', temple: '#efdcb4', plaza: '#dedad0', water: '#9cc6e0' };
+  for (const a of F.areas) if (a.kind !== 'water') poly(a, fills[a.kind]);
+  for (const a of F.areas) if (a.kind === 'water') poly(a, fills.water);
+  g.lineCap = g.lineJoin = 'round';
+  for (const r of F.roads) { g.beginPath(); r.pts.forEach((p, i) => i ? g.lineTo(X(p[0]), Z(p[1])) : g.moveTo(X(p[0]), Z(p[1])));
+    g.strokeStyle = r.kind === 'water' ? fills.water : r.kind === 'car' ? '#ffffff' : '#d8d2c4'; g.lineWidth = Math.max(1, r.width * MAPS); g.stroke(); }
+  for (const b of F.buildings) poly(b, b.kind === 'temple' ? '#c8834f' : '#cbbfae');
+  for (const w of F.walls) if (w.thick > 2) { g.beginPath(); w.pts.forEach((p, i) => i ? g.lineTo(X(p[0]), Z(p[1])) : g.moveTo(X(p[0]), Z(p[1]))); g.strokeStyle = '#a0583a'; g.lineWidth = 3; g.stroke(); }
+  for (const s of F.stupas) { g.beginPath(); g.arc(X(s.x), Z(s.z), Math.max(2, s.r * MAPS), 0, 7); g.fillStyle = s.ruin ? '#94573c' : '#d6aa3c'; g.fill(); }
+  mapImg = c;
+  const bc = $('bigmapCanvas'), bg = bc.getContext('2d'), k = Math.min(bc.width / W, bc.height / H);
+  bg.fillStyle = '#ebe6da'; bg.fillRect(0, 0, bc.width, bc.height);
+  bg.drawImage(c, (bc.width - W * k) / 2, (bc.height - H * k) / 2, W * k, H * k);
+  bg.font = '600 17px Sarabun, sans-serif'; bg.textAlign = 'center';
+  for (const l of LANDMARKS) { const [x, z] = proj(l.lat, l.lon), px = (bc.width - W * k) / 2 + X(x) * k, pz = (bc.height - H * k) / 2 + Z(z) * k;
+    bg.fillStyle = '#b03a2e'; bg.beginPath(); bg.arc(px, pz, 5, 0, 7); bg.fill();
+    bg.lineWidth = 4; bg.strokeStyle = 'rgba(255,255,255,.9)'; bg.strokeText(l.name, px, pz - 10); bg.fillStyle = '#222'; bg.fillText(l.name, px, pz - 10); }
+  bc._map = { k, ox: (bc.width - W * k) / 2, oz: (bc.height - H * k) / 2, base: bg.getImageData(0, 0, bc.width, bc.height) };
+}
+const mm = $('minimap'), mg = mm.getContext('2d');
+function drawMinimap() {
+  if (!mapImg) return; const S = mm.width, span = 420 * MAPS * (S / 360);   // ~420 m across
+  const px = (player.x - mapBounds[0]) * MAPS, pz = (player.z - mapBounds[1]) * MAPS;
+  mg.fillStyle = '#ebe6da'; mg.fillRect(0, 0, S, S);
+  mg.drawImage(mapImg, px - span / 2, pz - span / 2, span, span, 0, 0, S, S);
+  mg.save(); mg.translate(S / 2, S / 2); mg.rotate(-yaw);
+  mg.fillStyle = '#d0342c'; mg.strokeStyle = '#fff'; mg.lineWidth = 3;
+  mg.beginPath(); mg.moveTo(0, -16); mg.lineTo(10, 12); mg.lineTo(0, 6); mg.lineTo(-10, 12); mg.closePath(); mg.stroke(); mg.fill(); mg.restore();
+  mg.fillStyle = 'rgba(20,20,20,.75)'; mg.font = '700 22px Sarabun, sans-serif'; mg.fillText('N', S / 2 - 7, 24);
+}
+function drawBigmap() {
+  const bc = $('bigmapCanvas'), m = bc._map; if (!m) return; const g = bc.getContext('2d'); g.putImageData(m.base, 0, 0);
+  const x = m.ox + (player.x - mapBounds[0]) * MAPS * m.k, z = m.oz + (player.z - mapBounds[1]) * MAPS * m.k;
+  g.save(); g.translate(x, z); g.rotate(-yaw); g.fillStyle = '#d0342c'; g.strokeStyle = '#fff'; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(0, -14); g.lineTo(9, 10); g.lineTo(0, 5); g.lineTo(-9, 10); g.closePath(); g.stroke(); g.fill(); g.restore();
+}
+
+// ---------------------------------------------------------------------------
+// Player & controls
+// ---------------------------------------------------------------------------
+const EYE = 1.65;
+const player = { x: 0, y: EYE, z: 0, vy: 0, ground: true };
+let yaw = 0, pitch = 0, fly = false, runToggle = false, started = false, bob = 0;
+const keys = {}; const joy = { x: 0, y: 0 };
+const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+if (isTouch) document.body.classList.add('touch');
+
+function teleport(x, z, y) { const [fx, fz] = fly ? [x, z] : findFree(x, z); player.x = fx; player.z = fz; player.y = y ?? (fly ? Math.max(player.y, 60) : EYE); player.vy = 0; }
+function setFly(v) { fly = v; $('flyBtn').classList.toggle('on', fly); $('flyBtn').textContent = fly ? 'กำลังบิน' : 'บิน';
+  if (fly) player.y = Math.max(player.y, 25); else { const [x, z] = findFree(player.x, player.z); player.x = x; player.z = z; } }
+
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+  keys[e.code] = true;
+  if (e.code === 'KeyF') setFly(!fly);
+  if (e.code === 'KeyM') toggleBigmap();
+  if (e.code === 'Escape' && $('bigmap').style.display === 'flex') toggleBigmap(false);
+  if (e.code === 'Space') { e.preventDefault(); jump(); }
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+function jump() { if (!fly && player.ground) { player.vy = 4.6; player.ground = false; } }
+
+canvas.addEventListener('click', () => { if (started && !isTouch && document.pointerLockElement !== canvas) canvas.requestPointerLock(); });
+addEventListener('mousemove', e => { if (document.pointerLockElement !== canvas) return;
+  yaw -= e.movementX * 0.0022; pitch = clamp(pitch - e.movementY * 0.0022, -1.5, 1.5); });
+
+// touch: left joystick, drag elsewhere to look
+const joyEl = $('joy'), knob = joyEl.firstElementChild; let joyId = null, lookId = null, lookLast = null;
+joyEl.addEventListener('touchstart', e => { const t = e.changedTouches[0]; joyId = t.identifier; e.preventDefault(); moveJoy(t); }, { passive: false });
+function moveJoy(t) { const r = joyEl.getBoundingClientRect(); let dx = t.clientX - (r.left + r.width / 2), dy = t.clientY - (r.top + r.height / 2);
+  const l = Math.hypot(dx, dy), m = r.width / 2; if (l > m) { dx *= m / l; dy *= m / l; }
+  knob.style.transform = `translate(${dx}px, ${dy}px)`; joy.x = dx / m; joy.y = -dy / m; }
+canvas.addEventListener('touchstart', e => { for (const t of e.changedTouches) if (lookId === null) { lookId = t.identifier; lookLast = [t.clientX, t.clientY]; } }, { passive: true });
+addEventListener('touchmove', e => { for (const t of e.changedTouches) {
+  if (t.identifier === joyId) { moveJoy(t); e.preventDefault(); }
+  else if (t.identifier === lookId) { yaw -= (t.clientX - lookLast[0]) * 0.005; pitch = clamp(pitch - (t.clientY - lookLast[1]) * 0.005, -1.5, 1.5); lookLast = [t.clientX, t.clientY]; } } }, { passive: false });
+addEventListener('touchend', e => { for (const t of e.changedTouches) {
+  if (t.identifier === joyId) { joyId = null; joy.x = joy.y = 0; knob.style.transform = ''; }
+  if (t.identifier === lookId) lookId = null; } });
+addEventListener('touchcancel', () => { joyId = lookId = null; joy.x = joy.y = 0; knob.style.transform = ''; });
+
+$('runBtn').onclick = () => { runToggle = !runToggle; $('runBtn').classList.toggle('on', runToggle); };
+$('jumpBtn').onclick = jump;
+$('flyBtn').onclick = () => setFly(!fly);
+$('mapBtn').onclick = () => toggleBigmap();
+$('time').oninput = e => { const h = +e.target.value; clearTimeout(setTime._t); setTime._t = setTimeout(() => setTime(h), 60); };
+$('minimap').onclick = () => toggleBigmap(true);
+for (const [i, l] of LANDMARKS.entries()) { const o = document.createElement('option'); o.value = i; o.textContent = l.name; $('tp').appendChild(o); }
+$('tp').onchange = e => { const l = LANDMARKS[e.target.value]; if (!l) return; const [x, z] = proj(l.lat, l.lon);
+  teleport(x, z); yaw = l.yaw; pitch = l.chedi ? 0.25 : 0; e.target.value = ''; e.target.blur(); };
+
+function toggleBigmap(v) {
+  const el = $('bigmap'), show = v ?? el.style.display !== 'flex'; el.style.display = show ? 'flex' : 'none';
+  if (show) { if (document.pointerLockElement) document.exitPointerLock(); drawBigmap(); }
+}
+$('bigmap').addEventListener('click', e => {
+  const bc = $('bigmapCanvas'); if (e.target !== bc) { toggleBigmap(false); return; }
+  const r = bc.getBoundingClientRect(), m = bc._map, sx = (e.clientX - r.left) * bc.width / r.width, sz = (e.clientY - r.top) * bc.height / r.height;
+  const x = mapBounds[0] + (sx - m.ox) / m.k / MAPS, z = mapBounds[1] + (sz - m.oz) / m.k / MAPS;
+  teleport(x, z); toggleBigmap(false);
+});
+
+function step(dt) {
+  let f = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) + joy.y;
+  let s = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + joy.x;
+  const l = Math.hypot(f, s); if (l > 1) { f /= l; s /= l; }
+  const run = keys.ShiftLeft || keys.ShiftRight || runToggle;
+  const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
+  if (fly) {
+    const sp = run ? 140 : 45, cp = Math.cos(pitch);
+    player.x += (fx * cp * f + rx * s) * sp * dt; player.z += (fz * cp * f + rz * s) * sp * dt;
+    player.y += (Math.sin(pitch) * f + ((keys.Space ? 1 : 0) - (keys.KeyC || keys.ControlLeft ? 1 : 0))) * sp * dt;
+    player.y = clamp(player.y, EYE, 2500);
+  } else {
+    const sp = run ? 10 : 4.2; let dx = (fx * f + rx * s) * sp * dt, dz = (fz * f + rz * s) * sp * dt;
+    const n = Math.ceil(Math.hypot(dx, dz) / 0.25) || 1; dx /= n; dz /= n;
+    for (let i = 0; i < n; i++) {
+      if (!blocked(player.x + dx, player.z + dz)) { player.x += dx; player.z += dz; }
+      else if (!blocked(player.x + dx, player.z)) player.x += dx;
+      else if (!blocked(player.x, player.z + dz)) player.z += dz;
+    }
+    player.vy -= 12 * dt; player.y += player.vy * dt;
+    if (player.y <= EYE) { player.y = EYE; player.vy = 0; player.ground = true; }
+    if (l > 0.05 && player.ground) bob += dt * (run ? 13 : 8.5) * Math.min(1, l); else bob *= 0.9;
+  }
+  camera.position.set(player.x, player.y + (fly ? 0 : Math.sin(bob) * 0.04), player.z);
+  camera.rotation.set(pitch, yaw, 0);
+}
+
+let streetT = 0;
+function updateStreet() {
+  const items = roadNameSegs.get(gkey(player.x, player.z)); let best = null, bd = Infinity;
+  if (items) for (const s of items) { const d = segDist2(player.x, player.z, s.a[0], s.a[1], s.b[0], s.b[1]); if (d < bd) { bd = d; best = s; } }
+  const [lat, lon] = unproj(player.x, player.z);
+  $('street').textContent = (best && bd < (best.w / 2 + 12) ** 2 ? '📍 ' + best.name + ' · ' : '') + `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+}
+
+// ---------------------------------------------------------------------------
+// Main loop
+// ---------------------------------------------------------------------------
+const clock = new THREE.Clock();
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  if (started) step(dt);
+  sun.position.set(player.x + sunDir.x * 400, sunDir.y * 400, player.z + sunDir.z * 400);
+  sun.target.position.set(player.x, 0, player.z);
+  const sc = fly ? Math.min(600, 140 + player.y) : 140;
+  if (sun.shadow.camera.right !== sc) { Object.assign(sun.shadow.camera, { left: -sc, right: sc, top: sc, bottom: -sc }); sun.shadow.camera.updateProjectionMatrix(); }
+  waterNormal.offset.x += dt * 0.02; waterNormal.offset.y += dt * 0.013;
+  for (const s of labelSprites) s.visible = (s.position.x - player.x) ** 2 + (s.position.z - player.z) ** 2 < s.userData.range ** 2 * (fly ? 4 : 1);
+  renderer.render(scene, camera);
+  drawMinimap();
+  if ($('bigmap').style.display === 'flex') drawBigmap();
+  if ((streetT += dt) > 0.4) { streetT = 0; updateStreet(); }
+  requestAnimationFrame(frame);
+}
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+async function boot() {
+  setTime(+$('time').value);
+  const [sx, sz] = proj(LANDMARKS[0].lat, LANDMARKS[0].lon);
+  player.x = sx; player.z = sz; yaw = LANDMARKS[0].yaw;
+  camera.position.set(sx, 120, sz + 300); camera.lookAt(sx, 0, sz);
+  requestAnimationFrame(frame);
+  $('fallbackBtn').onclick = () => skipDownload && skipDownload('skip');
+  let data = null; try { data = await downloadOSM(); } catch (e) { console.warn(e); }
+  let F, note;
+  if (data) { setStatus('กำลังสร้างเมือง 3 มิติ…', 0.8); await new Promise(r => setTimeout(r, 30)); F = parseOSM(data); note = 'สร้างจากข้อมูล OpenStreetMap จริง'; }
+  else { setStatus('ดาวน์โหลดแผนที่ไม่สำเร็จ — ใช้แบบจำลองโดยประมาณแทน', 0.8); await new Promise(r => setTimeout(r, 30)); F = fakeCity(); note = 'แบบจำลองโดยประมาณ (ออฟไลน์)'; }
+  try { await document.fonts.ready; } catch (e) { /* ignore */ }
+  const stats = buildWorld(F);
+  [player.x, player.z] = findFree(sx, sz);
+  $('hud-top').querySelector('.sub').textContent = `${note} · อาคาร ${stats.buildings.toLocaleString()} หลัง · ถนน ${stats.roads.toLocaleString()} เส้น · ต้นไม้ ${stats.trees.toLocaleString()} ต้น`;
+  setStatus(`พร้อมแล้ว · ${note}`, 1);
+  $('fallbackBtn').style.display = 'none';
+  $('start').style.display = 'inline-block';
+  window.__cm3d = { stats, player, F, scene, look: (y, p) => { yaw = y; pitch = p; } };
+}
+$('start').onclick = () => {
+  $('overlay').style.display = 'none'; started = true; clock.getDelta();
+  if (!isTouch) canvas.requestPointerLock();
+};
+boot();
+</script>
+</body>
+</html>
