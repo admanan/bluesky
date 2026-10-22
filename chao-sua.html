@@ -1,0 +1,1009 @@
+<title>เจ้าสัวเชียงใหม่</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+<style>
+  /* Layout: ledger bar on top; city map with build toolbar on the left, firm / company panel on the right; report tabs below */
+  :root {
+    --bg:#e9ece6; --surface:#fafbf8; --surface-2:#f0f3ed; --ink:#171d19; --ink-2:#46514a; --muted:#77827b; --line:#d4dbd3;
+    --you:#1d7449; --you-tint:#1d74491f; --cheap:#b97a0c; --premium:#7d3d8f; --port:#3c5f7a;
+    --good:#1d7449; --bad:#b3261e;
+    --core:#d8d5cc; --sub:#dfe3d2; --rural:#cbdcb3; --road:#f6f5f0; --water:#9cc3d8; --moat:#7fb0c9; --grid:#00000010;
+    --display:"Chakra Petch","IBM Plex Sans Thai",system-ui,sans-serif;
+    --body:"IBM Plex Sans Thai",system-ui,sans-serif;
+    --mono:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#101411; --surface:#181d1a; --surface-2:#1f2622; --ink:#e5ebe6; --ink-2:#b0bbb3; --muted:#7c8880; --line:#2b332e;
+      --you:#4cc38a; --you-tint:#4cc38a24; --cheap:#e2a83a; --premium:#c58ad6; --port:#7fb0d6;
+      --good:#4cc38a; --bad:#ff8a80;
+      --core:#2c2e2b; --sub:#252b25; --rural:#1f2b1d; --road:#3a3d39; --water:#24485c; --moat:#2f5a70; --grid:#ffffff0d;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#101411; --surface:#181d1a; --surface-2:#1f2622; --ink:#e5ebe6; --ink-2:#b0bbb3; --muted:#7c8880; --line:#2b332e;
+    --you:#4cc38a; --you-tint:#4cc38a24; --cheap:#e2a83a; --premium:#c58ad6; --port:#7fb0d6;
+    --good:#4cc38a; --bad:#ff8a80;
+    --core:#2c2e2b; --sub:#252b25; --rural:#1f2b1d; --road:#3a3d39; --water:#24485c; --moat:#2f5a70; --grid:#ffffff0d;
+    color-scheme: dark;
+  }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { background:var(--bg); color:var(--ink); font:14px/1.5 var(--body); }
+  body::before { content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--surface); }
+  button, select, input { font:inherit; color:inherit; }
+  button { cursor:pointer; }
+  :focus-visible { outline:2px solid var(--you); outline-offset:2px; }
+  .num, .mono { font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .pos { color:var(--good); } .neg { color:var(--bad); }
+  .muted { color:var(--muted); }
+
+  .top { position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--surface); border-bottom:1px solid var(--line);
+    padding-block:8px; padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); }
+  .top-in { max-width:1320px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:center; gap:8px 20px; }
+  .logo { font-family:var(--display); font-weight:700; font-size:1.35rem; line-height:1; }
+  .logo small { display:block; font:500 .68rem var(--body); color:var(--muted); letter-spacing:.06em; margin-top:3px; }
+  .stats { display:flex; flex-wrap:wrap; gap:4px 20px; flex:1; min-width:0; }
+  .stat { display:flex; flex-direction:column; min-width:0; }
+  .stat span { font-size:.68rem; color:var(--muted); letter-spacing:.05em; }
+  .stat b { font:600 .98rem var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .goalbar { display:block; height:4px; border-radius:2px; background:var(--surface-2); margin-top:3px; overflow:hidden; min-width:120px; }
+  .goalbar i { display:block; height:100%; background:var(--you); width:0; }
+  .speed { display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  .speed button { border:0; background:var(--surface); padding:8px 12px; font-family:var(--mono); font-weight:600; min-width:44px; }
+  .speed button + button { border-left:1px solid var(--line); }
+  .speed button[aria-pressed="true"] { background:var(--ink); color:var(--surface); }
+  @media (max-width:700px) {
+    .top { position:static; }
+    .stats { flex-basis:100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .speed { position:fixed; z-index:6; right:max(16px,env(safe-area-inset-right,0px)); bottom:calc(16px + env(safe-area-inset-bottom,0px)); box-shadow:0 4px 14px rgb(0 0 0 / .25); }
+  }
+
+  .wrap { max-width:1320px; margin:0 auto; padding-block:14px 56px; padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); display:grid; gap:14px; }
+  .main { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:14px; align-items:start; }
+  @media (max-width:980px) { .main { grid-template-columns:minmax(0,1fr); } }
+  .panel { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; min-width:0; }
+  h2, h3 { font-family:var(--display); font-weight:600; margin:0; text-wrap:balance; }
+  h2 { font-size:1.08rem; } h3 { font-size:.95rem; }
+  .ph { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:6px 12px; margin-bottom:10px; }
+  .hint { font-size:.78rem; color:var(--muted); }
+
+  .tools { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .tool { display:flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:6px 10px; font-size:.85rem; }
+  .tool .glyph { display:inline-grid; place-items:center; width:20px; height:20px; border-radius:5px; background:var(--you); color:var(--surface); font:700 .75rem var(--display); }
+  .tool[aria-pressed="true"] { border-color:var(--you); box-shadow:0 0 0 2px var(--you-tint); }
+  .mapbox { position:relative; }
+  #map { display:block; width:100%; height:auto; border-radius:8px; touch-action:manipulation; cursor:pointer; }
+  .tip { position:absolute; pointer-events:none; background:var(--ink); color:var(--surface); font-size:.76rem; padding:5px 8px; border-radius:6px; white-space:nowrap; transform:translate(-50%,-110%); z-index:2; }
+  .legend { display:flex; flex-wrap:wrap; gap:4px 12px; font-size:.76rem; color:var(--ink-2); margin-top:8px; }
+  .legend span { display:inline-flex; align-items:center; gap:5px; }
+  .sw { display:inline-block; width:11px; height:11px; border-radius:3px; border:1px solid var(--line); }
+
+  .grid9 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+  .slot { min-height:74px; border:1px solid var(--line); background:var(--surface-2); border-radius:8px; padding:6px 7px; text-align:left; display:flex; flex-direction:column; gap:1px; min-width:0; font-size:.74rem; }
+  .slot b { font-family:var(--display); font-size:.86rem; font-weight:600; }
+  .slot .pn { color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .slot .lv { font-family:var(--mono); color:var(--muted); margin-top:auto; }
+  .slot.empty { align-items:center; justify-content:center; color:var(--muted); border-style:dashed; background:transparent; font-size:1.2rem; }
+  .slot.sel { border-color:var(--you); box-shadow:0 0 0 2px var(--you-tint); }
+  .slot.warn { border-color:var(--bad); }
+  .slot[data-u="purchase"] b { color:var(--port); } .slot[data-u="sales"] b, .slot[data-u="make"] b, .slot[data-u="grow"] b { color:var(--you); }
+  .slot[data-u="ad"] b { color:var(--cheap); } .slot[data-u="research"] b { color:var(--premium); }
+
+  .cfg { margin-top:10px; padding-top:10px; border-top:1px solid var(--line); display:grid; gap:8px; }
+  .field { display:grid; gap:3px; }
+  .field label { font-size:.74rem; color:var(--muted); }
+  select, input[type=number] { width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); }
+  .row2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .actions { display:flex; flex-wrap:wrap; gap:6px; }
+  .btn { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:6px 11px; font-size:.84rem; }
+  .btn:hover:not(:disabled) { border-color:var(--ink-2); }
+  .btn.go { border-color:var(--you); color:var(--you); font-weight:600; }
+  .btn.danger { color:var(--bad); }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .note { font-size:.78rem; color:var(--ink-2); background:var(--surface-2); border-radius:8px; padding:7px 9px; }
+  .note.bad { color:var(--bad); }
+
+  table { width:100%; border-collapse:collapse; font-size:.82rem; }
+  th, td { padding:5px 6px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--line); }
+  th:first-child, td:first-child { text-align:left; }
+  th { font-weight:600; color:var(--muted); font-size:.72rem; }
+  td.num, td .num { font-family:var(--mono); }
+  .tw { overflow-x:auto; }
+  .kv { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:6px; }
+  .kv div { background:var(--surface-2); border-radius:8px; padding:6px 9px; min-width:0; }
+  .kv span { display:block; font-size:.7rem; color:var(--muted); }
+  .kv b { font:600 .9rem var(--mono); }
+
+  .tabs { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:12px; border-bottom:1px solid var(--line); }
+  .tabs button { border:0; background:none; padding:8px 12px; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px; font-weight:500; }
+  .tabs button[aria-selected="true"] { color:var(--ink); border-color:var(--ink); }
+  .cols { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; }
+  @media (max-width:760px) { .cols { grid-template-columns:minmax(0,1fr); } }
+  canvas.chart { display:block; width:100%; height:210px; }
+  #news { list-style:none; margin:0; padding:0; display:grid; gap:6px; max-height:320px; overflow-y:auto; }
+  #news li { display:grid; grid-template-columns:auto minmax(0,1fr); gap:10px; font-size:.84rem; }
+  #news time { font:.7rem var(--mono); color:var(--muted); padding-top:2px; white-space:nowrap; }
+  #news li.good span { color:var(--good); } #news li.bad span { color:var(--bad); }
+  .dotc { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:1px; }
+
+  .toast { position:fixed; left:50%; bottom:calc(16px + env(safe-area-inset-bottom,0px)); transform:translate(-50%,20px); opacity:0; pointer-events:none;
+    background:var(--ink); color:var(--surface); padding:9px 15px; border-radius:10px; font-size:.88rem; max-width:calc(100% - 32px); transition:opacity .25s, transform .25s; z-index:20; }
+  .toast.show { opacity:1; transform:translate(-50%,0); }
+  .overlay { position:fixed; inset:0; background:rgb(0 0 0 / .45); display:grid; place-items:center; z-index:30; padding:16px; }
+  .modal { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:22px; max-width:460px; width:100%; display:grid; gap:12px; }
+  .modal h2 { font-size:1.5rem; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div class="logo">เจ้าสัวเชียงใหม่<small>เกมจำลองธุรกิจแนว Capitalism</small></div>
+    <div class="stats">
+      <div class="stat"><span>วันที่</span><b id="s-date"></b></div>
+      <div class="stat"><span>เงินสด</span><b id="s-cash"></b></div>
+      <div class="stat"><span>กำไรเดือนนี้</span><b id="s-mtd"></b></div>
+      <div class="stat"><span id="s-goal-l">มูลค่าบริษัท</span><b id="s-nw"></b><i class="goalbar"><i id="s-goalbar"></i></i></div>
+    </div>
+    <div class="speed" role="group" aria-label="ความเร็วเวลา">
+      <button data-speed="0" aria-label="หยุด">❚❚</button>
+      <button data-speed="1" aria-label="ความเร็ว 1 เท่า">▶</button>
+      <button data-speed="2" aria-label="ความเร็ว 2 เท่า">▶▶</button>
+      <button data-speed="3" aria-label="ความเร็ว 4 เท่า">▶▶▶</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="main">
+    <section class="panel">
+      <div class="ph"><h2>แผนที่เมืองเชียงใหม่</h2><span class="hint" id="map-hint">คลิกอาคารเพื่อจัดการ หรือเลือกประเภทอาคารด้านล่างแล้วคลิกที่ดินว่าง</span></div>
+      <div class="tools" id="tools"></div>
+      <div class="mapbox"><canvas id="map" aria-label="แผนที่เมือง"></canvas><div class="tip" id="tip" hidden></div></div>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--core)"></i>ใจกลางเมือง (ทำเลดี ที่ดินแพง)</span>
+        <span><i class="sw" style="background:var(--sub)"></i>ชานเมือง (สร้างโรงงานได้)</span>
+        <span><i class="sw" style="background:var(--rural)"></i>ชนบท (สร้างฟาร์มได้)</span>
+        <span><i class="dotc" style="background:var(--you)"></i>คุณ</span>
+        <span><i class="dotc" style="background:var(--cheap)"></i>ถูกดีกรุ๊ป</span>
+        <span><i class="dotc" style="background:var(--premium)"></i>ลูน่า คอร์ปอเรชั่น</span>
+        <span><i class="dotc" style="background:var(--port)"></i>คลังนำเข้า</span>
+      </div>
+    </section>
+    <section class="panel" id="side"></section>
+  </div>
+
+  <section class="panel">
+    <div class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-tab="fin" aria-selected="true">งบการเงิน</button>
+      <button role="tab" data-tab="mkt">ตลาดสินค้า</button>
+      <button role="tab" data-tab="rank">อันดับบริษัท</button>
+      <button role="tab" data-tab="news">ข่าว</button>
+      <button role="tab" data-tab="help">วิธีเล่น</button>
+    </div>
+    <div id="tab"></div>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ov-t">
+    <h2 id="ov-t"></h2><p id="ov-b" style="margin:0;color:var(--ink-2)"></p>
+    <div class="actions"><button class="btn go" id="ov-new">เล่นใหม่</button><button class="btn" id="ov-close">ดูผลงาน</button></div>
+  </div>
+</div>
+
+<script>
+/*SIM-START*/
+// ---- Simulation: pure game logic, no DOM. A three.js city could render the same `state` later. ----
+const Sim = (() => {
+  const W = 30, H = 20, DAY = 864e5;
+  const CFG = { startCash:5e6, goal:25e6, days:1096, startYear:2027, loanLimit:10e6, interest:.006, salvage:.7, sellBack:.5,
+    unitSetup:20000, upgrade:15000, maxLevel:9, K:2, exp:2, landPerTile:60000 };
+  const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+  // port = import price, q = import quality; consumer goods have a daily city demand at a reference price
+  const P = {
+    beans:   { name:'เมล็ดกาแฟ',  kind:'raw', port:5,   q:40 },
+    tealeaf: { name:'ใบชา',       kind:'raw', port:2.5, q:40 },
+    milk:    { name:'นมสด',       kind:'raw', port:3,   q:40 },
+    sugar:   { name:'น้ำตาลอ้อย', kind:'raw', port:1.2, q:45 },
+    wheat:   { name:'ข้าวสาลี',   kind:'raw', port:1.5, q:40 },
+    coffee:  { name:'กาแฟกระป๋อง', kind:'consumer', port:19, q:35, ref:25, demand:6000, recipe:{ beans:1, milk:1, sugar:1 }, w:[.35,.3,.35], drink:true },
+    thaitea: { name:'ชาไทยขวด',   kind:'consumer', port:15, q:35, ref:20, demand:5000, recipe:{ tealeaf:1, milk:1, sugar:1 }, w:[.3,.3,.4], drink:true },
+    bread:   { name:'ขนมปังแผ่น', kind:'consumer', port:23, q:35, ref:30, demand:4000, recipe:{ wheat:2, milk:1, sugar:1 }, w:[.4,.2,.4] },
+  };
+  const RAW = Object.keys(P).filter(k => P[k].kind === 'raw');
+  const CONSUMER = Object.keys(P).filter(k => P[k].kind === 'consumer');
+
+  const FIRMS = {
+    store:   { name:'ร้านค้าปลีก', glyph:'ร', cost:150000, maint:300, units:['purchase','sales','ad'], maxV:1 },
+    factory: { name:'โรงงาน',     glyph:'ง', cost:400000, maint:600, units:['purchase','make'],    maxV:.6 },
+    farm:    { name:'ฟาร์ม',      glyph:'ฟ', cost:250000, maint:300, units:['grow'],               maxV:.35 },
+    lab:     { name:'ศูนย์วิจัย',  glyph:'ว', cost:300000, maint:500, units:['research'],           maxV:1 },
+  };
+  const UNITS = {
+    purchase: { name:'จัดซื้อ',  cap:200, products:() => [...RAW, ...CONSUMER] },
+    sales:    { name:'ขายปลีก',  cap:150, products:() => CONSUMER },
+    make:     { name:'ผลิต',     cap:200, products:() => CONSUMER },
+    grow:     { name:'เพาะปลูก', cap:150, products:() => RAW },
+    ad:       { name:'โฆษณา',    products:() => CONSUMER },
+    research: { name:'วิจัย',     products:() => CONSUMER },
+  };
+  const unitCap = u => (UNITS[u.type].cap || 0) * u.level;
+  const unitDaily = u => u.type === 'ad' ? 400 * u.level : u.type === 'research' ? 800 * u.level : 200 + 50 * u.level;
+
+  // ---- map ----
+  const CENTER = { x:12.5, y:7.5 };
+  function tile(x, y) {
+    const road = x % 5 === 0 || y % 5 === 0;
+    const river = x === 22 && !road;
+    const d = Math.hypot(x + .5 - CENTER.x, (y + .5 - CENTER.y) * 1.15);
+    const v = Math.max(.1, Math.min(1, 1 - d / 15));
+    return { road, river, v, zone: v >= .6 ? 'core' : v >= .35 ? 'sub' : 'rural' };
+  }
+  const TILES = Array.from({ length: H }, (_, y) => Array.from({ length: W }, (_, x) => tile(x, y)));
+  const footprint = (x, y) => [[x, y], [x + 1, y], [x, y + 1], [x + 1, y + 1]];
+  const firmValue = f => footprint(f.x, f.y).reduce((a, [x, y]) => a + TILES[y][x].v, 0) / 4;
+  function canBuild(state, type, x, y) {
+    if (x < 0 || y < 0 || x + 1 >= W || y + 1 >= H) return 'นอกแผนที่';
+    for (const [a, b] of footprint(x, y)) {
+      const t = TILES[b][a];
+      if (t.road) return 'ติดถนน';
+      if (t.river) return 'ติดแม่น้ำปิง';
+      if (state.firms.some(f => a >= f.x && a <= f.x + 1 && b >= f.y && b <= f.y + 1)) return 'มีอาคารอยู่แล้ว';
+    }
+    const v = firmValue({ x, y });
+    if (v > FIRMS[type].maxV + 1e-9) return type === 'farm' ? 'ฟาร์มต้องอยู่ในเขตชนบท' : 'โรงงานต้องอยู่นอกใจกลางเมือง';
+    return null;
+  }
+  const landCost = (x, y) => Math.round(firmValue({ x, y }) * 4 * CFG.landPerTile / 1000) * 1000;
+  const buildCost = (type, x, y) => FIRMS[type].cost + landCost(x, y);
+  const firmAt = (state, x, y) => state.firms.find(f => x >= f.x && x <= f.x + 1 && y >= f.y && y <= f.y + 1);
+
+  // ---- helpers ----
+  const dateOf = day => new Date(Date.UTC(CFG.startYear, 0, 1) + day * DAY);
+  const dateLabel = day => { const d = dateOf(day); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear() + 543}`; };
+  const monthLabel = day => { const d = dateOf(day); return `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear() + 543}`; };
+  const comp = (state, id) => state.companies.find(c => c.id === id);
+  const mod = (state, kind, key) => state.mods.filter(m => m.kind === kind && (m.key === key || m.key === 'all')).reduce((a, m) => a * m.mult, 1);
+  const portPrice = (state, p, c) => P[p].port * mod(state, 'port', p) * (c && c.importMult || 1);
+  const portQ = (p, c) => c && c.importQ ? Math.max(c.importQ, P[p].q) : P[p].q;
+  const priceScore = (p, price) => Math.min(100, 50 * Math.pow(P[p].ref / Math.max(.01, price), 2));
+  function rating(state, firm, unit, p) {
+    const c = comp(state, firm.owner), inv = firm.inv[p];
+    const [wq, wb, wp] = P[p].w;
+    return wq * (inv ? inv.q : 0) + wb * c.brand[p] + wp * priceScore(p, unit.price);
+  }
+  function season(p, day) {
+    const m = dateOf(day).getUTCMonth();
+    let k = 1;
+    if (P[p].drink) k *= [1,1,1.2,1.25,1.2,.9,.9,.9,.9,1,1,1][m]; // hot season Mar–May, rains Jun–Sep
+    if (m === 10 || m === 11) k *= 1.1;                          // Yi Peng & high season tourists
+    return k;
+  }
+  const demand = (state, p) => P[p].demand * season(p, state.day) * mod(state, 'demand', p) * state.pop;
+
+  function addInv(firm, p, qty, q) {
+    if (qty <= 0) return;
+    const i = firm.inv[p] || (firm.inv[p] = { qty:0, q:0 });
+    i.q = (i.q * i.qty + q * qty) / (i.qty + qty); i.qty += qty;
+  }
+  function takeInv(firm, p, qty) {
+    const i = firm.inv[p]; if (!i) return 0;
+    const t = Math.min(i.qty, qty); i.qty -= t; return t;
+  }
+  const units = f => f.units.filter(Boolean);
+  const outputOf = f => units(f).filter(u => u.type === 'grow' || u.type === 'make').map(u => u.product).filter(Boolean);
+  // own firms that produce p (farms growing it, factories making it)
+  const sourcesFor = (state, owner, p) => state.firms.filter(f => f.owner === owner && outputOf(f).includes(p));
+
+  function book(state, c, cat, amt) {
+    c.cash += cat === 'sales' ? amt : -amt;
+    c.mtd[cat] = (c.mtd[cat] || 0) + amt;
+  }
+  const newMtd = () => ({ sales:0, imports:0, staff:0, ads:0, rnd:0, interest:0, capex:0 });
+
+  function netWorth(state, c) {
+    let v = c.cash - c.loan;
+    for (const f of state.firms) if (f.owner === c.id) {
+      v += f.invested * CFG.salvage;
+      for (const p in f.inv) v += f.inv[p].qty * P[p].port * .5;
+    }
+    return v;
+  }
+
+  // ---- building & units ----
+  function placeFirm(state, owner, type, x, y, spec = []) {
+    const c = comp(state, owner), cost = buildCost(type, x, y);
+    const f = { id: state.nextId++, owner, type, x, y, units: Array(9).fill(null), inv:{}, invested: cost, mtd:{ rev:0, cost:0 }, last:null };
+    state.firms.push(f);
+    book(state, c, 'capex', cost);
+    spec.forEach((u, i) => setUnit(state, f, i, u));
+    return f;
+  }
+  function setUnit(state, f, slot, u) {
+    const c = comp(state, f.owner);
+    f.units[slot] = { type:u.type, product:u.product || null, src:u.src || 'port', price:u.price || (u.product && P[u.product].ref) || 0, level:u.level || 1, last:0, warn:'' };
+    const cost = CFG.unitSetup + (f.units[slot].level - 1) * CFG.upgrade;
+    f.invested += cost; book(state, c, 'capex', cost);
+  }
+
+  // ---- one day ----
+  function day(state, rng) {
+    const cs = state.companies;
+    for (const c of cs) for (const p of CONSUMER) c.brand[p] *= .998;
+    for (const f of state.firms) {
+      if (f.type === 'port') continue;
+      const c = comp(state, f.owner);
+      const fixed = FIRMS[f.type].maint;
+      book(state, c, 'staff', fixed); f.mtd.cost += fixed;
+      for (const u of units(f)) {
+        const k = unitDaily(u);
+        book(state, c, u.type === 'ad' ? 'ads' : u.type === 'research' ? 'rnd' : 'staff', k); f.mtd.cost += k;
+        u.last = 0; u.warn = u.product ? '' : 'ยังไม่ได้เลือกสินค้า';
+      }
+    }
+    const byType = t => state.firms.filter(f => f.type === t);
+    // farms
+    for (const f of byType('farm')) for (const u of units(f)) if (u.type === 'grow' && u.product) {
+      const room = 3000 * u.level - (f.inv[u.product]?.qty || 0);
+      const q = Math.min(unitCap(u), Math.max(0, room));
+      addInv(f, u.product, q, 30 + 5 * u.level); u.last = q;
+      if (!q) u.warn = 'คลังเต็ม ตั้งให้โรงงานซื้อวัตถุดิบจากฟาร์มนี้';
+    }
+    const purchase = f => {
+      const c = comp(state, f.owner);
+      for (const u of units(f)) if (u.type === 'purchase' && u.product) {
+        const p = u.product, have = f.inv[p]?.qty || 0;
+        const want = Math.min(unitCap(u), Math.max(0, 3 * unitCap(u) - have));
+        if (!want) continue;
+        if (u.src === 'port') {
+          const price = portPrice(state, p, c);
+          if (c.cash < price * want && c.id === 'you' && c.cash < 0) { u.warn = 'เงินสดติดลบ ซื้อของไม่ได้'; continue; }
+          addInv(f, p, want, portQ(p, c)); book(state, c, 'imports', price * want); f.mtd.cost += price * want; u.last = want;
+        } else {
+          const s = state.firms.find(x => x.id === u.src);
+          if (!s) { u.warn = 'แหล่งสินค้าถูกขายไปแล้ว'; continue; }
+          const q0 = s.inv[p]?.q || 0, got = takeInv(s, p, want);
+          addInv(f, p, got, q0); u.last = got;
+          if (!got) u.warn = `${FIRMS[s.type].name} #${s.id} ยังไม่มี${P[p].name}`;
+        }
+      }
+    };
+    // factories: buy inputs, then make
+    for (const f of byType('factory')) {
+      purchase(f);
+      const c = comp(state, f.owner);
+      for (const u of units(f)) if (u.type === 'make' && u.product) {
+        const r = P[u.product].recipe, out = u.product;
+        if ((f.inv[out]?.qty || 0) > 3000 * u.level) { u.warn = 'คลังสินค้าเต็ม ยังไม่มีร้านมารับ ตั้งให้ร้านค้าปลีกซื้อจากโรงงานนี้'; continue; }
+        let n = unitCap(u);
+        for (const i in r) n = Math.min(n, Math.floor((f.inv[i]?.qty || 0) / r[i]));
+        if (n <= 0) { u.warn = 'วัตถุดิบไม่พอ: ' + Object.keys(r).filter(i => (f.inv[i]?.qty || 0) < r[i]).map(i => P[i].name).join(', '); continue; }
+        let qs = 0, ws = 0;
+        for (const i in r) { qs += f.inv[i].q * r[i]; ws += r[i]; takeInv(f, i, n * r[i]); }
+        addInv(f, out, n, .5 * qs / ws + .5 * c.tech[out]); u.last = n;
+      }
+    }
+    for (const f of byType('store')) purchase(f);
+    // labs & advertising
+    for (const f of state.firms) {
+      if (f.type === 'port') continue;
+      const c = comp(state, f.owner);
+      for (const u of units(f)) {
+        if (u.type === 'research' && u.product) { c.tech[u.product] += .04 * u.level * (1 - c.tech[u.product] / 100); u.last = 1; }
+        if (u.type === 'ad' && u.product) { c.brand[u.product] += .03 * u.level * (1 - c.brand[u.product] / 100); u.last = 1; }
+      }
+    }
+    // retail market: every sales unit competes for the city's daily demand of its product
+    for (const p of CONSUMER) {
+      const sellers = [];
+      for (const f of byType('store')) for (const u of units(f)) if (u.type === 'sales' && u.product === p) {
+        if (!(f.inv[p]?.qty > 0)) { u.warn = `ไม่มี${P[p].name}ในร้าน ต้องมีหน่วยจัดซื้อ`; continue; }
+        const r = rating(state, f, u, p);
+        sellers.push({ f, u, A: Math.pow(r / 50, CFG.exp) * (.4 + .8 * firmValue(f)) * Math.sqrt(u.level) });
+      }
+      const D = demand(state, p), tot = sellers.reduce((a, s) => a + s.A, 0) + CFG.K;
+      state.market[p].demand += D;
+      for (const s of sellers) {
+        const q = Math.floor(Math.min(D * s.A / tot, unitCap(s.u), s.f.inv[p].qty));
+        takeInv(s.f, p, q); s.u.last = q;
+        const c = comp(state, s.f.owner);
+        book(state, c, 'sales', q * s.u.price); s.f.mtd.rev += q * s.u.price;
+        c.sold[p] = (c.sold[p] || 0) + q; state.market[p].sold += q;
+        if (q >= unitCap(s.u) && s.f.owner === 'you') s.u.warn = 'ขายเต็มกำลัง ลองอัปเกรดหน่วยนี้';
+      }
+    }
+    state.pop *= 1.0003;
+    state.day++;
+    if (dateOf(state.day).getUTCDate() === 1) monthEnd(state, rng);
+  }
+
+  // ---- month end: interest, reports, AI, events ----
+  function monthEnd(state, rng) {
+    for (const c of state.companies) {
+      if (c.loan) book(state, c, 'interest', Math.round(c.loan * CFG.interest));
+      const m = c.mtd;
+      m.net = m.sales - m.imports - m.staff - m.ads - m.rnd - m.interest;
+      c.last = m; c.mtd = newMtd();
+      c.soldLast = c.sold; c.sold = {};
+    }
+    state.marketLast = state.market; state.market = freshMarket();
+    for (const f of state.firms) { f.last = f.mtd; f.mtd = { rev:0, cost:0 }; }
+    const you = comp(state, 'you');
+    news(state, `ปิดงบ ${monthLabel(state.day - 1)}: ${you.last.net >= 0 ? 'กำไร' : 'ขาดทุน'} ฿${Math.abs(Math.round(you.last.net)).toLocaleString('th-TH')}`, you.last.net >= 0 ? 'good' : 'bad');
+    if (you.cash < 0) {
+      const need = Math.ceil(-you.cash / 100000) * 100000;
+      if (you.loan + need <= CFG.loanLimit) { you.loan += need; you.cash += need; news(state, `เงินสดติดลบ ธนาคารปล่อยกู้ฉุกเฉิน ฿${need.toLocaleString('th-TH')}`, 'bad'); }
+      else state.over = { kind:'bankrupt' };
+    }
+    ai(state, rng);
+    state.mods = state.mods.map(m => ({ ...m, left: m.left - 1 })).filter(m => m.left > 0);
+    events(state, rng);
+    state.history.push({ day: state.day, nw: state.companies.map(c => Math.round(netWorth(state, c))), cash: Math.round(you.cash), net: Math.round(you.last.net) });
+    if (!state.over && netWorth(state, you) >= CFG.goal) state.over = { kind:'win' };
+    else if (!state.over && state.day >= CFG.days) state.over = { kind:'timeup' };
+  }
+
+  const EVENTS = [
+    { w:3, tone:'bad', make: (s, r) => { const p = RAW[Math.floor(r() * RAW.length)]; s.mods.push({ kind:'port', key:p, mult:1.35, left:2 }); return `ราคา${P[p].name}นำเข้าพุ่ง 35% อีก 2 เดือน`; } },
+    { w:2, tone:'bad', make: s => { s.mods.push({ kind:'port', key:'milk', mult:1.4, left:2 }); return 'โรคระบาดในวัวนม ราคานมสดนำเข้า +40% อีก 2 เดือน ฟาร์มโคนมของตัวเองได้เปรียบ'; } },
+    { w:2, tone:'bad', when: m => m >= 0 && m <= 2, make: s => { s.mods.push({ kind:'demand', key:'all', mult:.88, left:1 }); return 'ฝุ่น PM2.5 คลุมเมือง คนออกมาซื้อของน้อยลงเดือนหน้า'; } },
+    { w:2, tone:'good', make: (s, r) => { const p = CONSUMER[Math.floor(r() * CONSUMER.length)]; s.mods.push({ kind:'demand', key:p, mult:1.25, left:2 }); return `${P[p].name}กำลังเป็นกระแสในโซเชียล ความต้องการ +25% อีก 2 เดือน`; } },
+    { w:2, tone:'good', make: (s, r) => { const p = CONSUMER[Math.floor(r() * CONSUMER.length)]; s.mods.push({ kind:'port', key:p, mult:.85, left:2 }); return `ค่าเงินบาทแข็ง ${P[p].name}นำเข้าถูกลง 15% อีก 2 เดือน`; } },
+    { w:1, tone:'good', make: s => { s.pop *= 1.04; return 'มหาวิทยาลัยใหม่เปิดรับนักศึกษา ประชากรเมืองเพิ่ม 4%'; } },
+  ];
+  const SEASON_NEWS = { 2:'หน้าร้อนเริ่มแล้ว เครื่องดื่มขายดีขึ้นถึงพฤษภาคม', 5:'เข้าหน้าฝน ยอดเครื่องดื่มลดลงเล็กน้อย', 10:'เทศกาลยี่เป็งและไฮซีซั่น นักท่องเที่ยวเต็มเมือง' };
+  function events(state, rng) {
+    const m = dateOf(state.day).getUTCMonth();
+    if (SEASON_NEWS[m]) news(state, SEASON_NEWS[m]);
+    if (rng() > .4) return;
+    const pool = EVENTS.filter(e => !e.when || e.when(m));
+    let r = rng() * pool.reduce((a, e) => a + e.w, 0);
+    const e = pool.find(e => (r -= e.w) < 0) || pool[0];
+    news(state, e.make(state, rng), e.tone);
+  }
+
+  // ---- AI rivals: import goods, price against you, open stores at the best free sites ----
+  function bestSites(state, type) {
+    const out = [];
+    for (let y = 0; y < H - 1; y++) for (let x = 0; x < W - 1; x++) if (!canBuild(state, type, x, y)) out.push({ x, y, v: firmValue({ x, y }) });
+    return out.sort((a, b) => b.v - a.v);
+  }
+  function storeSpec(c, products) {
+    const spec = [];
+    products.forEach(p => spec.push({ type:'purchase', product:p, src:'port' }, { type:'sales', product:p, price: Math.round(P[p].ref * c.priceK) }));
+    spec.push({ type:'ad', product: products[0], level: c.adLevel });
+    return spec;
+  }
+  function ai(state, rng) {
+    const you = comp(state, 'you');
+    for (const c of state.companies.filter(c => c.ai)) {
+      const mine = state.firms.filter(f => f.owner === c.id);
+      for (const f of mine) for (const u of units(f)) if (u.type === 'sales') {
+        const p = u.product, floor = Math.ceil(portPrice(state, p, c) * 1.12);
+        const tot = state.marketLast[p].sold || 1, ys = (you.soldLast[p] || 0) / tot;
+        const target = P[p].ref * c.priceK;
+        if (c.ai === 'cheap' && ys > .2) u.price = Math.max(floor, Math.round(u.price * .96));
+        else u.price = Math.max(floor, Math.round(u.price + (target - u.price) * .3));
+        if (c.cash > 3e6 && u.level < 6 && u.last >= unitCap(u) * .9) { u.level++; f.invested += CFG.upgrade; book(state, c, 'capex', CFG.upgrade * u.level); }
+      }
+      if (c.ai === 'premium') for (const p of CONSUMER) c.tech[p] += .5;
+      if (c.cash < 0 && mine.length) {
+        const pl = f => { const m = f.last || f.mtd; return m.rev - m.cost; };
+        const worst = mine.sort((a, b) => pl(a) - pl(b))[0];
+        sellFirm(state, worst.id, true);
+        news(state, `${c.name} ปิด${FIRMS[worst.type].name}ที่ขาดทุน`, 'good');
+      } else if (c.cash > 1.5e6 && rng() < .45 && mine.length < 14) {
+        const site = bestSites(state, 'store')[Math.floor(rng() * 3)];
+        if (site) {
+          const n = 2 + Math.floor(rng() * 2), ps = [...CONSUMER].sort(() => rng() - .5).slice(0, n);
+          placeFirm(state, c.id, 'store', site.x, site.y, storeSpec(c, ps));
+          news(state, `${c.name} เปิดร้านค้าปลีกสาขาใหม่ ขาย${ps.map(p => P[p].name).join(' ')}`, 'bad');
+        }
+      }
+    }
+  }
+
+  function sellFirm(state, id, quiet) {
+    const f = state.firms.find(x => x.id === id); if (!f) return false;
+    const c = comp(state, f.owner);
+    c.cash += f.invested * CFG.sellBack;
+    state.firms = state.firms.filter(x => x !== f);
+    for (const g of state.firms) for (const u of units(g)) if (u.src === id) u.src = 'port';
+    if (!quiet) news(state, `คุณขาย${FIRMS[f.type].name} #${f.id} ได้เงินคืน ฿${Math.round(f.invested * CFG.sellBack).toLocaleString('th-TH')}`);
+    return true;
+  }
+
+  const news = (state, text, tone = 'info') => { state.news.unshift({ day: state.day, text, tone }); state.news.length = Math.min(state.news.length, 80); };
+  const freshMarket = () => Object.fromEntries(CONSUMER.map(p => [p, { demand:0, sold:0 }]));
+  const rngOf = state => () => {
+    let t = state.seed = (state.seed + 0x6D2B79F5) | 0;
+    t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+
+  function newGame(seed = Math.floor(Math.random() * 1e9)) {
+    const zero = v => Object.fromEntries(CONSUMER.map(p => [p, v]));
+    const company = (id, name, cash, extra) => ({ id, name, cash, loan:0, tech: zero(30), brand: zero(5), mtd: newMtd(), last:null, sold:{}, soldLast:{}, ...extra });
+    const state = {
+      v:2, seed, day:0, pop:1, nextId:1, firms:[], mods:[], news:[], history:[], over:null,
+      market: freshMarket(), marketLast: freshMarket(),
+      companies: [
+        company('you', 'บริษัทของคุณ', CFG.startCash),
+        company('thukdee', 'ถูกดีกรุ๊ป', 6e6, { ai:'cheap', priceK:.9, adLevel:2, importMult:.85, brand: zero(25) }),
+        company('luna', 'ลูน่า คอร์ปอเรชั่น', 8e6, { ai:'premium', priceK:1.2, adLevel:5, importMult:1.1, importQ:62, brand: zero(35), tech: zero(45) }),
+      ],
+    };
+    state.port = { x:1, y:16 }; // import depot (decorative, not a firm)
+    state.firms.push({ id:0, owner:'port', type:'port', x:1, y:16, units:[], inv:{}, invested:0, mtd:{rev:0,cost:0}, last:null });
+    const sites = bestSites(state, 'store');
+    const take = i => { const s = sites[i]; sites.splice(i, 1); return s; };
+    const y0 = take(4);
+    placeFirm(state, 'you', 'store', y0.x, y0.y, [
+      { type:'purchase', product:'coffee' }, { type:'sales', product:'coffee', price:25 },
+      { type:'purchase', product:'thaitea' }, { type:'sales', product:'thaitea', price:20 },
+    ]);
+    const th = comp(state, 'thukdee'), lu = comp(state, 'luna');
+    const spots = () => bestSites(state, 'store');
+    [[th, ['coffee','thaitea']], [lu, ['coffee','bread']], [th, ['bread','thaitea']], [lu, ['thaitea','coffee']], [th, ['coffee','bread']]]
+      .forEach(([c, ps], i) => { const s = spots()[i * 2 + 1]; placeFirm(state, c.id, 'store', s.x, s.y, storeSpec(c, ps)); });
+    for (const c of state.companies) { c.mtd = newMtd(); c.cash = c.id === 'you' ? CFG.startCash : c.cash; }
+    state.history.push({ day:0, nw: state.companies.map(c => Math.round(netWorth(state, c))), cash: CFG.startCash, net:0 });
+    news(state, 'คุณมีร้านค้าปลีก 1 แห่ง ขายกาแฟกระป๋องและชาไทยขวดที่ซื้อจากคลังนำเข้า และมีเงินสด ฿5 ล้าน กด ▶ เพื่อเริ่มเดินเวลา');
+    return state;
+  }
+
+  // ---- player actions ----
+  const you = s => comp(s, 'you');
+  function build(state, type, x, y) {
+    if (state.over || canBuild(state, type, x, y)) return null;
+    const cost = buildCost(type, x, y);
+    if (you(state).cash < cost) return null;
+    const f = placeFirm(state, 'you', type, x, y);
+    news(state, `คุณสร้าง${FIRMS[type].name} #${f.id} (฿${cost.toLocaleString('th-TH')})`, 'good');
+    return f;
+  }
+  function addUnit(state, f, slot, type) {
+    if (state.over || f.owner !== 'you' || f.units[slot] || !FIRMS[f.type].units.includes(type) || you(state).cash < CFG.unitSetup) return false;
+    setUnit(state, f, slot, { type });
+    return true;
+  }
+  function upgradeUnit(state, f, slot) {
+    const u = f.units[slot], cost = CFG.upgrade * (u ? u.level : 0);
+    if (state.over || !u || u.level >= CFG.maxLevel || you(state).cash < cost) return false;
+    u.level++; f.invested += cost; book(state, you(state), 'capex', cost); return true;
+  }
+  function removeUnit(state, f, slot) { if (!f.units[slot]) return false; f.units[slot] = null; return true; }
+  // quick setups fill empty slots the way a Capitalism player would wire them by hand
+  function template(state, f, kind, p) {
+    const free = () => f.units.findIndex(u => !u);
+    const need = [];
+    const srcFor = q => (sourcesFor(state, 'you', q)[0] || { id:'port' }).id;
+    if (kind === 'sell') need.push({ type:'purchase', product:p, src: srcFor(p) }, { type:'sales', product:p, price:P[p].ref });
+    if (kind === 'make') { Object.keys(P[p].recipe).forEach(i => need.push({ type:'purchase', product:i, src: srcFor(i) })); need.push({ type:'make', product:p }); }
+    if (kind === 'grow') need.push({ type:'grow', product:p });
+    if (kind === 'ad') need.push({ type:'ad', product:p });
+    if (kind === 'research') need.push({ type:'research', product:p });
+    if (f.units.filter(u => !u).length < need.length) return 'ช่องว่างไม่พอ';
+    if (you(state).cash < need.length * CFG.unitSetup) return 'เงินสดไม่พอ';
+    need.forEach(u => setUnit(state, f, free(), u));
+    return null;
+  }
+  // point every own store's purchasing of p at this producer
+  function linkStores(state, f, p) {
+    let n = 0;
+    for (const g of state.firms) if (g.owner === 'you' && g !== f && (g.type === 'store' || g.type === 'factory'))
+      for (const u of g.units) if (u && u.type === 'purchase' && u.product === p && u.src !== f.id) { u.src = f.id; n++; }
+    return n;
+  }
+  function borrow(state, amt) { const c = you(state); amt = Math.min(amt, CFG.loanLimit - c.loan); if (state.over || amt <= 0) return false; c.loan += amt; c.cash += amt; return true; }
+  function repay(state, amt) { const c = you(state); amt = Math.min(amt, c.loan, c.cash); if (state.over || amt <= 0) return false; c.loan -= amt; c.cash -= amt; return true; }
+  function tick(state) { if (!state.over) day(state, rngOf(state)); return state; }
+
+  return { W, H, CFG, P, RAW, CONSUMER, FIRMS, UNITS, TILES, newGame, tick, canBuild, buildCost, landCost, firmAt, firmValue,
+    build, addUnit, upgradeUnit, removeUnit, template, linkStores, sellFirm, borrow, repay, sourcesFor, outputOf, unitCap, unitDaily,
+    rating, priceScore, portPrice, portQ, demand, netWorth, comp, dateLabel, monthLabel, dateOf };
+})();
+/*SIM-END*/
+
+// ---- UI ----
+const $ = s => document.querySelector(s);
+const fmt = n => Math.round(n).toLocaleString('th-TH');
+const baht = n => (n < 0 ? '−' : '') + '฿' + fmt(Math.abs(n));
+const signed = n => (n >= 0 ? '+' : '−') + '฿' + fmt(Math.abs(n));
+const million = n => (n / 1e6).toLocaleString('th-TH', { maximumFractionDigits: Math.abs(n) >= 1e7 ? 1 : 2 }) + ' ล้าน';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const SAVE = 'chao-sua-v2';
+const COLOR = { you:'--you', thukdee:'--cheap', luna:'--premium', port:'--port' };
+const SPEED_MS = [0, 700, 300, 90];
+let state, ui = { sel:null, slot:null, build:null, hover:null, tab:'fin', speed:0 }, timer = null;
+
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const you = () => Sim.comp(state, 'you');
+const selFirm = () => state.firms.find(f => f.id === ui.sel);
+function save() { try { localStorage.setItem(SAVE, JSON.stringify(state)); } catch (e) {} }
+function load() { try { const s = JSON.parse(localStorage.getItem(SAVE)); return s && s.v === 2 ? s : null; } catch (e) { return null; } }
+
+// ---- top bar ----
+function renderTop() {
+  const c = you(), nw = Sim.netWorth(state, c), m = c.mtd;
+  const net = m.sales - m.imports - m.staff - m.ads - m.rnd - m.interest;
+  $('#s-date').textContent = Sim.dateLabel(state.day);
+  $('#s-cash').textContent = baht(c.cash); $('#s-cash').className = c.cash < 0 ? 'neg' : '';
+  $('#s-mtd').textContent = signed(net); $('#s-mtd').className = net >= 0 ? 'pos' : 'neg';
+  $('#s-goal-l').textContent = `มูลค่าบริษัท · เป้า ฿${million(Sim.CFG.goal)} ใน 3 ปี`;
+  $('#s-nw').textContent = baht(nw);
+  $('#s-goalbar').style.width = Math.max(0, Math.min(100, nw / Sim.CFG.goal * 100)) + '%';
+  document.querySelectorAll('.speed button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.speed === ui.speed));
+}
+
+// ---- map ----
+const map = $('#map');
+let ts = 20;
+function sizeMap() {
+  const w = map.clientWidth || map.parentElement.clientWidth, dpr = window.devicePixelRatio || 1;
+  ts = w / Sim.W;
+  map.style.height = ts * Sim.H + 'px';
+  map.width = w * dpr; map.height = ts * Sim.H * dpr;
+  map.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function drawMap() {
+  const g = map.getContext('2d'), T = Sim.TILES;
+  const col = { core:css('--core'), sub:css('--sub'), rural:css('--rural'), road:css('--road'), water:css('--water'), moat:css('--moat'), grid:css('--grid') };
+  for (let y = 0; y < Sim.H; y++) for (let x = 0; x < Sim.W; x++) {
+    const t = T[y][x];
+    g.fillStyle = t.river ? col.water : t.road ? col.road : col[t.zone];
+    g.fillRect(x * ts, y * ts, ts + .5, ts + .5);
+  }
+  g.strokeStyle = col.grid; g.lineWidth = 1;
+  for (let x = 0; x <= Sim.W; x++) { g.beginPath(); g.moveTo(x * ts, 0); g.lineTo(x * ts, Sim.H * ts); g.stroke(); }
+  for (let y = 0; y <= Sim.H; y++) { g.beginPath(); g.moveTo(0, y * ts); g.lineTo(Sim.W * ts, y * ts); g.stroke(); }
+  // old-city moat (คูเมือง) around the central block
+  g.strokeStyle = col.moat; g.lineWidth = Math.max(2, ts * .18);
+  g.strokeRect(10.5 * ts, 5.5 * ts, 4 * ts, 4 * ts);
+  g.font = `600 ${Math.max(9, ts * .42)}px ${css('--body').split(',')[0]}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillStyle = css('--muted');
+  g.fillText('แม่น้ำปิง', 22.5 * ts, 2.5 * ts - ts * .9);
+  // supply links between your firms
+  g.strokeStyle = css('--you'); g.lineWidth = 1.5; g.setLineDash([4, 3]); g.globalAlpha = .7;
+  for (const f of state.firms) for (const u of f.units.filter(Boolean)) if (u.type === 'purchase' && u.src !== 'port') {
+    const s = state.firms.find(x => x.id === u.src); if (!s) continue;
+    g.beginPath(); g.moveTo((s.x + 1) * ts, (s.y + 1) * ts); g.lineTo((f.x + 1) * ts, (f.y + 1) * ts); g.stroke();
+  }
+  g.setLineDash([]); g.globalAlpha = 1;
+  for (const f of state.firms) {
+    const x = f.x * ts + 2, y = f.y * ts + 2, s = ts * 2 - 4, c = css(COLOR[f.owner]);
+    g.fillStyle = '#00000022'; g.fillRect(x + 2, y + 3, s, s);
+    g.fillStyle = c; roundRect(g, x, y, s, s, ts * .25); g.fill();
+    g.fillStyle = css('--surface'); roundRect(g, x + s * .14, y + s * .14, s * .72, s * .72, ts * .18); g.fill();
+    g.fillStyle = c; g.font = `700 ${s * .42}px "Chakra Petch", sans-serif`;
+    g.fillText(f.type === 'port' ? 'น' : Sim.FIRMS[f.type].glyph, x + s / 2, y + s / 2 + 1);
+    if (f.owner === 'you' && f.units.some(u => u && u.warn)) { g.fillStyle = css('--bad'); g.beginPath(); g.arc(x + s - 3, y + 3, ts * .2, 0, 7); g.fill(); }
+    if (f.id === ui.sel) { g.strokeStyle = css('--ink'); g.lineWidth = 2.5; roundRect(g, x - 3, y - 3, s + 6, s + 6, ts * .3); g.stroke(); }
+  }
+  if (ui.build && ui.hover) {
+    const { x, y } = ui.hover, bad = Sim.canBuild(state, ui.build, x, y);
+    g.fillStyle = bad ? css('--bad') : css('--you'); g.globalAlpha = .45;
+    g.fillRect(x * ts, y * ts, ts * 2, ts * 2); g.globalAlpha = 1;
+  }
+}
+function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function tileFrom(e) {
+  const r = map.getBoundingClientRect();
+  return { x: Math.floor((e.clientX - r.left) / ts), y: Math.floor((e.clientY - r.top) / ts), px: e.clientX - r.left, py: e.clientY - r.top };
+}
+function showTip(e) {
+  const t = tileFrom(e), tip = $('#tip');
+  if (t.x < 0 || t.y < 0 || t.x >= Sim.W || t.y >= Sim.H) { tip.hidden = true; return; }
+  let txt;
+  if (ui.build) {
+    const x = Math.min(t.x, Sim.W - 2), y = Math.min(t.y, Sim.H - 2);
+    ui.hover = { x, y };
+    const bad = Sim.canBuild(state, ui.build, x, y);
+    txt = bad ? bad : `${Sim.FIRMS[ui.build].name} ${baht(Sim.buildCost(ui.build, x, y))} · ทำเล ${Math.round(Sim.firmValue({ x, y }) * 100)}%`;
+  } else {
+    const f = Sim.firmAt(state, t.x, t.y), tl = Sim.TILES[t.y][t.x];
+    txt = f ? (f.type === 'port' ? 'คลังนำเข้า: ซื้อวัตถุดิบและสินค้านำเข้าได้ทุกชนิด' : `${Sim.FIRMS[f.type].name} #${f.id} · ${Sim.comp(state, f.owner).name}`)
+      : tl.river ? 'แม่น้ำปิง' : tl.road ? 'ถนน' : `ทำเล ${Math.round(tl.v * 100)}% · ${{ core:'ใจกลางเมือง', sub:'ชานเมือง', rural:'ชนบท' }[tl.zone]}`;
+  }
+  tip.textContent = txt; tip.hidden = false;
+  tip.style.left = Math.min(Math.max(t.px, 90), map.clientWidth - 90) + 'px'; tip.style.top = t.py + 'px';
+  if (ui.build) drawMap();
+}
+
+// ---- tools ----
+function renderTools() {
+  $('#tools').innerHTML = Object.entries(Sim.FIRMS).map(([k, f]) =>
+    `<button class="tool" data-build="${k}" aria-pressed="${ui.build === k}"><span class="glyph">${f.glyph}</span>${f.name} <span class="muted num">฿${fmt(f.cost / 1000)}k+</span></button>`).join('')
+    + (ui.build ? '<button class="tool" data-build="">ยกเลิก</button>' : '');
+  $('#map-hint').textContent = ui.build ? `คลิกที่ดินว่างเพื่อสร้าง${Sim.FIRMS[ui.build].name} (ราคารวมค่าที่ดิน)` : 'คลิกอาคารเพื่อจัดการ หรือเลือกประเภทอาคารแล้วคลิกที่ดินว่าง';
+}
+
+// ---- side panel: firm detail with 3×3 units ----
+function renderSide() {
+  const f = selFirm();
+  if (!f || f.type === 'port') return renderOverview(f);
+  const owner = Sim.comp(state, f.owner), mine = f.owner === 'you';
+  const F = Sim.FIRMS[f.type];
+  const slots = f.units.map((u, i) => u
+    ? `<button class="slot${i === ui.slot ? ' sel' : ''}${mine && u.warn ? ' warn' : ''}" data-slot="${i}" data-u="${u.type}">
+        <b>${Sim.UNITS[u.type].name}</b><span class="pn">${u.product ? Sim.P[u.product].name : '—'}</span>
+        <span class="lv">ระดับ ${u.level}${u.type === 'sales' ? ` · ฿${u.price}` : ''}${'cap' in Sim.UNITS[u.type] ? ` · ${fmt(u.last)}/วัน` : ''}</span></button>`
+    : `<button class="slot empty${i === ui.slot ? ' sel' : ''}" data-slot="${i}" ${mine ? '' : 'disabled'} aria-label="ช่องว่าง">+</button>`).join('');
+  const inv = Object.entries(f.inv).filter(([, v]) => v.qty >= 1);
+  const last = f.last ? f.last.rev - f.last.cost : null;
+  $('#side').innerHTML = `
+    <div class="ph"><h2><span class="dotc" style="background:var(${COLOR[f.owner]})"></span>${F.name} #${f.id}</h2><span class="hint">${esc(owner.name)} · ทำเล ${Math.round(Sim.firmValue(f) * 100)}%</span></div>
+    <div class="kv" style="margin-bottom:10px">
+      <div><span>รายได้เดือนนี้</span><b>${baht(f.mtd.rev)}</b></div>
+      <div><span>ค่าใช้จ่ายเดือนนี้</span><b>${baht(f.mtd.cost)}</b></div>
+      <div><span>กำไรเดือนก่อน</span><b class="${last == null ? '' : last >= 0 ? 'pos' : 'neg'}">${last == null ? '—' : signed(last)}</b></div>
+    </div>
+    <div class="grid9">${slots}</div>
+    ${mine ? renderCfg(f) : '<div class="note" style="margin-top:10px">อาคารของคู่แข่ง ดูได้แต่จัดการไม่ได้</div>'}
+    ${inv.length ? `<div class="tw" style="margin-top:10px"><table><thead><tr><th>สินค้าในคลัง</th><th>จำนวน</th><th>คุณภาพ</th></tr></thead><tbody>
+      ${inv.map(([p, v]) => `<tr><td>${Sim.P[p].name}</td><td class="num">${fmt(v.qty)}</td><td class="num">${Math.round(v.q)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+    ${mine ? `<div class="actions" style="margin-top:10px"><button class="btn danger" data-act="sell">ขายอาคารนี้ +${baht(f.invested * Sim.CFG.sellBack)}</button><button class="btn" data-act="deselect">ปิด</button></div>` : '<div class="actions" style="margin-top:10px"><button class="btn" data-act="deselect">ปิด</button></div>'}`;
+}
+
+function quickSetups(f) {
+  const opts = {
+    store: Sim.CONSUMER.map(p => [`sell:${p}`, `ขาย${Sim.P[p].name}`]).concat(Sim.CONSUMER.map(p => [`ad:${p}`, `โฆษณา${Sim.P[p].name}`])),
+    factory: Sim.CONSUMER.map(p => [`make:${p}`, `ผลิต${Sim.P[p].name}`]),
+    farm: Sim.RAW.map(p => [`grow:${p}`, `${p === 'milk' ? 'เลี้ยงโคนม' : 'ปลูก' + Sim.P[p].name}`]),
+    lab: Sim.CONSUMER.map(p => [`research:${p}`, `วิจัย${Sim.P[p].name}`]),
+  }[f.type];
+  return `<div class="field"><label>ตั้งค่าด่วน (เติมหน่วยในช่องว่างให้อัตโนมัติ ช่องละ ฿${fmt(Sim.CFG.unitSetup)})</label>
+    <div class="actions">${opts.map(([k, l]) => `<button class="btn" data-tpl="${k}">${l}</button>`).join('')}</div></div>`;
+}
+
+function renderCfg(f) {
+  const i = ui.slot, u = i == null ? null : f.units[i];
+  const c = you();
+  if (i == null) return `<div class="cfg">${quickSetups(f)}<div class="hint">หรือคลิกช่องในตาราง 3×3 เพื่อเพิ่มและตั้งค่าหน่วยทีละช่อง</div></div>`;
+  if (!u) return `<div class="cfg"><h3>เพิ่มหน่วยในช่อง ${i + 1}</h3>
+    <div class="actions">${Sim.FIRMS[f.type].units.map(t => `<button class="btn go" data-add="${t}" ${c.cash < Sim.CFG.unitSetup ? 'disabled' : ''}>${Sim.UNITS[t].name} ฿${fmt(Sim.CFG.unitSetup)}</button>`).join('')}</div>
+    ${quickSetups(f)}</div>`;
+  const prods = Sim.UNITS[u.type].products();
+  let extra = '';
+  if (u.type === 'purchase' && u.product) {
+    const srcs = Sim.sourcesFor(state, 'you', u.product).filter(s => s.id !== f.id);
+    extra = `<div class="field"><label for="u-src">ซื้อจาก</label><select id="u-src">
+      <option value="port" ${u.src === 'port' ? 'selected' : ''}>คลังนำเข้า · ฿${Sim.portPrice(state, u.product, c).toFixed(1)} · คุณภาพ ${Sim.portQ(u.product, c)}</option>
+      ${srcs.map(s => `<option value="${s.id}" ${u.src === s.id ? 'selected' : ''}>${Sim.FIRMS[s.type].name} #${s.id} ของคุณ (ไม่มีค่าซื้อ) · คุณภาพ ${Math.round(s.inv[u.product]?.q || 0)}</option>`).join('')}
+    </select></div>`;
+  }
+  if (u.type === 'sales' && u.product) {
+    const p = u.product, r = Sim.rating(state, f, u, p), inv = f.inv[p];
+    const rivals = state.firms.filter(g => g.owner !== 'you' && g.type === 'store').flatMap(g => g.units.filter(x => x && x.type === 'sales' && x.product === p).map(x => ({ g, x })));
+    const best = rivals.sort((a, b) => Sim.rating(state, b.g, b.x, p) - Sim.rating(state, a.g, a.x, p))[0];
+    extra = `<div class="row2"><div class="field"><label for="u-price">ราคาขาย (อ้างอิงตลาด ฿${Sim.P[p].ref})</label><input type="number" id="u-price" min="1" step="1" value="${u.price}"></div>
+      <div class="field"><label>คะแนนรวมของสินค้า</label><b class="num" style="font-size:1.1rem;padding-top:4px">${Math.round(r)}/100</b></div></div>
+      <div class="note">คุณภาพ ${Math.round(inv?.q || 0)} · แบรนด์ ${Math.round(c.brand[p])} · ความคุ้มราคา ${Math.round(Sim.priceScore(p, u.price))}
+      ${best ? `<br>คู่แข่งที่ดีที่สุด: ${esc(Sim.comp(state, best.g.owner).name)} ฿${best.x.price} คะแนน ${Math.round(Sim.rating(state, best.g, best.x, p))}` : ''}</div>`;
+  }
+  if (u.type === 'make' && u.product) extra = `<div class="note">สูตร: ${Object.entries(Sim.P[u.product].recipe).map(([k, n]) => `${Sim.P[k].name} ×${n}`).join(' + ')} → ${Sim.P[u.product].name} ×1<br>คุณภาพ = ครึ่งหนึ่งจากวัตถุดิบ + ครึ่งหนึ่งจากเทคโนโลยี (ตอนนี้ ${Math.round(c.tech[u.product])})</div>`;
+  if ((u.type === 'make' || u.type === 'grow') && u.product) extra += `<div class="actions"><button class="btn go" data-act="link">ให้${u.type === 'make' ? 'ร้านค้าปลีก' : 'โรงงานและร้าน'}ทุกแห่งที่ซื้อ${Sim.P[u.product].name} มาซื้อจากที่นี่</button></div>`;
+  if (u.type === 'grow') extra = `<div class="note">ผลผลิตคุณภาพ ${30 + 5 * u.level} (สูงขึ้นตามระดับ)</div>` + extra;
+  if (u.type === 'ad' && u.product) extra = `<div class="note">ใช้งบ ${baht(Sim.unitDaily(u))}/วัน · แบรนด์${Sim.P[u.product].name}ของคุณ ${Math.round(c.brand[u.product])}/100</div>`;
+  if (u.type === 'research' && u.product) extra = `<div class="note">ใช้งบ ${baht(Sim.unitDaily(u))}/วัน · เทคโนโลยี${Sim.P[u.product].name} ${c.tech[u.product].toFixed(1)}/100</div>`;
+  const upCost = Sim.CFG.upgrade * u.level;
+  return `<div class="cfg">
+    <div class="ph" style="margin:0"><h3>หน่วย${Sim.UNITS[u.type].name} · ระดับ ${u.level}</h3><span class="hint">${'cap' in Sim.UNITS[u.type] ? `กำลัง ${fmt(Sim.unitCap(u))}/วัน · ` : ''}ค่าใช้จ่าย ${baht(Sim.unitDaily(u))}/วัน</span></div>
+    <div class="field"><label for="u-prod">สินค้า</label><select id="u-prod"><option value="">— เลือกสินค้า —</option>${prods.map(p => `<option value="${p}" ${u.product === p ? 'selected' : ''}>${Sim.P[p].name}</option>`).join('')}</select></div>
+    ${extra}
+    ${u.warn ? `<div class="note bad">${u.warn}</div>` : ''}
+    <div class="actions"><button class="btn go" data-act="up" ${u.level >= Sim.CFG.maxLevel || c.cash < upCost ? 'disabled' : ''}>อัปเกรดเป็นระดับ ${u.level + 1} ${baht(upCost)}</button><button class="btn danger" data-act="rm">ลบหน่วย</button></div>
+  </div>`;
+}
+
+function renderOverview(f) {
+  const c = you();
+  const mine = state.firms.filter(g => g.owner === 'you');
+  const warn = mine.flatMap(g => g.units.map((u, i) => u && u.warn ? { g, u, i } : null).filter(Boolean)).slice(0, 6);
+  $('#side').innerHTML = `
+    ${f ? '<div class="note" style="margin-bottom:10px">คลังนำเข้า: ซื้อวัตถุดิบและสินค้าสำเร็จรูปได้ทุกชนิด ราคาคงที่แต่คุณภาพต่ำ</div>' : ''}
+    <div class="ph"><h2>บริษัทของคุณ</h2><span class="hint">${mine.length} อาคาร</span></div>
+    <div class="kv">
+      <div><span>เงินสด</span><b>${baht(c.cash)}</b></div>
+      <div><span>หนี้ธนาคาร</span><b>${baht(c.loan)}</b></div>
+      <div><span>มูลค่าบริษัท</span><b>${baht(Sim.netWorth(state, c))}</b></div>
+    </div>
+    <h3 style="margin:14px 0 6px">อาคารของคุณ</h3>
+    <div class="tw"><table><thead><tr><th>อาคาร</th><th>หน่วย</th><th>กำไรเดือนก่อน</th></tr></thead><tbody>
+      ${mine.map(g => { const l = g.last ? g.last.rev - g.last.cost : null; return `<tr><td><button class="btn" data-pick="${g.id}">${Sim.FIRMS[g.type].name} #${g.id}</button></td><td class="num">${g.units.filter(Boolean).length}/9</td><td class="num ${l == null ? '' : l >= 0 ? 'pos' : 'neg'}">${l == null ? '—' : signed(l)}</td></tr>`; }).join('')}
+    </tbody></table></div>
+    ${warn.length ? `<h3 style="margin:14px 0 6px">ต้องดูแล</h3>${warn.map(w => `<div class="note bad" style="margin-bottom:4px">${Sim.FIRMS[w.g.type].name} #${w.g.id} · ${Sim.UNITS[w.u.type].name}: ${w.u.warn}</div>`).join('')}` : ''}
+    <h3 style="margin:14px 0 6px">ห่วงโซ่อุปทานแบบ Capitalism</h3>
+    <div class="note">ฟาร์ม (ปลูก/เลี้ยง) → โรงงาน (จัดซื้อวัตถุดิบ → ผลิต) → ร้านค้าปลีก (จัดซื้อ → ขาย + โฆษณา) · ศูนย์วิจัยเพิ่มเทคโนโลยีให้สินค้าคุณภาพดีขึ้น</div>`;
+}
+
+// ---- bottom tabs ----
+function renderTab() {
+  document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === ui.tab));
+  const el = $('#tab'), c = you();
+  if (ui.tab === 'fin') {
+    const row = (l, a, b, neg) => `<tr><td>${l}</td><td class="num">${a == null ? '—' : (neg && a ? '−' : '') + fmt(a)}</td><td class="num">${b == null ? '—' : (neg && b ? '−' : '') + fmt(b)}</td></tr>`;
+    const m = c.mtd, L = c.last || {};
+    const net = x => x.sales - x.imports - x.staff - x.ads - x.rnd - x.interest;
+    el.innerHTML = `<div class="cols">
+      <div><div class="ph"><h3>งบกำไรขาดทุน</h3><span class="hint">บาท</span></div><div class="tw"><table>
+        <thead><tr><th></th><th>เดือนนี้ (ถึงวันนี้)</th><th>เดือนก่อน</th></tr></thead><tbody>
+        ${row('รายได้จากการขาย', m.sales, c.last ? L.sales : null)}
+        ${row('ซื้อสินค้านำเข้า', m.imports, c.last ? L.imports : null, 1)}
+        ${row('ค่าจ้างและค่าดำเนินงาน', m.staff, c.last ? L.staff : null, 1)}
+        ${row('ค่าโฆษณา', m.ads, c.last ? L.ads : null, 1)}
+        ${row('ค่าวิจัยและพัฒนา', m.rnd, c.last ? L.rnd : null, 1)}
+        ${row('ดอกเบี้ย', m.interest, c.last ? L.interest : null, 1)}
+        <tr><td><b>กำไรสุทธิ</b></td><td class="num ${net(m) >= 0 ? 'pos' : 'neg'}"><b>${signed(net(m))}</b></td><td class="num ${c.last ? (L.net >= 0 ? 'pos' : 'neg') : ''}"><b>${c.last ? signed(L.net) : '—'}</b></td></tr>
+        <tr><td class="muted">เงินลงทุนสร้างอาคาร/หน่วย</td><td class="num muted">${fmt(m.capex)}</td><td class="num muted">${c.last ? fmt(L.capex) : '—'}</td></tr>
+        </tbody></table></div>
+        <div class="ph" style="margin-top:12px"><h3>ธนาคาร</h3><span class="hint">ดอกเบี้ย 0.6%/เดือน · วงเงิน ฿10 ล้าน · หนี้ตอนนี้ ${baht(c.loan)}</span></div>
+        <div class="actions"><button class="btn" data-act="borrow">กู้ ฿1,000,000</button><button class="btn" data-act="repay" ${c.loan <= 0 ? 'disabled' : ''}>คืนหนี้ ฿1,000,000</button></div>
+      </div>
+      <div><div class="ph"><h3>มูลค่าบริษัทรายเดือน</h3><span class="hint">เทียบคู่แข่ง</span></div><canvas class="chart" id="chart"></canvas></div>
+    </div>`;
+    drawChart();
+  } else if (ui.tab === 'mkt') {
+    const ML = state.marketLast, MM = state.market;
+    el.innerHTML = `<div class="tw"><table><thead><tr><th>สินค้า</th><th>ความต้องการ/วัน</th><th>ราคาอ้างอิง</th><th>ส่วนแบ่งคุณ</th>${state.companies.slice(1).map(x => `<th>${esc(x.name)}</th>`).join('')}<th>เทคโนโลยีคุณ</th><th>แบรนด์คุณ</th></tr></thead><tbody>
+      ${Sim.CONSUMER.map(p => {
+        const src = ML[p].sold ? { m:ML[p], key:'soldLast' } : { m:MM[p], key:'sold' };
+        const sh = id => src.m.sold ? `${Math.round((Sim.comp(state, id)[src.key][p] || 0) / src.m.sold * 100)}%` : '—';
+        return `<tr><td>${Sim.P[p].name}</td><td class="num">${fmt(Sim.demand(state, p))}</td><td class="num">฿${Sim.P[p].ref}</td><td class="num"><b>${sh('you')}</b></td>${state.companies.slice(1).map(x => `<td class="num">${sh(x.id)}</td>`).join('')}<td class="num">${Math.round(c.tech[p])}</td><td class="num">${Math.round(c.brand[p])}</td></tr>`;
+      }).join('')}</tbody></table></div>
+      <p class="hint" style="margin:10px 0 0">ส่วนแบ่งคิดจากยอดขายเดือนก่อน (หรือเดือนนี้ถ้ายังไม่ครบเดือน) · ลูกค้าเลือกร้านจากคะแนนรวม = คุณภาพ + แบรนด์ + ความคุ้มราคา และทำเลของร้าน</p>
+      <div class="ph" style="margin-top:14px"><h3>ราคาวัตถุดิบที่คลังนำเข้า</h3></div>
+      <div class="tw"><table><thead><tr><th>สินค้า</th><th>ราคา</th><th>คุณภาพ</th><th>ใช้ผลิต</th></tr></thead><tbody>
+      ${[...Sim.RAW, ...Sim.CONSUMER].map(p => `<tr><td>${Sim.P[p].name}</td><td class="num">฿${Sim.portPrice(state, p, c).toFixed(2)}</td><td class="num">${Sim.P[p].q}</td><td>${Sim.CONSUMER.filter(x => Sim.P[x].recipe[p]).map(x => Sim.P[x].name).join(', ') || (Sim.P[p].kind === 'consumer' ? 'สินค้าสำเร็จรูป' : '')}</td></tr>`).join('')}
+      </tbody></table></div>`;
+  } else if (ui.tab === 'rank') {
+    const rows = state.companies.map(x => ({ x, nw: Sim.netWorth(state, x), n: state.firms.filter(f => f.owner === x.id).length })).sort((a, b) => b.nw - a.nw);
+    el.innerHTML = `<div class="tw"><table><thead><tr><th>อันดับ</th><th>บริษัท</th><th>มูลค่าบริษัท</th><th>เงินสด</th><th>อาคาร</th><th>กำไรเดือนก่อน</th></tr></thead><tbody>
+      ${rows.map((r, i) => `<tr><td class="num">${i + 1}</td><td style="text-align:left"><span class="dotc" style="background:var(${COLOR[r.x.id]})"></span>${esc(r.x.name)}</td><td class="num">${baht(r.nw)}</td><td class="num">${baht(r.x.cash)}</td><td class="num">${r.n}</td><td class="num ${r.x.last ? (r.x.last.net >= 0 ? 'pos' : 'neg') : ''}">${r.x.last ? signed(r.x.last.net) : '—'}</td></tr>`).join('')}
+      </tbody></table></div>
+      <p class="hint" style="margin:10px 0 0">ถูกดีกรุ๊ปขายถูกและจะตัดราคาเมื่อคุณแย่งลูกค้าได้มาก · ลูน่า คอร์ปอเรชั่นนำเข้าสินค้าพรีเมียม คุณภาพสูง ราคาแพง แบรนด์แข็ง</p>`;
+  } else if (ui.tab === 'news') {
+    el.innerHTML = `<ol id="news">${state.news.map(n => `<li class="${n.tone}"><time>${Sim.dateLabel(n.day)}</time><span>${esc(n.text)}</span></li>`).join('')}</ol>`;
+  } else {
+    el.innerHTML = `<div class="cols"><div>
+      <h3>เป้าหมาย</h3><p>สร้างมูลค่าบริษัทให้ถึง <b>฿${million(Sim.CFG.goal)}</b> ภายใน 3 ปี โดยแข่งกับบริษัท AI สองราย</p>
+      <h3>หลักการแบบ Capitalism</h3>
+      <p>ทุกอาคารมีช่อง <b>3×3</b> สำหรับวาง "หน่วย" แต่ละหน่วยทำงานอย่างเดียว และอัปเกรดได้ถึงระดับ 9 ยิ่งระดับสูง กำลังผลิตหรือขายยิ่งมาก</p>
+      <ul><li><b>ร้านค้าปลีก</b>: จัดซื้อ → ขายปลีก, โฆษณา</li><li><b>โรงงาน</b>: จัดซื้อวัตถุดิบ → ผลิต (ต้องอยู่นอกใจกลางเมือง)</li><li><b>ฟาร์ม</b>: ปลูกพืช/เลี้ยงสัตว์ (เฉพาะเขตชนบท)</li><li><b>ศูนย์วิจัย</b>: เพิ่มเทคโนโลยี ทำให้สินค้าที่ผลิตเองมีคุณภาพสูงขึ้น</li></ul>
+    </div><div>
+      <h3>เคล็ดลับ</h3>
+      <ul><li>เริ่มจากซื้อของนำเข้ามาขาย กำไรน้อยแต่ปลอดภัย</li><li>สร้างโรงงานผลิตเอง ต้นทุนจะถูกกว่าซื้อสินค้าสำเร็จรูปเกือบครึ่ง</li><li>สร้างฟาร์มส่งวัตถุดิบให้โรงงาน ต้นทุนต่ำลงอีกและคุมคุณภาพได้</li><li>หน่วยที่มีจุดแดงบนแผนที่ต้องดูแล เช่น วัตถุดิบไม่พอหรือขายเต็มกำลัง</li><li>ร้านในทำเลดี (ใจกลางเมือง) ดึงลูกค้าได้มากกว่า</li><li>เกมบันทึกอัตโนมัติในเบราว์เซอร์นี้</li></ul>
+      <div class="actions"><button class="btn danger" data-act="newgame">เริ่มเกมใหม่</button></div>
+    </div></div>`;
+  }
+}
+
+function drawChart() {
+  const c = $('#chart'); if (!c) return;
+  const w = c.clientWidth, h = c.clientHeight, dpr = window.devicePixelRatio || 1; if (!w) return;
+  c.width = w * dpr; c.height = h * dpr;
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const Hs = state.history, N = Sim.CFG.days, G = Sim.CFG.goal;
+  const vals = Hs.flatMap(p => p.nw);
+  const lo = Math.min(0, ...vals), hi = Math.max(G, ...vals) * 1.05;
+  const st = [2e6, 5e6, 1e7, 2e7, 5e7].find(s => (hi - lo) / s <= 6) || 1e8;
+  const L = 40, R = 8, T = 10, B = 22;
+  const x = d => L + (w - L - R) * d / N, y = v => T + (h - T - B) * (1 - (v - lo) / (hi - lo));
+  g.font = '11px "IBM Plex Mono", monospace'; g.textBaseline = 'middle';
+  for (let v = Math.ceil(lo / st) * st; v <= hi; v += st) {
+    g.strokeStyle = css('--line'); g.lineWidth = 1; g.beginPath(); g.moveTo(L, y(v)); g.lineTo(w - R, y(v)); g.stroke();
+    g.fillStyle = css('--muted'); g.textAlign = 'right'; g.fillText(v / 1e6 + 'M', L - 5, y(v));
+  }
+  g.textAlign = 'center';
+  for (let yr = 0; yr <= 3; yr++) g.fillText(yr < 3 ? `${String(Sim.CFG.startYear + 543 + yr).slice(2)}` : 'จบ', Math.min(Math.max(x(yr * 365), L + 10), w - R - 12), h - 9);
+  g.setLineDash([4, 4]); g.strokeStyle = css('--you'); g.globalAlpha = .5; g.beginPath(); g.moveTo(L, y(G)); g.lineTo(w - R, y(G)); g.stroke(); g.setLineDash([]); g.globalAlpha = 1;
+  state.companies.forEach((co, i) => {
+    g.strokeStyle = css(COLOR[co.id]); g.lineWidth = co.id === 'you' ? 2.5 : 1.5; g.beginPath();
+    Hs.forEach((p, k) => k ? g.lineTo(x(p.day), y(p.nw[i])) : g.moveTo(x(p.day), y(p.nw[i]))); g.stroke();
+    const e = Hs[Hs.length - 1]; g.fillStyle = g.strokeStyle; g.beginPath(); g.arc(x(e.day), y(e.nw[i]), 3, 0, 7); g.fill();
+  });
+}
+
+// ---- loop ----
+function panelBusy() { const a = document.activeElement; return a && (a.tagName === 'SELECT' || a.tagName === 'INPUT') && a.closest('#side, #tab'); }
+function renderAll() { renderTop(); renderTools(); drawMap(); renderSide(); renderTab(); }
+function changed() { renderAll(); save(); }
+function setSpeed(s) {
+  ui.speed = state.over ? 0 : s; clearInterval(timer); timer = null;
+  if (ui.speed) timer = setInterval(() => {
+    const before = state.day;
+    Sim.tick(state);
+    renderTop(); drawMap();
+    const monthTurned = Sim.dateOf(state.day).getUTCDate() === 1;
+    if (!panelBusy() && (monthTurned || state.day % 3 === 0)) { renderSide(); if (ui.tab !== 'help') renderTab(); }
+    if (monthTurned) { save(); const l = you().last; if (l) toast(`ปิดงบ ${Sim.monthLabel(before)}: ${l.net >= 0 ? 'กำไร' : 'ขาดทุน'} ${signed(l.net)}`); }
+    if (state.over) { setSpeed(0); save(); showOver(); renderAll(); }
+  }, SPEED_MS[ui.speed]);
+  renderTop();
+}
+let tt; function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2600); }
+function showOver() {
+  if (!state.over) return;
+  const nw = Sim.netWorth(state, you());
+  const [t, b] = { win:['คุณคือเจ้าสัวแห่งเชียงใหม่', `มูลค่าบริษัทถึง ${baht(nw)} เมื่อ ${Sim.dateLabel(state.day)}`],
+    bankrupt:['ล้มละลาย', 'เงินสดติดลบเกินวงเงินกู้ ธนาคารยึดกิจการ'],
+    timeup:['ครบ 3 ปี', `มูลค่าบริษัทสุดท้าย ${baht(nw)} (${Math.round(nw / Sim.CFG.goal * 100)}% ของเป้า)`] }[state.over.kind];
+  $('#ov-t').textContent = t; $('#ov-b').textContent = b; $('#overlay').hidden = false;
+}
+function newGame() { setSpeed(0); state = Sim.newGame(); ui.sel = null; ui.slot = null; ui.build = null; $('#overlay').hidden = true; changed(); toast('เริ่มเกมใหม่แล้ว'); }
+
+function init() {
+  document.querySelector('.speed').onclick = e => { const b = e.target.closest('button'); if (b) setSpeed(+b.dataset.speed); };
+  $('#tools').onclick = e => { const b = e.target.closest('[data-build]'); if (!b) return; ui.build = b.dataset.build || null; ui.hover = null; renderTools(); drawMap(); };
+  map.addEventListener('mousemove', showTip);
+  map.addEventListener('mouseleave', () => { $('#tip').hidden = true; ui.hover = null; drawMap(); });
+  map.addEventListener('click', e => {
+    const t = tileFrom(e);
+    if (ui.build) {
+      const x = Math.min(t.x, Sim.W - 2), y = Math.min(t.y, Sim.H - 2);
+      const bad = Sim.canBuild(state, ui.build, x, y);
+      if (bad) return toast(bad);
+      const cost = Sim.buildCost(ui.build, x, y);
+      if (you().cash < cost) return toast(`เงินไม่พอ ต้องใช้ ${baht(cost)}`);
+      const f = Sim.build(state, ui.build, x, y);
+      ui.build = null; ui.sel = f.id; ui.slot = null; changed(); toast(`สร้าง${Sim.FIRMS[f.type].name}แล้ว เลือก "ตั้งค่าด่วน" หรือเพิ่มหน่วยในช่อง 3×3`);
+      return;
+    }
+    const f = Sim.firmAt(state, t.x, t.y);
+    ui.sel = f ? f.id : null; ui.slot = null; renderSide(); drawMap();
+  });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && ui.build) { ui.build = null; renderTools(); drawMap(); } });
+  $('#side').addEventListener('click', e => {
+    const f = selFirm(), b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.pick) { ui.sel = +b.dataset.pick; ui.slot = null; renderSide(); drawMap(); return; }
+    if (b.dataset.slot != null) { ui.slot = ui.slot === +b.dataset.slot ? null : +b.dataset.slot; renderSide(); return; }
+    if (b.dataset.add) { if (Sim.addUnit(state, f, ui.slot, b.dataset.add)) changed(); return; }
+    if (b.dataset.tpl) { const [k, p] = b.dataset.tpl.split(':'); const err = Sim.template(state, f, k, p); if (err) toast(err); else { ui.slot = null; changed(); } return; }
+    const act = b.dataset.act;
+    if (act === 'up' && Sim.upgradeUnit(state, f, ui.slot)) changed();
+    if (act === 'rm' && Sim.removeUnit(state, f, ui.slot)) changed();
+    if (act === 'link') { const n = Sim.linkStores(state, f, f.units[ui.slot].product); toast(n ? `เปลี่ยนแหล่งซื้อแล้ว ${n} หน่วย` : 'ยังไม่มีหน่วยจัดซื้อสินค้านี้ในอาคารอื่น'); changed(); }
+    if (act === 'deselect') { ui.sel = null; ui.slot = null; renderSide(); drawMap(); }
+    if (act === 'sell') {
+      if (b.dataset.armed) { Sim.sellFirm(state, f.id); ui.sel = null; ui.slot = null; changed(); }
+      else { b.dataset.armed = 1; b.textContent = 'กดอีกครั้งเพื่อยืนยันการขาย'; }
+    }
+  });
+  $('#side').addEventListener('change', e => {
+    const f = selFirm(), u = f && f.units[ui.slot]; if (!u) return;
+    if (e.target.id === 'u-prod') { u.product = e.target.value || null; if (u.type === 'sales' && u.product) u.price = Sim.P[u.product].ref; u.src = 'port'; }
+    if (e.target.id === 'u-src') u.src = e.target.value === 'port' ? 'port' : +e.target.value;
+    if (e.target.id === 'u-price') u.price = Math.max(1, Math.round(+e.target.value || 1));
+    e.target.blur(); changed();
+  });
+  $('#tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { ui.tab = b.dataset.tab; renderTab(); } };
+  $('#tab').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.act === 'borrow' && Sim.borrow(state, 1e6)) changed();
+    if (b.dataset.act === 'repay' && Sim.repay(state, 1e6)) changed();
+    if (b.dataset.act === 'newgame') { if (b.dataset.armed) newGame(); else { b.dataset.armed = 1; b.textContent = 'กดอีกครั้งเพื่อยืนยัน'; } }
+  });
+  $('#ov-new').onclick = newGame;
+  $('#ov-close').onclick = () => { $('#overlay').hidden = true; };
+  const redraw = () => { sizeMap(); drawMap(); drawChart(); };
+  addEventListener('resize', redraw);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw);
+  new MutationObserver(redraw).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
+  if (document.fonts) document.fonts.ready.then(redraw);
+  sizeMap(); renderAll(); showOver();
+}
+
+window.claude?.hot?.snapshot?.(() => ({ state, ui: { ...ui, speed:0 } }));
+const start = data => {
+  state = data?.state || load() || Sim.newGame();
+  if (data?.ui) ui = { ...ui, ...data.ui, speed:0 };
+  init();
+};
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
