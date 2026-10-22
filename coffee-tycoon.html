@@ -1,0 +1,780 @@
+<title>เจ้าพ่อกาแฟ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+<style>
+  /* Layout: sticky ledger bar on top; left = city map + decisions, right = monthly receipt, chart, shares, news */
+  :root {
+    --bg:#edf0ea; --surface:#fafbf8; --surface-2:#f1f4ee; --paper:#fffef9;
+    --ink:#17201b; --ink-2:#47524b; --muted:#78837c; --line:#d6ddd5;
+    --you:#1d7449; --you-tint:#1d74491f; --cheap:#b97a0c; --premium:#7d3d8f;
+    --good:#1d7449; --bad:#b3261e; --warn:#a86a00;
+    --map:#dfe6da; --moat:#9fb9c9;
+    --display:"Chakra Petch","IBM Plex Sans Thai",system-ui,sans-serif;
+    --body:"IBM Plex Sans Thai",system-ui,sans-serif;
+    --mono:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#111512; --surface:#191e1b; --surface-2:#202622; --paper:#1d2320;
+      --ink:#e6ece7; --ink-2:#b2bdb5; --muted:#7e8a82; --line:#2c342f;
+      --you:#4cc38a; --you-tint:#4cc38a24; --cheap:#e2a83a; --premium:#c58ad6;
+      --good:#4cc38a; --bad:#ff8a80; --warn:#e2a83a;
+      --map:#1c2420; --moat:#35505e;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#111512; --surface:#191e1b; --surface-2:#202622; --paper:#1d2320;
+    --ink:#e6ece7; --ink-2:#b2bdb5; --muted:#7e8a82; --line:#2c342f;
+    --you:#4cc38a; --you-tint:#4cc38a24; --cheap:#e2a83a; --premium:#c58ad6;
+    --good:#4cc38a; --bad:#ff8a80; --warn:#e2a83a;
+    --map:#1c2420; --moat:#35505e;
+    color-scheme: dark;
+  }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { background:var(--bg); color:var(--ink); font:15px/1.55 var(--body); }
+  body::before { content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--surface); }
+  button { font:inherit; color:inherit; cursor:pointer; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--you); outline-offset:2px; }
+  .num { font-family:var(--mono); font-variant-numeric:tabular-nums; }
+
+  /* top ledger bar */
+  .top { position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--surface); border-bottom:1px solid var(--line);
+    padding-block:10px; padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); }
+  .top-in { max-width:1180px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:center; gap:10px 22px; }
+  .logo { font-family:var(--display); font-weight:700; font-size:1.45rem; letter-spacing:.01em; line-height:1; }
+  .logo small { display:block; font-family:var(--body); font-weight:500; font-size:.72rem; color:var(--muted); letter-spacing:.06em; margin-top:4px; }
+  .stats { display:flex; flex-wrap:wrap; gap:6px 22px; flex:1; min-width:0; }
+  .stat { display:flex; flex-direction:column; min-width:0; }
+  .stat span { font-size:.7rem; color:var(--muted); letter-spacing:.05em; }
+  .stat b { font-family:var(--mono); font-weight:600; font-size:1.02rem; font-variant-numeric:tabular-nums; }
+  .goal { min-width:180px; }
+  .goalbar { display:block; height:5px; border-radius:3px; background:var(--surface-2); border:1px solid var(--line); margin-top:4px; overflow:hidden; }
+  .goalbar i { display:block; height:100%; background:var(--you); width:0; transition:width .4s; }
+  .primary { background:var(--ink); color:var(--surface); border:0; border-radius:10px; padding:11px 18px; font-family:var(--display); font-weight:600; font-size:1rem; white-space:nowrap; }
+  .primary:hover { background:var(--you); }
+  .primary:disabled { opacity:.45; cursor:not-allowed; }
+  @media (max-width:700px) {
+    .top { position:static; }
+    .stats { flex-basis:100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 14px; }
+    .goal { min-width:0; }
+    .top .primary { position:fixed; z-index:6; right:max(16px,env(safe-area-inset-right,0px)); bottom:calc(16px + env(safe-area-inset-bottom,0px)); box-shadow:0 4px 14px rgb(0 0 0 / .25); }
+  }
+
+  .wrap { max-width:1180px; margin:0 auto; padding-block:16px 48px; padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); }
+  .intro { color:var(--ink-2); margin:0 0 14px; max-width:75ch; }
+  .layout { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:16px; align-items:start; }
+  @media (max-width:900px) { .layout { grid-template-columns:minmax(0,1fr); } }
+  .col { display:grid; gap:16px; min-width:0; }
+  .panel { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; min-width:0; }
+  .panel h2 { font-family:var(--display); font-weight:600; font-size:1.05rem; margin:0; text-wrap:balance; }
+  .ph { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:6px 12px; margin-bottom:12px; }
+  .hint { font-size:.8rem; color:var(--muted); }
+
+  .legend { display:flex; flex-wrap:wrap; gap:4px 12px; font-size:.78rem; color:var(--ink-2); }
+  .legend span { display:inline-flex; align-items:center; gap:5px; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:3px; }
+  .dot.you { background:var(--you); } .dot.thukdee { background:var(--cheap); } .dot.luna { background:var(--premium); }
+
+  /* city map: tiles placed roughly where the districts sit in Chiang Mai */
+  .map { display:grid; gap:8px; padding:8px; border-radius:10px; background:var(--map);
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    grid-template-areas:"cmu santitham santitham" "nimman oldcity bazaar" "airport oldcity bazaar"; }
+  @media (max-width:560px) { .map { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-areas:"cmu santitham" "nimman oldcity" "airport bazaar"; } }
+  .tile { text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:4px; min-width:0; transition:border-color .15s, transform .15s; }
+  .tile:hover { border-color:var(--ink-2); }
+  .tile.sel { border-color:var(--you); box-shadow:0 0 0 2px var(--you-tint); }
+  .tile.moat { border:3px double var(--moat); }
+  .tile .tn { font-family:var(--display); font-weight:600; font-size:.98rem; line-height:1.2; }
+  .tile .tt { font-size:.72rem; color:var(--muted); }
+  .tile .dots { display:flex; flex-wrap:wrap; gap:3px; min-height:10px; margin-top:auto; padding-top:4px; }
+  .tile .tm { display:flex; justify-content:space-between; gap:6px; font-size:.74rem; color:var(--ink-2); }
+  .tag { display:inline-block; font-size:.68rem; padding:0 6px; border-radius:999px; border:1px solid var(--line); color:var(--ink-2); }
+  .tag.hot { border-color:var(--good); color:var(--good); }
+  .tag.cold { border-color:var(--bad); color:var(--bad); }
+
+  .district { margin-top:12px; display:grid; gap:10px; }
+  .dhead { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:6px 12px; }
+  .dhead h3 { font-family:var(--display); font-size:1.15rem; margin:0; }
+  .kv { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
+  .kv div { background:var(--surface-2); border-radius:8px; padding:8px 10px; min-width:0; }
+  .kv span { display:block; font-size:.72rem; color:var(--muted); }
+  .kv b { font-family:var(--mono); font-weight:600; font-variant-numeric:tabular-nums; }
+  .be { font-size:.84rem; color:var(--ink-2); }
+  .bebar { position:relative; height:8px; border-radius:4px; background:var(--surface-2); border:1px solid var(--line); margin-top:6px; }
+  .bebar i { position:absolute; inset:0 auto 0 0; border-radius:4px; background:var(--you); opacity:.75; }
+  .bebar em { position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--ink); }
+  .actions { display:flex; flex-wrap:wrap; gap:8px; }
+  .btn { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:7px 12px; font-size:.88rem; }
+  .btn:hover:not(:disabled) { border-color:var(--ink-2); }
+  .btn.go { border-color:var(--you); color:var(--you); font-weight:600; }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+
+  /* decisions */
+  .prod { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 12px; padding:10px 0; border-top:1px solid var(--line); }
+  .prod:first-of-type { border-top:0; padding-top:0; }
+  .prod label { font-weight:600; }
+  .prod .price { font-family:var(--mono); font-weight:600; font-size:1.05rem; text-align:right; }
+  .prod input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--you); }
+  .prod .meta { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:4px 14px; font-size:.78rem; color:var(--muted); }
+  .seg { display:flex; gap:4px; flex-wrap:wrap; }
+  .seg button { min-width:42px; padding:6px 0; border:1px solid var(--line); background:var(--surface); border-radius:8px; font-family:var(--mono); }
+  .seg button[aria-pressed="true"] { background:var(--you); border-color:var(--you); color:var(--surface); }
+  .row { display:grid; gap:6px; padding:12px 0 0; margin-top:12px; border-top:1px solid var(--line); }
+  .row .rl { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .row .rl b { font-family:var(--mono); }
+  .row input[type=range] { width:100%; accent-color:var(--you); }
+
+  /* thermal receipt */
+  .receipt { background:var(--paper); color:var(--ink); font-family:var(--mono); font-size:.84rem; padding:18px 18px 22px; border:1px solid var(--line); border-radius:4px;
+    -webkit-mask: radial-gradient(circle 6px at 50% 100%, transparent 98%, #000) 0 0 / 14px 100% repeat-x; mask: radial-gradient(circle 6px at 50% 100%, transparent 98%, #000) 0 0 / 14px 100% repeat-x; min-width:0; }
+  .receipt h2 { font-family:var(--display); font-weight:700; font-size:1.1rem; text-align:center; margin:0; }
+  .receipt .sub { text-align:center; color:var(--muted); font-size:.76rem; margin:2px 0 10px; }
+  .receipt .ln { display:flex; justify-content:space-between; gap:10px; }
+  .receipt .ln span:first-child { min-width:0; overflow-wrap:anywhere; }
+  .receipt .ln span:last-child { white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .receipt .ind { padding-left:10px; color:var(--ink-2); }
+  .receipt hr { border:0; border-top:1px dashed var(--muted); margin:8px 0; }
+  .receipt hr.dbl { border-top:3px double var(--ink); }
+  .receipt .total { font-weight:600; font-size:1rem; }
+  .pos { color:var(--good); } .neg { color:var(--bad); }
+  .receipt .note { color:var(--muted); font-size:.74rem; margin-top:8px; text-align:center; }
+  .receipt .lastm { background:var(--surface-2); border-radius:4px; padding:6px 8px; margin-bottom:10px; font-size:.78rem; }
+
+  canvas { display:block; width:100%; height:200px; }
+
+  .share { display:grid; gap:8px; }
+  .share .sl { display:flex; justify-content:space-between; font-size:.8rem; color:var(--ink-2); }
+  .stack { display:flex; height:14px; border-radius:4px; overflow:hidden; background:var(--surface-2); gap:2px; }
+  .stack i { display:block; height:100%; }
+  .stack .you { background:var(--you); } .stack .thukdee { background:var(--cheap); } .stack .luna { background:var(--premium); }
+
+  #news { list-style:none; margin:0; padding:0; display:grid; gap:8px; max-height:300px; overflow-y:auto; }
+  #news li { display:grid; grid-template-columns:auto minmax(0,1fr); gap:10px; font-size:.86rem; }
+  #news time { font-family:var(--mono); font-size:.72rem; color:var(--muted); padding-top:2px; white-space:nowrap; }
+  #news li.good span { color:var(--good); } #news li.bad span { color:var(--bad); }
+
+  .foot { margin-top:16px; display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; align-items:center; color:var(--muted); font-size:.8rem; }
+
+  .toast { position:fixed; left:50%; bottom:calc(16px + env(safe-area-inset-bottom,0px)); transform:translate(-50%,20px); opacity:0; pointer-events:none;
+    background:var(--ink); color:var(--surface); padding:10px 16px; border-radius:10px; font-size:.9rem; max-width:calc(100% - 32px); transition:opacity .25s, transform .25s; z-index:20; }
+  .toast.show { opacity:1; transform:translate(-50%,0); }
+
+  .overlay { position:fixed; inset:0; background:rgb(0 0 0 / .45); display:grid; place-items:center; z-index:30; padding:16px; }
+  .modal { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:24px; max-width:440px; width:100%; display:grid; gap:12px; }
+  .modal h2 { font-family:var(--display); font-size:1.6rem; margin:0; }
+  .modal p { margin:0; color:var(--ink-2); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div class="logo">เจ้าพ่อกาแฟ<small>เชียงใหม่ · ต้นแบบเกมจำลองธุรกิจ</small></div>
+    <div class="stats">
+      <div class="stat"><span>เดือน</span><b id="s-month"></b></div>
+      <div class="stat"><span>เงินสด</span><b id="s-cash"></b></div>
+      <div class="stat"><span>หนี้ธนาคาร</span><b id="s-loan"></b></div>
+      <div class="stat goal"><span id="s-goal-l">มูลค่าสุทธิ</span><b id="s-nw"></b><i class="goalbar"><i id="s-goalbar"></i></i></div>
+    </div>
+    <button id="btn-next" class="primary">ปิดงบเดือนนี้ ▸</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <p class="intro">ตั้งราคา เลือกคุณภาพ ใส่งบการตลาด และเปิดสาขาในย่านต่าง ๆ แล้วกด <b>ปิดงบเดือนนี้</b> แข่งกับ <span style="color:var(--cheap)">ถูกดีคาเฟ่</span> (สายราคาถูก) และ <span style="color:var(--premium)">ลูน่า โรสเตอร์</span> (สายพรีเมียม) ให้มูลค่าสุทธิถึง <b>฿3 ล้าน</b> ภายใน 36 เดือน</p>
+
+  <div class="layout">
+    <section class="col">
+      <div class="panel">
+        <div class="ph">
+          <h2>แผนที่ตลาด</h2>
+          <div class="legend"><span><i class="dot you"></i>คุณ</span><span><i class="dot thukdee"></i>ถูกดีคาเฟ่</span><span><i class="dot luna"></i>ลูน่า โรสเตอร์</span></div>
+        </div>
+        <div class="map" id="map"></div>
+        <div class="district" id="district"></div>
+      </div>
+
+      <div class="panel" id="decisions">
+        <div class="ph"><h2>การตัดสินใจประจำเดือน</h2><span class="hint">ใช้กับทุกสาขา</span></div>
+        <div id="prods"></div>
+        <div class="row">
+          <div class="rl"><span>ระดับคุณภาพ <span class="hint">เมล็ดดีขึ้น บาริสต้าเก่งขึ้น แต่ต้นทุนสูงขึ้น</span></span></div>
+          <div class="seg" id="quality"></div>
+          <div class="hint" id="quality-meta"></div>
+        </div>
+        <div class="row">
+          <div class="rl"><span>งบการตลาดต่อเดือน</span><b id="mkt-v"></b></div>
+          <input type="range" id="mkt" min="0" max="100000" step="5000" aria-label="งบการตลาดต่อเดือน">
+          <div class="hint" id="mkt-meta"></div>
+        </div>
+        <div class="row">
+          <div class="rl"><span>เงินกู้ธนาคาร <span class="hint">ดอกเบี้ย 0.8% ต่อเดือน · วงเงิน ฿1.5 ล้าน</span></span></div>
+          <div class="actions">
+            <button class="btn" id="borrow">กู้เพิ่ม ฿100,000</button>
+            <button class="btn" id="repay">คืนหนี้ ฿100,000</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="col">
+      <div class="receipt" id="receipt"></div>
+      <div class="panel">
+        <div class="ph"><h2>เงินสดและมูลค่าสุทธิ</h2><div class="legend"><span><i class="dot you"></i>มูลค่าสุทธิ</span><span><i class="dot" style="background:var(--ink-2)"></i>เงินสด</span></div></div>
+        <canvas id="chart" aria-label="กราฟเงินสดและมูลค่าสุทธิรายเดือน"></canvas>
+      </div>
+      <div class="panel">
+        <div class="ph"><h2>ส่วนแบ่งตลาดทั้งเมือง</h2><span class="hint">ประมาณการเดือนนี้</span></div>
+        <div class="share" id="shares"></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><h2>ข่าวธุรกิจ</h2></div>
+        <ol id="news"></ol>
+      </div>
+    </section>
+  </div>
+
+  <div class="foot">
+    <span>มูลค่าสุทธิ = เงินสด − หนี้ + มูลค่าซากสาขา (40% ของค่าเปิด)</span>
+    <button class="btn" id="newgame">เริ่มเกมใหม่</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ov-title">
+    <h2 id="ov-title"></h2>
+    <p id="ov-body"></p>
+    <div class="actions"><button class="primary" id="ov-new">เล่นใหม่</button><button class="btn" id="ov-close">ดูผลงาน</button></div>
+  </div>
+</div>
+
+<script>
+/*SIM-START*/
+// ---- Simulation: pure game logic, no DOM. A future three.js map only needs to read `state`. ----
+const Sim = (() => {
+  const CFG = { cap:4500, openCost:300000, salvage:.4, staff:36000, util:8000, interest:.008,
+    loanLimit:1500000, goal:3000000, months:36, startYear:2027, elast:3, outside:1.2, maxPerDistrict:4 };
+
+  const PRODUCTS = [
+    { id:'coffee', name:'กาแฟเย็น',  unit:'แก้ว', cost:18, ref:55, share:.5, cold:true },
+    { id:'tea',    name:'ชาไทย',     unit:'แก้ว', cost:12, ref:45, share:.3, cold:true },
+    { id:'toast',  name:'ขนมปังปิ้ง', unit:'จาน',  cost:10, ref:35, share:.2, cold:false },
+  ];
+  // traffic = potential units per month in the district; wealth scales the price people accept
+  const DISTRICTS = [
+    { id:'cmu',       name:'หลัง มช.',      traffic:22500, rent:18000, wealth:.75, kind:'uni',     label:'ย่านนักศึกษา' },
+    { id:'santitham', name:'สันติธรรม',     traffic:13500, rent:15000, wealth:.95, kind:'local',   label:'ย่านคนทำงาน' },
+    { id:'nimman',    name:'นิมมานเหมินท์', traffic:27000, rent:45000, wealth:1.3, kind:'tourist', label:'ย่านฮิป' },
+    { id:'oldcity',   name:'คูเมือง',       traffic:20000, rent:30000, wealth:1.1, kind:'tourist', label:'ย่านเมืองเก่า' },
+    { id:'bazaar',    name:'ไนท์บาซาร์',    traffic:18000, rent:35000, wealth:1.15, kind:'tourist', label:'ย่านท่องเที่ยว' },
+    { id:'airport',   name:'สนามบิน',       traffic:12500, rent:60000, wealth:1.6, kind:'tourist', label:'ย่านสนามบิน' },
+  ];
+  const TOURIST = [1.3,1.25,1.05,1.1,.9,.8,.8,.8,.8,.9,1.2,1.4]; // high season Nov–Feb, rainy Jun–Sep
+  const UNI     = [1,1,.9,.5,.6,1.1,1.1,1.1,1.1,.8,1.1,1];        // Thai semesters: break Apr–May
+  const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+  const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+  const sum = a => a.reduce((x,y) => x + y, 0);
+  const rngOf = state => () => {
+    let t = state.seed = (state.seed + 0x6D2B79F5) | 0;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+
+  const monthLabel = t => `${MONTHS[t % 12]} ${CFG.startYear + 543 + Math.floor(t / 12)}`;
+  const seller = (state, id) => state.sellers.find(s => s.id === id);
+  const branchCount = s => sum(Object.values(s.branches));
+  const netWorth = s => s.cash - s.loan + branchCount(s) * CFG.openCost * CFG.salvage;
+  const qualityFactor = lvl => .8 + .15 * lvl;
+  const brandFactor = b => .5 + b / 100;
+  const modMult = (state, kind, keys) => state.mods.filter(m => m.kind === kind && keys.includes(m.key)).reduce((a,m) => a * m.mult, 1);
+
+  function season(d, m) {
+    let k = 1;
+    if (d.kind === 'tourist') k *= TOURIST[m];
+    if (d.kind === 'uni') k *= UNI[m];
+    if (d.id === 'nimman') k = 1 + (k - 1) * .6; // locals keep Nimman busy year round
+    return k;
+  }
+  const unitCost = (state, s, p) => p.cost * modMult(state, 'cost', [p.id]) * (1 + .12 * (s.quality - 1));
+  const staffCost = (state, s) => (CFG.staff + 5000 * (s.quality - 1)) * state.salaryMult;
+  const branchFixed = (state, s, d) => d.rent + staffCost(state, s) + CFG.util;
+  const effPrice = (state, s, p) => s.prices[p.id] * modMult(state, 'price', [s.id]);
+  function marketSize(state, d, p, m) {
+    const hot = p.cold && m >= 2 && m <= 4 ? 1.15 : 1;
+    return d.traffic * p.share * season(d, m) * hot * modMult(state, 'traffic', ['all', d.id]);
+  }
+
+  // One month of demand. noise(d) lets the real month differ a little from the forecast.
+  function market(state, noise = () => 1) {
+    const m = state.t % 12;
+    const res = {};
+    for (const s of state.sellers) {
+      res[s.id] = { units:{}, rev:{}, revenue:0, cogs:0, rent:0, staff:0, util:0, lost:0, byD:{} };
+      for (const p of PRODUCTS) { res[s.id].units[p.id] = 0; res[s.id].rev[p.id] = 0; }
+    }
+    for (const d of DISTRICTS) {
+      const present = state.sellers.filter(s => (s.branches[d.id] || 0) > 0);
+      const nz = noise(d);
+      const want = {}; present.forEach(s => want[s.id] = {});
+      let size = 0;
+      for (const p of PRODUCTS) {
+        const M = marketSize(state, d, p, m) * nz; size += M;
+        const A = present.map(s => Math.pow(s.branches[d.id], .6) * qualityFactor(s.quality) * brandFactor(s.brand)
+          * Math.pow(p.ref * d.wealth / effPrice(state, s, p), CFG.elast));
+        const tot = sum(A) + CFG.outside;
+        present.forEach((s, i) => want[s.id][p.id] = M * A[i] / tot);
+      }
+      for (const s of present) {
+        const n = s.branches[d.id], r = res[s.id];
+        const total = sum(Object.values(want[s.id]));
+        const k = total > n * CFG.cap ? n * CFG.cap / total : 1;
+        let units = 0, rev = 0, cogs = 0;
+        for (const p of PRODUCTS) {
+          const u = Math.round(want[s.id][p.id] * k);
+          const pr = effPrice(state, s, p);
+          r.units[p.id] += u; r.rev[p.id] += u * pr;
+          units += u; rev += u * pr; cogs += u * unitCost(state, s, p);
+        }
+        const lost = Math.round(total - total * k);
+        const fixed = branchFixed(state, s, d) * n;
+        r.revenue += rev; r.cogs += cogs; r.lost += lost;
+        r.rent += d.rent * n; r.staff += staffCost(state, s) * n; r.util += CFG.util * n;
+        r.byD[d.id] = { units, rev, cogs, fixed, lost, profit: rev - cogs - fixed, share: units / size, size };
+      }
+      for (const s of state.sellers) if (!res[s.id].byD[d.id]) res[s.id].byD[d.id] = { units:0, rev:0, cogs:0, fixed:0, lost:0, profit:0, share:0, size };
+    }
+    for (const s of state.sellers) {
+      const r = res[s.id];
+      r.cogs = Math.round(r.cogs);
+      r.marketing = s.marketing;
+      r.interest = Math.round(s.loan * CFG.interest);
+      r.net = Math.round(r.revenue - r.cogs - r.rent - r.staff - r.util - r.marketing - r.interest);
+    }
+    return res;
+  }
+
+  function shares(res) {
+    const out = {};
+    for (const p of PRODUCTS) {
+      const tot = sum(Object.values(res).map(r => r.units[p.id]));
+      out[p.id] = Object.fromEntries(Object.entries(res).map(([id, r]) => [id, tot ? r.units[p.id] / tot : 0]));
+    }
+    return out;
+  }
+
+  // Units a single branch must sell per month to cover its own fixed costs, at the current product mix.
+  function breakEven(state, sid, did) {
+    const s = seller(state, sid), d = DISTRICTS.find(x => x.id === did);
+    const fixed = branchFixed(state, s, d);
+    const margin = sum(PRODUCTS.map(p => p.share * (effPrice(state, s, p) - unitCost(state, s, p))));
+    return { fixed, margin, units: margin > 0 ? Math.ceil(fixed / margin) : Infinity };
+  }
+
+  const news = (state, text, tone = 'info') => state.news.unshift({ t: state.t, text, tone });
+
+  const EVENTS = [
+    { w:3, text:'ราคาเมล็ดกาแฟโลกพุ่ง 25% ต้นทุนกาแฟเย็นแพงขึ้น 3 เดือน', tone:'bad',
+      fx: s => s.mods.push({ kind:'cost', key:'coffee', mult:1.25, left:3 }) },
+    { w:2, text:'นมข้นหวานขาดตลาด ต้นทุนกาแฟและชาไทยขึ้น 15% อีก 2 เดือน', tone:'bad',
+      fx: s => s.mods.push({ kind:'cost', key:'coffee', mult:1.15, left:2 }, { kind:'cost', key:'tea', mult:1.15, left:2 }) },
+    { w:3, when: m => m >= 1 && m <= 3, text:'ฝุ่น PM2.5 หนัก คนออกจากบ้านน้อยลงเดือนหน้า', tone:'bad',
+      fx: s => s.mods.push({ kind:'traffic', key:'all', mult:.82, left:1 }) },
+    { w:2, when: m => m >= 5 && m <= 8, text:'พายุฝนเข้าเชียงใหม่ ลูกค้าหน้าร้านลดลงเดือนหน้า', tone:'bad',
+      fx: s => s.mods.push({ kind:'traffic', key:'all', mult:.88, left:1 }) },
+    { w:2, ok: s => s.sellers[0].quality >= 3 && branchCount(s.sellers[0]) > 0, text:'คลิปรีวิวร้านคุณไวรัลบน TikTok แบรนด์ +15', tone:'good',
+      fx: s => { s.sellers[0].brand = clamp(s.sellers[0].brand + 15, 0, 100); } },
+    { w:2, ok: s => s.sellers[0].quality <= 1, text:'อินฟลูเอนเซอร์บ่นว่ากาแฟร้านคุณจืด แบรนด์ −10', tone:'bad',
+      fx: s => { s.sellers[0].brand = clamp(s.sellers[0].brand - 10, 0, 100); } },
+    { w:2, text:'ถูกดีคาเฟ่จัดโปรลด 15% ทุกเมนู 2 เดือน', tone:'bad',
+      fx: s => s.mods.push({ kind:'price', key:'thukdee', mult:.85, left:2 }) },
+    { w:1, text:'ลูน่า โรสเตอร์ ออกเมนูซิกเนเจอร์ใหม่ แบรนด์ลูน่า +10', tone:'bad',
+      fx: s => { const l = seller(s, 'luna'); l.brand = clamp(l.brand + 10, 0, 100); } },
+    { w:1, text:'รัฐบาลขึ้นค่าแรงขั้นต่ำ เงินเดือนพนักงานทุกร้าน +6%', tone:'bad',
+      fx: s => { s.salaryMult *= 1.06; } },
+    { w:2, text:'มีคอนเสิร์ตใหญ่ที่นิมมานเดือนหน้า คนแน่นย่าน +35%', tone:'good',
+      fx: s => s.mods.push({ kind:'traffic', key:'nimman', mult:1.35, left:1 }) },
+    { w:1, text:'สายการบินเปิดเส้นทางบินตรงใหม่ คนที่สนามบินเพิ่ม 25% อีก 3 เดือน', tone:'good',
+      fx: s => s.mods.push({ kind:'traffic', key:'airport', mult:1.25, left:3 }) },
+  ];
+  const SEASON_NEWS = {
+    2: 'หน้าร้อนมาแล้ว เครื่องดื่มเย็นขายดีขึ้น 15% ถึงพฤษภาคม',
+    3: 'สงกรานต์! นักท่องเที่ยวเพิ่ม แต่ มช. ปิดเทอม นักศึกษากลับบ้าน',
+    5: 'เปิดเทอมแล้ว นักศึกษากลับมาย่านหลัง มช. แต่หน้าฝนนักท่องเที่ยวน้อย',
+    10: 'ใกล้เทศกาลยี่เป็ง นักท่องเที่ยวเริ่มเข้าเมือง',
+    11: 'ไฮซีซั่นเต็มที่ ย่านท่องเที่ยวคึกคักที่สุดของปี',
+  };
+
+  function rollEvent(state, rng) {
+    const next = state.t % 12; // called after t++ → this is the coming month
+    if (SEASON_NEWS[next]) news(state, SEASON_NEWS[next]);
+    if (rng() > .45) return;
+    const pool = EVENTS.filter(e => (!e.when || e.when(next)) && (!e.ok || e.ok(state)));
+    let r = rng() * sum(pool.map(e => e.w));
+    const e = pool.find(e => (r -= e.w) < 0) || pool[0];
+    e.fx(state);
+    news(state, e.text, e.tone);
+  }
+
+  function rivals(state, res, rng) {
+    const you = state.sellers[0];
+    const sh = shares(res);
+    for (const s of state.sellers.slice(1)) {
+      const base = s.strat === 'cheap' ? .82 : 1.3;
+      for (const p of PRODUCTS) {
+        const target = p.ref * base;
+        if (s.strat === 'cheap' && you.prices[p.id] < s.prices[p.id] * 1.1 && sh[p.id].you > .3)
+          s.prices[p.id] = Math.max(Math.ceil(unitCost(state, s, p) * 1.3), Math.round(s.prices[p.id] * .95));
+        else s.prices[p.id] = Math.round(s.prices[p.id] + (target - s.prices[p.id]) * .3);
+      }
+      if (s.strat === 'premium') s.marketing = you.brand > s.brand - 5 ? Math.min(90000, s.marketing + 5000) : Math.max(40000, s.marketing - 5000);
+
+      const owned = DISTRICTS.filter(d => s.branches[d.id] > 0);
+      if (s.cash < 0 && owned.length) {
+        const worst = owned.sort((a, b) => res[s.id].byD[a.id].profit - res[s.id].byD[b.id].profit)[0];
+        s.branches[worst.id]--; s.cash += CFG.openCost * CFG.salvage;
+        news(state, `${s.name} ปิดสาขาที่${worst.name} เพราะขาดทุน`, 'good');
+      } else if (s.cash > CFG.openCost * 2.5 && rng() < .3) {
+        const m = (state.t + 1) % 12;
+        const fit = d => s.strat === 'cheap' ? 1 / d.wealth : d.wealth * d.wealth;
+        const pick = DISTRICTS.filter(d => (s.branches[d.id] || 0) < 3)
+          .map(d => ({ d, score: d.traffic * season(d, m) * fit(d) * (.8 + .4 * rng())
+            / (1 + sum(state.sellers.map(x => x.branches[d.id] || 0))) }))
+          .sort((a, b) => b.score - a.score)[0];
+        if (pick) {
+          s.branches[pick.d.id] = (s.branches[pick.d.id] || 0) + 1; s.cash -= CFG.openCost;
+          news(state, `${s.name} เปิดสาขาใหม่ที่${pick.d.name}`, 'bad');
+        }
+      }
+    }
+  }
+
+  function newGame(seed = Math.floor(Math.random() * 1e9)) {
+    const prices = k => Object.fromEntries(PRODUCTS.map(p => [p.id, Math.round(p.ref * k)]));
+    const state = {
+      v:1, seed, t:0, salaryMult:1, mods:[], news:[], history:[], last:null, over:null,
+      sellers:[
+        { id:'you', name:'ร้านของคุณ', cash:400000, loan:0, brand:15, quality:2, marketing:15000, prices:prices(1), branches:{ cmu:1 } },
+        { id:'thukdee', name:'ถูกดีคาเฟ่', strat:'cheap', cash:1200000, loan:0, brand:35, quality:1, marketing:15000, prices:prices(.82), branches:{ cmu:2, santitham:1, oldcity:1 } },
+        { id:'luna', name:'ลูน่า โรสเตอร์', strat:'premium', cash:1200000, loan:0, brand:40, quality:4, marketing:45000, prices:prices(1.3), branches:{ nimman:2, airport:1, oldcity:1 } },
+      ],
+    };
+    state.history.push({ t:0, cash:400000, nw:netWorth(state.sellers[0]), net:0 });
+    news(state, 'คุณมีร้านกาแฟสาขาแรกที่หลัง มช. กับเงินสด ฿400,000 ไนท์บาซาร์ยังไม่มีใครเปิดร้าน');
+    return state;
+  }
+
+  function step(state) {
+    if (state.over) return state;
+    const rng = rngOf(state);
+    const noise = {};
+    const res = market(state, d => noise[d.id] ??= .9 + .2 * rng());
+    for (const s of state.sellers) {
+      const r = res[s.id];
+      s.cash += r.net;
+      const wom = branchCount(s) > 0 && s.quality >= 3 ? (s.quality - 2) * .6 : 0; // word of mouth
+      s.brand = clamp(s.brand * .94 + 3 * Math.sqrt(s.marketing / 10000) + wom, 0, 100);
+    }
+    const you = state.sellers[0];
+    const r = res.you;
+    state.last = { t: state.t, you: r, shares: shares(res) };
+    news(state, `ปิดงบ ${monthLabel(state.t)}: ${r.net >= 0 ? 'กำไร' : 'ขาดทุน'} ฿${Math.abs(r.net).toLocaleString('th-TH')}`, r.net >= 0 ? 'good' : 'bad');
+    if (r.lost > 500) news(state, `ลูกค้าต่อคิวยาวจนเดินหนีไป ${r.lost.toLocaleString('th-TH')} ราย ลองเปิดสาขาเพิ่มหรือขึ้นราคา`, 'bad');
+
+    if (you.cash < 0) {
+      const need = Math.ceil(-you.cash / 10000) * 10000;
+      if (you.loan + need <= CFG.loanLimit) {
+        you.loan += need; you.cash += need;
+        news(state, `เงินสดติดลบ ธนาคารปล่อยกู้ฉุกเฉิน ฿${need.toLocaleString('th-TH')}`, 'bad');
+      } else state.over = { kind:'bankrupt' };
+    }
+    rivals(state, res, rng);
+    state.mods = state.mods.map(m => ({ ...m, left: m.left - 1 })).filter(m => m.left > 0);
+    state.t++;
+    rollEvent(state, rng);
+    const nw = netWorth(you);
+    state.history.push({ t: state.t, cash: you.cash, nw, net: r.net });
+    if (!state.over && nw >= CFG.goal) state.over = { kind:'win' };
+    else if (!state.over && state.t >= CFG.months) state.over = { kind:'timeup' };
+    return state;
+  }
+
+  function openBranch(state, did) {
+    const you = state.sellers[0];
+    if (state.over || you.cash < CFG.openCost || (you.branches[did] || 0) >= CFG.maxPerDistrict) return false;
+    you.cash -= CFG.openCost; you.branches[did] = (you.branches[did] || 0) + 1;
+    news(state, `คุณเปิดสาขาใหม่ที่${DISTRICTS.find(d => d.id === did).name}`, 'good');
+    return true;
+  }
+  function closeBranch(state, did) {
+    const you = state.sellers[0];
+    if (state.over || !(you.branches[did] > 0)) return false;
+    you.branches[did]--; you.cash += CFG.openCost * CFG.salvage;
+    news(state, `คุณปิดสาขาที่${DISTRICTS.find(d => d.id === did).name} ขายอุปกรณ์ได้ ฿${(CFG.openCost * CFG.salvage).toLocaleString('th-TH')}`);
+    return true;
+  }
+  function borrow(state, amt) {
+    const you = state.sellers[0];
+    amt = Math.min(amt, CFG.loanLimit - you.loan);
+    if (state.over || amt <= 0) return false;
+    you.loan += amt; you.cash += amt; return true;
+  }
+  function repay(state, amt) {
+    const you = state.sellers[0];
+    amt = Math.min(amt, you.loan, you.cash);
+    if (state.over || amt <= 0) return false;
+    you.loan -= amt; you.cash -= amt; return true;
+  }
+
+  return { CFG, PRODUCTS, DISTRICTS, MONTHS, newGame, step, market, shares, breakEven, season, marketSize, unitCost,
+    staffCost, netWorth, branchCount, monthLabel, openBranch, closeBranch, borrow, repay };
+})();
+/*SIM-END*/
+
+// ---- UI: renders `state` with plain DOM. Swap renderMap() for a three.js scene later. ----
+const $ = s => document.querySelector(s);
+const fmt = n => Math.round(n).toLocaleString('th-TH');
+const baht = n => (n < 0 ? '−' : '') + '฿' + fmt(Math.abs(n));
+const signed = n => (n >= 0 ? '+' : '−') + '฿' + fmt(Math.abs(n));
+const compact = n => Math.abs(n) >= 1e6 ? (n / 1e6).toFixed(Math.abs(n) >= 1e7 ? 0 : 1) + ' ล้าน' : fmt(n / 1000) + 'k';
+const SAVE = 'coffee-tycoon-v1';
+const NAMES = { you:'คุณ', thukdee:'ถูกดีคาเฟ่', luna:'ลูน่า โรสเตอร์' };
+let state, selected = 'cmu', forecast;
+
+function save() { try { localStorage.setItem(SAVE, JSON.stringify(state)); } catch (e) {} }
+function load() { try { const s = JSON.parse(localStorage.getItem(SAVE)); return s && s.v === 1 ? s : null; } catch (e) { return null; } }
+const you = () => state.sellers[0];
+
+function renderTop() {
+  const s = you(), nw = Sim.netWorth(s);
+  $('#s-month').textContent = `${Sim.monthLabel(Math.min(state.t, Sim.CFG.months - 1))} · ${Math.min(state.t + 1, Sim.CFG.months)}/${Sim.CFG.months}`;
+  $('#s-cash').textContent = baht(s.cash);
+  $('#s-cash').className = s.cash < 0 ? 'neg' : '';
+  $('#s-loan').textContent = baht(s.loan);
+  $('#s-nw').textContent = baht(nw);
+  $('#s-goal-l').textContent = `มูลค่าสุทธิ · เป้า ฿${compact(Sim.CFG.goal)}`;
+  $('#s-goalbar').style.width = Math.max(0, Math.min(100, nw / Sim.CFG.goal * 100)) + '%';
+  $('#btn-next').disabled = !!state.over;
+  $('#borrow').disabled = !!state.over || s.loan >= Sim.CFG.loanLimit;
+  $('#repay').disabled = !!state.over || s.loan <= 0 || s.cash <= 0;
+}
+
+function seasonTag(d) {
+  const k = Sim.season(d, state.t % 12);
+  if (k >= 1.1) return '<span class="tag hot">คึกคัก</span>';
+  if (k <= .85) return '<span class="tag cold">เงียบ</span>';
+  return '';
+}
+
+function renderMap() {
+  const m = state.t % 12;
+  $('#map').innerHTML = Sim.DISTRICTS.map(d => {
+    const size = Sim.PRODUCTS.reduce((a, p) => a + Sim.marketSize(state, d, p, m), 0);
+    const dots = state.sellers.map(s => `<i class="dot ${s.id}"></i>`.repeat(s.branches[d.id] || 0)).join('');
+    const sh = forecast.you.byD[d.id].share;
+    return `<button class="tile${d.id === selected ? ' sel' : ''}${d.id === 'oldcity' ? ' moat' : ''}" style="grid-area:${d.id}" data-d="${d.id}" aria-pressed="${d.id === selected}">
+      <span class="tn">${d.name}</span>
+      <span class="tt">${d.label} ${seasonTag(d)}</span>
+      <span class="tm"><span>ตลาด <b class="num">${fmt(size / 1000)}k</b></span><span>เช่า <b class="num">${fmt(d.rent / 1000)}k</b></span></span>
+      <span class="tm"><span>ส่วนแบ่งคุณ</span><b class="num">${(sh * 100).toFixed(0)}%</b></span>
+      <span class="dots">${dots || '<span class="tt">ยังไม่มีร้าน</span>'}</span>
+    </button>`;
+  }).join('');
+}
+
+function renderDistrict() {
+  const d = Sim.DISTRICTS.find(x => x.id === selected), s = you();
+  const n = s.branches[d.id] || 0, f = forecast.you.byD[d.id];
+  const be = Sim.breakEven(state, 'you', d.id);
+  const perBranch = n ? f.units / n : 0;
+  const cap = Sim.CFG.cap;
+  const rivalsHere = state.sellers.slice(1).filter(r => r.branches[d.id] > 0).map(r => `${r.name} ${r.branches[d.id]} สาขา`).join(', ') || 'ไม่มีคู่แข่ง';
+  const wealth = d.wealth >= 1.3 ? 'สูงมาก' : d.wealth >= 1.1 ? 'สูง' : d.wealth >= .9 ? 'ปานกลาง' : 'ต่ำ';
+  const beTxt = be.units === Infinity ? 'ราคาต่ำกว่าต้นทุน ขายเท่าไหร่ก็ไม่คุ้ม'
+    : `แต่ละสาขาต้องขายเดือนละ <b class="num">${fmt(be.units)}</b> หน่วยถึงจะคุ้มทุน (ค่าคงที่ ${baht(be.fixed)} ÷ กำไรต่อหน่วยเฉลี่ย ${baht(be.margin)})`;
+  $('#district').innerHTML = `
+    <div class="dhead"><h3>${d.name}</h3><span class="hint">${d.label} · กำลังซื้อ${wealth} · ${rivalsHere}</span></div>
+    <div class="kv">
+      <div><span>สาขาของคุณ</span><b>${n}</b></div>
+      <div><span>ขายได้ (ประมาณ)</span><b>${fmt(f.units)}</b></div>
+      <div><span>กำไรย่านนี้ (ประมาณ)</span><b class="${f.profit >= 0 ? 'pos' : 'neg'}">${n ? signed(f.profit) : '—'}</b></div>
+      <div><span>ลูกค้าที่เสียเพราะคิวเต็ม</span><b class="${f.lost > 0 ? 'neg' : ''}">${fmt(f.lost)}</b></div>
+    </div>
+    <div class="be">${beTxt}
+      ${n && be.units !== Infinity ? `<div class="bebar" title="ยอดขายต่อสาขาเทียบความจุ ${fmt(cap)}"><i style="width:${Math.min(100, perBranch / cap * 100)}%"></i><em style="left:${Math.min(100, be.units / cap * 100)}%"></em></div>
+      <div class="hint">แถบ = ยอดขายต่อสาขา ${fmt(perBranch)} จากความจุ ${fmt(cap)} · ขีดดำ = จุดคุ้มทุน</div>` : ''}
+    </div>
+    <div class="actions">
+      <button class="btn go" id="open" ${state.over || s.cash < Sim.CFG.openCost || n >= Sim.CFG.maxPerDistrict ? 'disabled' : ''}>เปิดสาขาที่นี่ −฿${fmt(Sim.CFG.openCost)}</button>
+      <button class="btn" id="close" ${state.over || !n ? 'disabled' : ''}>ปิดสาขา +฿${fmt(Sim.CFG.openCost * Sim.CFG.salvage)}</button>
+    </div>`;
+  $('#open').onclick = () => { if (Sim.openBranch(state, d.id)) changed(); };
+  $('#close').onclick = () => { if (Sim.closeBranch(state, d.id)) changed(); };
+}
+
+function buildDecisions() {
+  $('#prods').innerHTML = Sim.PRODUCTS.map(p => `
+    <div class="prod">
+      <label for="pr-${p.id}">${p.name}</label><span class="price" id="pv-${p.id}"></span>
+      <input type="range" id="pr-${p.id}" min="${p.cost}" max="${p.ref * 2}" step="1">
+      <div class="meta" id="pm-${p.id}"></div>
+    </div>`).join('');
+  Sim.PRODUCTS.forEach(p => $('#pr-' + p.id).addEventListener('input', e => { you().prices[p.id] = +e.target.value; changed(); }));
+  $('#quality').innerHTML = [1,2,3,4,5].map(l => `<button data-q="${l}" aria-label="คุณภาพระดับ ${l}">${l}</button>`).join('');
+  $('#quality').onclick = e => { const b = e.target.closest('button'); if (b && !state.over) { you().quality = +b.dataset.q; changed(); } };
+  $('#mkt').addEventListener('input', e => { you().marketing = +e.target.value; changed(); });
+}
+
+function renderDecisions() {
+  const s = you();
+  const rivalP = id => state.sellers.slice(1).map(r => `${r.name.split(' ')[0]} ฿${r.prices[id]}`).join(' · ');
+  for (const p of Sim.PRODUCTS) {
+    const el = $('#pr-' + p.id);
+    if (document.activeElement !== el) el.value = s.prices[p.id];
+    el.disabled = !!state.over;
+    const c = Sim.unitCost(state, s, p);
+    $('#pv-' + p.id).textContent = '฿' + s.prices[p.id];
+    $('#pm-' + p.id).innerHTML = `<span>ต้นทุน ฿${c.toFixed(1)}/${p.unit}</span><span class="${s.prices[p.id] > c ? 'pos' : 'neg'}">กำไร ฿${(s.prices[p.id] - c).toFixed(1)}</span><span>คู่แข่ง: ${rivalP(p.id)}</span><span>ขายได้ ~${fmt(forecast.you.units[p.id])}</span>`;
+  }
+  $('#quality').querySelectorAll('button').forEach(b => { b.setAttribute('aria-pressed', +b.dataset.q === s.quality); b.disabled = !!state.over; });
+  $('#quality-meta').textContent = `ระดับ ${s.quality}: ต้นทุนวัตถุดิบ +${12 * (s.quality - 1)}% · เงินเดือนต่อสาขา ${baht(Sim.staffCost(state, s))}${s.quality >= 3 ? ' · ลูกค้าบอกต่อ ช่วยเพิ่มแบรนด์' : ''}`;
+  const m = $('#mkt'); if (document.activeElement !== m) m.value = s.marketing; m.disabled = !!state.over;
+  $('#mkt-v').textContent = baht(s.marketing);
+  const rv = state.sellers.slice(1).map(r => `${r.name} ${r.brand.toFixed(0)}`).join(' · ');
+  $('#mkt-meta').textContent = `แบรนด์ของคุณ ${s.brand.toFixed(0)}/100 (ลดลง 6% ทุกเดือนถ้าไม่ทำการตลาด) · ${rv}`;
+}
+
+function renderReceipt() {
+  const r = forecast.you, s = you();
+  const gross = r.revenue - r.cogs;
+  const ln = (a, b, cls = '') => `<div class="ln ${cls}"><span>${a}</span><span>${b}</span></div>`;
+  const last = state.last ? `<div class="lastm">เดือนที่แล้ว (${Sim.monthLabel(state.last.t)}): <b class="${state.last.you.net >= 0 ? 'pos' : 'neg'}">${signed(state.last.you.net)}</b> · ขาย ${fmt(Object.values(state.last.you.units).reduce((a, b) => a + b, 0))} หน่วย</div>` : '';
+  $('#receipt').innerHTML = `
+    <h2>ร้านของคุณ · ${Sim.branchCount(s)} สาขา</h2>
+    <div class="sub">ประมาณการงบ ${Sim.monthLabel(Math.min(state.t, Sim.CFG.months - 1))} · ยอดจริงแกว่ง ±10%</div>
+    ${last}
+    ${Sim.PRODUCTS.map(p => ln(`${p.name} ${fmt(r.units[p.id])} × ฿${s.prices[p.id]}`, fmt(r.rev[p.id]), 'ind')).join('')}
+    <hr>
+    ${ln('รายได้รวม', fmt(r.revenue))}
+    ${ln('ต้นทุนวัตถุดิบ', '−' + fmt(r.cogs), 'ind')}
+    ${ln('กำไรขั้นต้น', fmt(gross))}
+    <hr>
+    ${ln('ค่าเช่า', '−' + fmt(r.rent), 'ind')}
+    ${ln('เงินเดือนพนักงาน', '−' + fmt(r.staff), 'ind')}
+    ${ln('ค่าน้ำค่าไฟ', '−' + fmt(r.util), 'ind')}
+    ${ln('การตลาด', '−' + fmt(r.marketing), 'ind')}
+    ${ln('ดอกเบี้ย', '−' + fmt(r.interest), 'ind')}
+    <hr class="dbl">
+    ${ln('กำไรสุทธิ', `<span class="${r.net >= 0 ? 'pos' : 'neg'}">${signed(r.net)}</span>`, 'total')}
+    ${r.lost > 0 ? `<div class="note">คิวเต็ม เสียลูกค้า ${fmt(r.lost)} ราย</div>` : ''}
+    <div class="note">ขอบคุณที่อุดหนุน · ภาษีรวมแล้ว</div>`;
+}
+
+function renderShares() {
+  const sh = Sim.shares(forecast);
+  $('#shares').innerHTML = Sim.PRODUCTS.map(p => `
+    <div>
+      <div class="sl"><span>${p.name}</span><span class="num">คุณ ${(sh[p.id].you * 100).toFixed(0)}%</span></div>
+      <div class="stack" title="${state.sellers.map(s => `${NAMES[s.id]} ${(sh[p.id][s.id] * 100).toFixed(0)}%`).join(' · ')}">
+        ${state.sellers.map(s => `<i class="${s.id}" style="width:${sh[p.id][s.id] * 100}%"></i>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function renderNews() {
+  $('#news').innerHTML = state.news.slice(0, 40).map(n => `<li class="${n.tone}"><time>${Sim.monthLabel(Math.min(n.t, Sim.CFG.months - 1))}</time><span>${n.text}</span></li>`).join('');
+}
+
+function drawChart() {
+  const c = $('#chart'), w = c.clientWidth, h = c.clientHeight, dpr = window.devicePixelRatio || 1;
+  if (!w) return;
+  c.width = w * dpr; c.height = h * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+  const css = getComputedStyle(document.documentElement), tok = n => css.getPropertyValue(n).trim();
+  const H = state.history, G = Sim.CFG.goal, N = Sim.CFG.months;
+  const vals = H.flatMap(p => [p.cash, p.nw]);
+  const lo = Math.min(0, ...vals), hi = Math.max(G, ...vals) * 1.05;
+  const stepV = [250000, 500000, 1000000, 2000000, 5000000].find(s => (hi - lo) / s <= 6) || 1e7;
+  const L = 52, R = 10, T = 10, B = 24;
+  const x = t => L + (w - L - R) * t / N, y = v => T + (h - T - B) * (1 - (v - lo) / (hi - lo));
+  ctx.font = '11px "IBM Plex Mono", monospace'; ctx.textBaseline = 'middle';
+  for (let v = Math.ceil(lo / stepV) * stepV; v <= hi; v += stepV) {
+    ctx.strokeStyle = tok('--line'); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(L, y(v)); ctx.lineTo(w - R, y(v)); ctx.stroke();
+    ctx.fillStyle = tok('--muted'); ctx.textAlign = 'right'; ctx.fillText(v === 0 ? '0' : (v / 1e6).toFixed(stepV < 1e6 ? 2 : 0).replace(/\.?0+$/, '') + 'M', L - 6, y(v));
+  }
+  ctx.textAlign = 'center'; ctx.fillStyle = tok('--muted');
+  for (let t = 0; t <= N; t += 12) ctx.fillText(t < N ? `ม.ค. ${String(Sim.CFG.startYear + 543 + t / 12).slice(2)}` : 'จบเกม', Math.min(x(t), w - R - 18), h - 10);
+  ctx.setLineDash([4, 4]); ctx.strokeStyle = tok('--you'); ctx.globalAlpha = .6;
+  ctx.beginPath(); ctx.moveTo(L, y(G)); ctx.lineTo(w - R, y(G)); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+  ctx.fillStyle = tok('--you'); ctx.textAlign = 'left'; ctx.fillText('เป้า ฿3 ล้าน', L + 4, y(G) - 9);
+  const line = (key, color, width) => {
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineJoin = 'round'; ctx.beginPath();
+    H.forEach((p, i) => i ? ctx.lineTo(x(p.t), y(p[key])) : ctx.moveTo(x(p.t), y(p[key]))); ctx.stroke();
+    const e = H[H.length - 1]; ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x(e.t), y(e[key]), 3.5, 0, 7); ctx.fill();
+  };
+  line('cash', tok('--ink-2'), 1.5);
+  line('nw', tok('--you'), 2.5);
+}
+
+function render() {
+  forecast = Sim.market(state);
+  renderTop(); renderMap(); renderDistrict(); renderDecisions(); renderReceipt(); renderShares(); renderNews(); drawChart();
+}
+function changed() { render(); save(); }
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function showOver() {
+  if (!state.over) { $('#overlay').hidden = true; return; }
+  const nw = Sim.netWorth(you());
+  const msg = {
+    win: ['คุณคือเจ้าพ่อกาแฟแห่งเชียงใหม่', `ถึงเป้า ฿3 ล้านในเดือนที่ ${state.t} ด้วยมูลค่าสุทธิ ${baht(nw)} และ ${Sim.branchCount(you())} สาขา`],
+    bankrupt: ['ล้มละลาย', `เงินสดติดลบเกินวงเงินกู้ ธนาคารยึดกิจการในเดือนที่ ${state.t} ลองตั้งราคาให้เกินจุดคุ้มทุนและขยายสาขาช้าลง`],
+    timeup: ['ครบ 36 เดือน', `มูลค่าสุทธิสุดท้าย ${baht(nw)} (${(nw / Sim.CFG.goal * 100).toFixed(0)}% ของเป้า) ลองอีกรอบด้วยกลยุทธ์ใหม่`],
+  }[state.over.kind];
+  $('#ov-title').textContent = msg[0]; $('#ov-body').textContent = msg[1];
+  $('#overlay').hidden = false;
+}
+
+function newGame() { state = Sim.newGame(); selected = 'cmu'; $('#overlay').hidden = true; changed(); }
+
+function init() {
+  buildDecisions();
+  $('#map').addEventListener('click', e => { const b = e.target.closest('.tile'); if (b) { selected = b.dataset.d; renderMap(); renderDistrict(); } });
+  $('#btn-next').onclick = () => {
+    Sim.step(state); changed();
+    const r = state.last.you;
+    toast(`${Sim.monthLabel(state.last.t)}: ${r.net >= 0 ? 'กำไร' : 'ขาดทุน'} ${signed(r.net)}`);
+    showOver();
+  };
+  $('#borrow').onclick = () => { if (Sim.borrow(state, 100000)) changed(); };
+  $('#repay').onclick = () => { if (Sim.repay(state, 100000)) changed(); };
+  let armed = 0;
+  $('#newgame').onclick = e => {
+    if (Date.now() - armed < 3000) { armed = 0; e.target.textContent = 'เริ่มเกมใหม่'; newGame(); toast('เริ่มเกมใหม่แล้ว'); return; }
+    armed = Date.now(); e.target.textContent = 'กดอีกครั้งเพื่อยืนยัน';
+    setTimeout(() => { if (armed) e.target.textContent = 'เริ่มเกมใหม่'; }, 3000);
+  };
+  $('#ov-new').onclick = newGame;
+  $('#ov-close').onclick = () => { $('#overlay').hidden = true; };
+  addEventListener('resize', drawChart);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawChart);
+  new MutationObserver(drawChart).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (document.fonts) document.fonts.ready.then(drawChart);
+  render(); showOver();
+}
+
+window.claude?.hot?.snapshot?.(() => ({ state, selected }));
+const start = data => { state = data?.state || load() || Sim.newGame(); selected = data?.selected || 'cmu'; init(); };
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
