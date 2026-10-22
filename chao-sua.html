@@ -61,6 +61,7 @@
   .vp { position:absolute; inset:3px; overflow:auto; background:#1d2a1c; scrollbar-width:thin; scrollbar-color:var(--hi) var(--inset); }
   #map { display:block; touch-action:none; cursor:grab; }
   #map.building { cursor:crosshair; }
+  .compass { position:absolute; left:10px; top:10px; z-index:2; padding:3px 8px; font:700 .8rem var(--mono); color:var(--gold); background:rgb(17 22 28 / .8); border:1px solid var(--hi); }
   .zoom { position:absolute; left:10px; bottom:10px; display:flex; flex-direction:column; gap:2px; z-index:2; }
   .zoom .bt { width:30px; height:30px; padding:0; font:700 1rem var(--mono); }
   .dock { display:flex; flex-direction:column; gap:4px; padding:5px; width:76px; overflow-y:auto; }
@@ -173,6 +174,7 @@
   <div class="stage">
     <div class="view bevel">
       <div class="vp inset" id="vp"><canvas id="map" aria-label="แผนที่เมืองเชียงใหม่แบบ isometric"></canvas></div>
+      <div class="compass" aria-label="ทิศเหนือชี้ไปทางขวาบน">N ↗</div>
       <div class="zoom"><button class="bt" id="zin" aria-label="ซูมเข้า">+</button><button class="bt" id="zout" aria-label="ซูมออก">−</button></div>
       <section class="win bevel" id="win" hidden aria-labelledby="win-title">
         <div class="win-t"><h2 id="win-title"></h2><button class="bt" id="win-x" aria-label="ปิดหน้าต่าง">✕</button></div>
@@ -197,7 +199,7 @@
 /*SIM-START*/
 // ---- Simulation: pure game logic, no DOM. A three.js city could render the same `state` later. ----
 const Sim = (() => {
-  const W = 30, H = 20, DAY = 864e5;
+  const W = 40, H = 30, DAY = 864e5;
   const CFG = { startCash:5e6, goal:25e6, days:1096, startYear:2027, loanLimit:10e6, interest:.006, salvage:.7, sellBack:.5,
     unitSetup:20000, upgrade:15000, maxLevel:9, K:2, exp:2, landPerTile:60000 };
   const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -233,28 +235,85 @@ const Sim = (() => {
   const unitCap = u => (UNITS[u.type].cap || 0) * u.level;
   const unitDaily = u => u.type === 'ad' ? 400 * u.level : u.type === 'research' ? 800 * u.level : 200 + 50 * u.level;
 
-  // ---- map ----
-  const CENTER = { x:12.5, y:7.5 };
-  function tile(x, y) {
-    const road = x % 5 === 0 || y % 5 === 0;
-    const river = x === 22 && !road;
-    const d = Math.hypot(x + .5 - CENTER.x, (y + .5 - CENTER.y) * 1.15);
-    const v = Math.max(.1, Math.min(1, 1 - d / 15));
-    return { road, river, v, zone: v >= .6 ? 'core' : v >= .35 ? 'sub' : 'rural' };
+  // ---- map: Chiang Mai, simplified but laid out like the real city (1 tile ≈ 300 m, x runs east, y runs south) ----
+  const OLD = { x0:15, y0:11, x1:19, y1:15 };                       // walled old city inside the moat
+  const riverX = y => 24 + (y > 17 ? 1 : 0) + (y > 25 ? 1 : 0);     // Mae Ping, drifting east as it flows south
+  const HUBS = [[17,13,1], [10.5,10.5,.95], [22,15,.95], [32.5,8.5,.75], [15.5,20.5,.75], [27.5,15.5,.6]];
+  const AREAS = [['ช้างเผือก',17,6], ['สันติธรรม',13,7], ['นิมมานเหมินท์',11,11], ['คูเมือง',17,13], ['ไนท์บาซาร์',22,15],
+    ['วัดเกต',26,9], ['ฟ้าฮ่าม',30,5], ['หนองหอย',27,21], ['ป่าแดด',19,24], ['สุเทพ',8,18], ['หางดง',13,28], ['สันกำแพง',36,15],
+    ['แม่ริม',20,1], ['สารภี',24,28], ['วัวลาย',18,18], ['ซุปเปอร์ไฮเวย์',32,14], ['ท่าศาลา',36,24], ['ห้วยแก้ว',8,6]];
+  const ROADS = [
+    [[14,10],[20,10]], [[14,16],[20,16]], [[14,10],[14,16]], [[20,10],[20,16]],   // roads around the moat
+    [[15,13],[27,13],[27,14],[39,14]],      // ราชดำเนิน → ท่าแพ → เจริญเมือง → สันกำแพง
+    [[17,11],[17,15]], [[17,0],[17,10]],    // พระปกเกล้า, โชตนา
+    [[14,10],[10,8],[5,7]],                 // ห้วยแก้ว
+    [[10,8],[10,16]], [[5,16],[14,16]],     // นิมมานเหมินท์, สุเทพ
+    [[4,8],[4,29]],                         // คลองชลประทาน
+    [[22,13],[22,19]], [[17,16],[17,19]],   // ช้างคลาน, วัวลาย
+    [[14,16],[14,29]], [[14,19],[31,19]],   // หางดง, มหิดล
+    [[27,0],[30,5],[31,10],[31,19],[30,24],[27,29]],   // ซุปเปอร์ไฮเวย์
+    [[5,4],[27,4]], [[14,23],[25,23]], [[35,0],[35,29]],
+  ];
+  const ROAD_NAMES = { 'ราชดำเนิน/ท่าแพ':[[15,13],[27,13]], 'ห้วยแก้ว':[[14,10],[5,7]] };
+  const LANDMARKS = [
+    { id:'chedi', name:'วัดเจดีย์หลวง', x:18, y:14 }, { id:'singh', name:'วัดพระสิงห์', x:15, y:12 },
+    { id:'suandok', name:'วัดสวนดอก', x:12, y:15 }, { id:'suthep', name:'วัดพระธาตุดอยสุเทพ', x:2, y:6 },
+    { id:'maya', name:'ห้างเมญ่า', x:11, y:7 }, { id:'warorot', name:'ตลาดวโรรส', x:23, y:12 },
+    { id:'festival', name:'เซ็นทรัลเฟสติวัล', x:32, y:8, w:2 }, { id:'plaza', name:'เซ็นทรัลแอร์พอร์ต', x:15, y:20, w:2 },
+    { id:'station', name:'สถานีรถไฟเชียงใหม่', x:27, y:15, w:2 }, { id:'zoo', name:'สวนสัตว์เชียงใหม่', x:4, y:6 },
+    { id:'terminal', name:'อาคารผู้โดยสาร', x:12, y:21 },
+  ];
+  function path(pts, f) {
+    for (let i = 0; i < pts.length - 1; i++) {
+      let [x, y] = pts[i]; const [x1, y1] = pts[i + 1];
+      const tx = Math.abs(x1 - x), ty = Math.abs(y1 - y), sx = Math.sign(x1 - x), sy = Math.sign(y1 - y);
+      let dx = 0, dy = 0; f(x, y);
+      while (x !== x1 || y !== y1) {
+        if (y === y1 || (x !== x1 && (dx + 1) / tx <= (dy + 1) / ty)) { x += sx; dx++; } else { y += sy; dy++; }
+        f(x, y);
+      }
+    }
   }
-  const TILES = Array.from({ length: H }, (_, y) => Array.from({ length: W }, (_, x) => tile(x, y)));
+  function buildTiles() {
+    const T = Array.from({ length: H }, (_, y) => Array.from({ length: W }, (_, x) => ({ x, y, kind:'land' })));
+    const set = (x, y, kind, extra) => { if (x >= 0 && y >= 0 && x < W && y < H) Object.assign(T[y][x], { kind }, extra); };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if (x <= 3 || (x === 4 && y < 6)) set(x, y, 'mountain');
+      else if (x >= 5 && x <= 9 && y >= 9 && y <= 15) set(x, y, 'campus');
+      else if (x >= 9 && x <= 12 && y >= 20 && y <= 27) set(x, y, x === 10 ? 'runway' : 'airport');
+    }
+    set(6, 11, 'water', { name:'อ่างแก้ว' }); set(7, 11, 'water', { name:'อ่างแก้ว' });
+    for (let y = 17; y < H; y++) set(28, y, 'rail');
+    for (let y = 0; y < H; y++) { set(riverX(y), y, 'river'); set(riverX(Math.min(H - 1, y + 1)), y, 'river'); }
+    ROADS.forEach(r => path(r, (x, y) => set(x, y, 'road')));
+    for (let y = 13; y < H; y++) { set(riverX(y) + 1, y, 'road'); set(riverX(Math.min(H - 1, y + 1)) + 1, y, 'road'); } // เชียงใหม่–ลำพูน
+    for (const l of LANDMARKS) for (let a = 0; a < (l.w || 1); a++) for (let b = 0; b < (l.w || 1); b++) set(l.x + a, l.y + b, 'landmark', { name:l.name, lm: a === 0 && b === 0 ? l.id : null });
+    for (const row of T) for (const t of row) {
+      t.v = Math.max(.1, Math.min(1, Math.max(...HUBS.map(([hx, hy, w]) => w * (1 - Math.hypot(t.x + .5 - hx, t.y + .5 - hy) / 9)))));
+      t.zone = t.v >= .6 ? 'core' : t.v >= .35 ? 'sub' : 'rural';
+      t.old = t.x >= OLD.x0 && t.x <= OLD.x1 && t.y >= OLD.y0 && t.y <= OLD.y1;
+      t.area = t.kind === 'mountain' ? 'ดอยสุเทพ' : t.kind === 'campus' ? 'มหาวิทยาลัยเชียงใหม่' : t.kind === 'airport' || t.kind === 'runway' ? 'สนามบินเชียงใหม่'
+        : AREAS.reduce((b, a) => Math.hypot(a[1] - t.x, a[2] - t.y) < Math.hypot(b[1] - t.x, b[2] - t.y) ? a : b)[0];
+      t.road = t.kind === 'road'; t.river = t.kind === 'river';
+    }
+    return T;
+  }
+  const TILES = buildTiles();
+  const BLOCK = { road:'ติดถนน', river:'ติดแม่น้ำปิง', mountain:'ดอยสุเทพเป็นเขตอุทยานแห่งชาติ', campus:'พื้นที่มหาวิทยาลัยเชียงใหม่',
+    airport:'เขตสนามบิน', runway:'เขตสนามบิน', rail:'ติดทางรถไฟ', water:'ติดแหล่งน้ำ' };
   const footprint = (x, y) => [[x, y], [x + 1, y], [x, y + 1], [x + 1, y + 1]];
   const firmValue = f => footprint(f.x, f.y).reduce((a, [x, y]) => a + TILES[y][x].v, 0) / 4;
   function canBuild(state, type, x, y) {
     if (x < 0 || y < 0 || x + 1 >= W || y + 1 >= H) return 'นอกแผนที่';
     for (const [a, b] of footprint(x, y)) {
       const t = TILES[b][a];
-      if (t.road) return 'ติดถนน';
-      if (t.river) return 'ติดแม่น้ำปิง';
+      if (t.kind === 'landmark') return `ติด${t.name}`;
+      if (t.kind !== 'land') return BLOCK[t.kind];
+      if (t.old && type !== 'store') return 'เขตเมืองเก่าในคูเมือง สร้างได้เฉพาะร้านค้าปลีก';
       if (state.firms.some(f => a >= f.x && a <= f.x + 1 && b >= f.y && b <= f.y + 1)) return 'มีอาคารอยู่แล้ว';
     }
     const v = firmValue({ x, y });
-    if (v > FIRMS[type].maxV + 1e-9) return type === 'farm' ? 'ฟาร์มต้องอยู่ในเขตชนบท' : 'โรงงานต้องอยู่นอกใจกลางเมือง';
+    if (v > FIRMS[type].maxV + 1e-9) return type === 'farm' ? 'ฟาร์มต้องอยู่ในเขตชนบท' : 'โรงงานต้องอยู่นอกย่านใจกลางเมือง';
     return null;
   }
   const landCost = (x, y) => Math.round(firmValue({ x, y }) * 4 * CFG.landPerTile / 1000) * 1000;
@@ -528,7 +587,7 @@ const Sim = (() => {
     const zero = v => Object.fromEntries(CONSUMER.map(p => [p, v]));
     const company = (id, name, cash, extra) => ({ id, name, cash, loan:0, tech: zero(30), brand: zero(5), mtd: newMtd(), last:null, sold:{}, soldLast:{}, ...extra });
     const state = {
-      v:2, seed, day:0, pop:1, nextId:1, firms:[], mods:[], news:[], history:[], over:null,
+      v:3, seed, day:0, pop:1, nextId:1, firms:[], mods:[], news:[], history:[], over:null,
       market: freshMarket(), marketLast: freshMarket(),
       companies: [
         company('you', 'บริษัทของคุณ', CFG.startCash),
@@ -536,8 +595,8 @@ const Sim = (() => {
         company('luna', 'ลูน่า คอร์ปอเรชั่น', 8e6, { ai:'premium', priceK:1.2, adLevel:5, importMult:1.1, importQ:62, brand: zero(35), tech: zero(45) }),
       ],
     };
-    state.port = { x:1, y:16 }; // import depot (decorative, not a firm)
-    state.firms.push({ id:0, owner:'port', type:'port', x:1, y:16, units:[], inv:{}, invested:0, mtd:{rev:0,cost:0}, last:null });
+    // import depot by the railway, fed by rail and the Superhighway
+    state.firms.push({ id:0, owner:'port', type:'port', x:29, y:15, units:[], inv:{}, invested:0, mtd:{rev:0,cost:0}, last:null });
     const sites = bestSites(state, 'store');
     const take = i => { const s = sites[i]; sites.splice(i, 1); return s; };
     const y0 = take(4);
@@ -602,7 +661,7 @@ const Sim = (() => {
   function repay(state, amt) { const c = you(state); amt = Math.min(amt, c.loan, c.cash); if (state.over || amt <= 0) return false; c.loan -= amt; c.cash -= amt; return true; }
   function tick(state) { if (!state.over) day(state, rngOf(state)); return state; }
 
-  return { W, H, CFG, P, RAW, CONSUMER, FIRMS, UNITS, TILES, newGame, tick, canBuild, buildCost, landCost, firmAt, firmValue,
+  return { W, H, OLD, riverX, LANDMARKS, CFG, P, RAW, CONSUMER, FIRMS, UNITS, TILES, newGame, tick, canBuild, buildCost, landCost, firmAt, firmValue,
     build, addUnit, upgradeUnit, removeUnit, template, linkStores, sellFirm, borrow, repay, sourcesFor, outputOf, unitCap, unitDaily,
     rating, priceScore, portPrice, portQ, demand, netWorth, comp, dateLabel, monthLabel, dateOf };
 })();
@@ -615,7 +674,7 @@ const baht = n => (n < 0 ? '−' : '') + '฿' + fmt(Math.abs(n));
 const signed = n => (n >= 0 ? '+' : '−') + '฿' + fmt(Math.abs(n));
 const million = n => (n / 1e6).toLocaleString('th-TH', { maximumFractionDigits: Math.abs(n) >= 1e7 ? 1 : 2 }) + ' ล้าน';
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
-const SAVE = 'chao-sua-v2';
+const SAVE = 'chao-sua-v3';
 const COLOR = { you:'--you', thukdee:'--cheap', luna:'--premium', port:'--port' };
 const SPEED_MS = [0, 700, 300, 90];
 const PCOLOR = { coffee:'#6b4a33', thaitea:'#e07b2c', bread:'#d9a35b', beans:'#4a3326', tealeaf:'#4f8a3a', milk:'#e8eef2', sugar:'#f2efe6', wheat:'#d8b45a' };
@@ -645,7 +704,7 @@ const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 const you = () => Sim.comp(state, 'you');
 const selFirm = () => state.firms.find(f => f.id === ui.sel);
 function save() { try { localStorage.setItem(SAVE, JSON.stringify(state)); } catch (e) {} }
-function load() { try { const s = JSON.parse(localStorage.getItem(SAVE)); return s && s.v === 2 ? s : null; } catch (e) { return null; } }
+function load() { try { const s = JSON.parse(localStorage.getItem(SAVE)); return s && s.v === 3 ? s : null; } catch (e) { return null; } }
 
 // ---- top bar ----
 function renderTop() {
@@ -662,7 +721,7 @@ function renderTop() {
 
 // ---- isometric city ----
 const map = $('#map'), vp = $('#vp');
-const ZOOMS = [36, 52, 72];
+const ZOOMS = [30, 44, 60];
 let TW = 52, TH = 26, OX = 0, OY = 0, MW = 0, MH = 0, ground = null, groundKey = '';
 const P = (x, y) => [OX + (x - y) * TW / 2, OY + (x + y) * TH / 2];
 const hash = (x, y, k = 0) => { let h = (x * 73856093) ^ (y * 19349663) ^ (k * 83492791); h = Math.imul(h ^ h >>> 13, 1274126177); return ((h ^ h >>> 16) >>> 0) / 4294967296; };
@@ -673,8 +732,8 @@ function shade(hex, k) {
 function poly(g, pts, fill, stroke) { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.stroke(); } }
 const up = (p, h) => [p[0], p[1] - h];
 // extruded box on the ground rectangle (x0,y0)-(x1,y1), height h px; faces: top, left (y1 side), right (x1 side)
-function box(g, x0, y0, x1, y1, h, base, top) {
-  const A = P(x0, y0), B = P(x1, y0), C = P(x1, y1), D = P(x0, y1);
+function box(g, x0, y0, x1, y1, h, base, top, z = 0) {
+  const A = up(P(x0, y0), z), B = up(P(x1, y0), z), C = up(P(x1, y1), z), D = up(P(x0, y1), z);
   poly(g, [D, C, up(C, h), up(D, h)], shade(base, .78));
   poly(g, [C, B, up(B, h), up(C, h)], shade(base, .98));
   poly(g, [up(A, h), up(B, h), up(C, h), up(D, h)], top || shade(base, 1.12));
@@ -694,7 +753,7 @@ function gable(g, x0, y0, x1, y1, h, rh, color) {
 function sizeMap() {
   TW = ZOOMS[ui.zoom]; TH = TW / 2;
   const pad = TW;
-  OX = Sim.H * TW / 2 + pad; OY = TW * 1.6;
+  OX = Sim.H * TW / 2 + pad; OY = TW * 3;
   MW = (Sim.W + Sim.H) * TW / 2 + pad * 2; MH = (Sim.W + Sim.H) * TH / 2 + OY + pad;
   const dpr = window.devicePixelRatio || 1;
   map.style.width = MW + 'px'; map.style.height = MH + 'px';
@@ -705,48 +764,139 @@ function buildGround() {
   const dpr = window.devicePixelRatio || 1;
   ground = document.createElement('canvas'); ground.width = MW * dpr; ground.height = MH * dpr;
   const g = ground.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const col = { core:css('--g-core'), sub:css('--g-sub'), rural:css('--g-rural') };
+  const KIND = { road:'--g-road', river:'--g-water', water:'--g-water' };
+  const FIX = { mountain:'#3f5d34', campus:'#94b57c', airport:'#a7b38a', runway:'#4b4e52', rail:'#857d6f', landmark:'#c9bfa4' };
+  const zone = { core:css('--g-core'), sub:css('--g-sub'), rural:css('--g-rural') };
   for (let y = 0; y < Sim.H; y++) for (let x = 0; x < Sim.W; x++) {
     const t = Sim.TILES[y][x], d = [P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)];
-    const base = t.river ? css('--g-water') : t.road ? css('--g-road') : col[t.zone];
+    const base = KIND[t.kind] ? css(KIND[t.kind]) : FIX[t.kind] || (t.old ? '#b4a68c' : zone[t.zone]);
     poly(g, d, shade(base, .94 + hash(x, y) * .1));
-    if (!t.road && !t.river) { g.strokeStyle = 'rgba(0,0,0,.08)'; g.lineWidth = 1; poly(g, d, null, 'rgba(0,0,0,.08)'); }
-    if (t.road) {
+    if (t.kind === 'land') poly(g, d, null, 'rgba(0,0,0,.07)');
+    const nb = (dx, dy) => { const n = Sim.TILES[y + dy]?.[x + dx]; return n && n.kind === 'road'; };
+    if (t.kind === 'road') {
       g.strokeStyle = css('--g-mark'); g.lineWidth = Math.max(1, TW / 40); g.setLineDash([TW / 10, TW / 10]);
-      const v = x % 5 === 0, h = y % 5 === 0;
-      if (v && !h) { g.beginPath(); g.moveTo(...P(x + .5, y)); g.lineTo(...P(x + .5, y + 1)); g.stroke(); }
-      if (h && !v) { g.beginPath(); g.moveTo(...P(x, y + .5)); g.lineTo(...P(x + 1, y + .5)); g.stroke(); }
+      const ns = nb(0, -1) || nb(0, 1), ew = nb(-1, 0) || nb(1, 0);
+      if (ns && !ew) { g.beginPath(); g.moveTo(...P(x + .5, y)); g.lineTo(...P(x + .5, y + 1)); g.stroke(); }
+      if (ew && !ns) { g.beginPath(); g.moveTo(...P(x, y + .5)); g.lineTo(...P(x + 1, y + .5)); g.stroke(); }
       g.setLineDash([]);
-      if (x === 22) { g.strokeStyle = '#2b2b2b'; g.lineWidth = 2; g.beginPath(); g.moveTo(...P(22, y)); g.lineTo(...P(22, y + 1)); g.moveTo(...P(23, y)); g.lineTo(...P(23, y + 1)); g.stroke(); }
+      const wet = (dx, dy) => Sim.TILES[y + dy]?.[x + dx]?.kind === 'river';
+      if (wet(0, -1) || wet(0, 1) || wet(-1, 0) || wet(1, 0) || x === Sim.riverX(y)) { // bridge railings over the Ping
+        g.strokeStyle = '#d9d4c4'; g.lineWidth = 2;
+        if (ew) { g.beginPath(); g.moveTo(...P(x, y + .08)); g.lineTo(...P(x + 1, y + .08)); g.moveTo(...P(x, y + .92)); g.lineTo(...P(x + 1, y + .92)); g.stroke(); }
+        else { g.beginPath(); g.moveTo(...P(x + .08, y)); g.lineTo(...P(x + .08, y + 1)); g.moveTo(...P(x + .92, y)); g.lineTo(...P(x + .92, y + 1)); g.stroke(); }
+      }
     }
-    if (t.river) { g.strokeStyle = 'rgba(255,255,255,.25)'; g.lineWidth = 1; const c = P(x + .5, y + .5); g.beginPath(); g.moveTo(c[0] - TW * .15, c[1]); g.quadraticCurveTo(c[0], c[1] - 3, c[0] + TW * .15, c[1]); g.stroke(); }
+    if (t.kind === 'river' || t.kind === 'water') { g.strokeStyle = 'rgba(255,255,255,.25)'; g.lineWidth = 1; const c = P(x + .5, y + .5); g.beginPath(); g.moveTo(c[0] - TW * .15, c[1]); g.quadraticCurveTo(c[0], c[1] - 3, c[0] + TW * .15, c[1]); g.stroke(); }
+    if (t.kind === 'rail') {
+      g.strokeStyle = '#5b5248'; g.lineWidth = 1;
+      for (let k = .1; k < 1; k += .2) { g.beginPath(); g.moveTo(...P(x + .3, y + k)); g.lineTo(...P(x + .7, y + k)); g.stroke(); }
+      g.strokeStyle = '#d0d0d0'; g.lineWidth = 1.5;
+      g.beginPath(); g.moveTo(...P(x + .38, y)); g.lineTo(...P(x + .38, y + 1)); g.moveTo(...P(x + .62, y)); g.lineTo(...P(x + .62, y + 1)); g.stroke();
+    }
+    if (t.kind === 'runway') { g.strokeStyle = '#f2f2f2'; g.lineWidth = 2; g.setLineDash([TW / 8, TW / 8]); g.beginPath(); g.moveTo(...P(x + .5, y)); g.lineTo(...P(x + .5, y + 1)); g.stroke(); g.setLineDash([]); }
+    if (t.kind === 'campus' && hash(x, y, 9) < .5) { g.strokeStyle = 'rgba(240,235,215,.6)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(...P(x, y + .5)); g.lineTo(...P(x + 1, y + .5)); g.stroke(); }
   }
-  // old-city moat
-  g.strokeStyle = css('--g-water'); g.lineWidth = Math.max(3, TH * .28); g.lineJoin = 'round';
-  poly(g, [P(10.5, 5.5), P(14.5, 5.5), P(14.5, 9.5), P(10.5, 9.5)], null, css('--g-water'));
-  const label = (txt, x, y) => { const [a, b] = P(x, y); g.font = `600 ${Math.max(10, TW * .22)}px "IBM Plex Sans Thai", sans-serif`; g.textAlign = 'center'; g.fillStyle = 'rgba(0,0,0,.55)'; g.fillText(txt, a + 1, b + 1); g.fillStyle = '#f3f0dc'; g.fillText(txt, a, b); };
-  label('แม่น้ำปิง', 22.5, 18.4); label('คูเมือง', 14.2, 5.2);
+  // the old city moat (คูเมือง) runs just inside the ring roads
+  const O = Sim.OLD;
+  g.lineJoin = 'miter'; g.lineWidth = Math.max(3, TH * .3);
+  poly(g, [P(O.x0 + .12, O.y0 + .12), P(O.x1 + .88, O.y0 + .12), P(O.x1 + .88, O.y1 + .88), P(O.x0 + .12, O.y1 + .88)], null, css('--g-water'));
+  g.lineWidth = Math.max(1, TH * .08);
+  poly(g, [P(O.x0 + .26, O.y0 + .26), P(O.x1 + .74, O.y0 + .26), P(O.x1 + .74, O.y1 + .74), P(O.x0 + .26, O.y1 + .74)], null, '#8b4a2f'); // remains of the city wall
 }
 
-// decorative city fabric on free land: shophouses downtown, houses in the suburbs, trees in the country
+// decorative city fabric: shophouses downtown, low-rise in the old city, houses, trees, paddies, campus and the mountain
 function decor(occupied) {
   const out = [];
   for (let y = 0; y < Sim.H; y++) for (let x = 0; x < Sim.W; x++) {
-    const t = Sim.TILES[y][x]; if (t.road || t.river || occupied.has(x + ',' + y)) continue;
+    const t = Sim.TILES[y][x], k = x + y;
+    if (t.kind === 'mountain') { out.push({ k, kind:'hill', x, y, r: hash(x, y, 6) }); continue; }
+    if (t.kind === 'landmark') { if (t.lm) out.push({ k: k + (Sim.LANDMARKS.find(l => l.id === t.lm).w ? 2 : 1), kind:'lm', id:t.lm, x, y }); continue; }
+    if (t.kind === 'campus') { const r = hash(x, y, 7); if (r < .4) out.push({ k, kind:'campus', x, y, r }); else if (r < .75) out.push({ k, kind:'tree', x, y, r }); continue; }
+    if (t.kind === 'airport') { if (hash(x, y, 8) < .15) out.push({ k, kind:'tree', x, y, r: .2 }); continue; }
+    if (t.kind !== 'land' || occupied.has(x + ',' + y)) continue;
     const r = hash(x, y, 1);
-    if (t.zone === 'core' && r < .72) out.push({ k:x + y, kind:'shop', x, y, r: hash(x, y, 2) });
-    else if (t.zone === 'sub' && r < .38) out.push({ k:x + y, kind:'house', x, y, r: hash(x, y, 3) });
-    else if ((t.zone === 'sub' && r < .6) || (t.zone === 'rural' && r < .3)) out.push({ k:x + y, kind:'tree', x, y, r: hash(x, y, 4) });
-    else if (t.zone === 'rural' && r < .42) out.push({ k:x + y, kind:'paddy', x, y, r: hash(x, y, 5) });
+    if (t.old) { if (r < .8) out.push({ k, kind: r < .12 ? 'wat' : 'shop', x, y, r: hash(x, y, 2) * .45 }); }
+    else if (t.zone === 'core' && r < .72) out.push({ k, kind:'shop', x, y, r: hash(x, y, 2) });
+    else if (t.zone === 'sub' && r < .38) out.push({ k, kind:'house', x, y, r: hash(x, y, 3) });
+    else if ((t.zone === 'sub' && r < .6) || (t.zone === 'rural' && r < .28)) out.push({ k, kind:'tree', x, y, r: hash(x, y, 4) });
+    else if (t.zone === 'rural' && r < .5) out.push({ k, kind:'paddy', x, y, r: hash(x, y, 5) });
   }
   return out;
 }
 const WALLS = ['#d9cfbf', '#cfc6b8', '#e3d9c5', '#c9bfae', '#bfc6c9'], ROOFS = ['#9b5b4a', '#7d8a96', '#a8826a', '#6f7c6a', '#8c4f3c'];
+function tree(g, x, y, r, z = 0, s0 = .13) {
+  const c = up(P(x, y), z), s = TW * (s0 + r * .06);
+  g.strokeStyle = '#5a4430'; g.lineWidth = Math.max(1.5, TW / 30); g.beginPath(); g.moveTo(c[0], c[1]); g.lineTo(c[0], c[1] - s); g.stroke();
+  g.fillStyle = shade('#3f7a34', .8 + r * .35); g.beginPath(); g.arc(c[0], c[1] - s * 1.6, s, 0, 7); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.12)'; g.beginPath(); g.arc(c[0] - s * .3, c[1] - s * 1.9, s * .45, 0, 7); g.fill();
+}
+// Lanna temple hall: white walls, stacked red roof with gold trim
+function viharn(g, x0, y0, x1, y1, h) {
+  box(g, x0, y0, x1, y1, h, '#efe8da');
+  gable(g, x0, y0, x1, y1, h, TH * .55, '#a8352a');
+  gable(g, x0 + .12, y0 + .1, x1 - .12, y1 - .1, h + TH * .3, TH * .5, '#b8402f');
+  const a = up(P(x0, (y0 + y1) / 2), h + TH * .8), b = up(P(x1, (y0 + y1) / 2), h + TH * .8);
+  g.strokeStyle = '#e8b64c'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke();
+}
+function chedi(g, cx, cy, s, color, z = 0) {
+  const c = up(P(cx, cy), z);
+  box(g, cx - s * .5, cy - s * .5, cx + s * .5, cy + s * .5, TH * s * .5, color, null, z);
+  box(g, cx - s * .36, cy - s * .36, cx + s * .36, cy + s * .36, TH * s * .5, color, null, z + TH * s * .5);
+  const top = c[1] - TH * s * 1.1;
+  g.fillStyle = shade(color, 1.05); g.beginPath(); g.ellipse(c[0], top - TH * s * .15, TW * s * .2, TH * s * .5, 0, Math.PI, 0); g.fill();
+  g.fillStyle = '#e8b64c'; g.beginPath(); g.moveTo(c[0] - TW * s * .05, top - TH * s * .5); g.lineTo(c[0] + TW * s * .05, top - TH * s * .5); g.lineTo(c[0], top - TH * s * 1.6); g.closePath(); g.fill();
+}
+function drawLandmark(g, id, x, y) {
+  if (id === 'chedi') { // Wat Chedi Luang: the great ruined brick chedi
+    box(g, x + .05, y + .05, x + .95, y + .95, TH * .5, '#9c6240');
+    box(g, x + .18, y + .18, x + .82, y + .82, TH * .6, '#a86c47', null, TH * .5);
+    box(g, x + .3, y + .3, x + .7, y + .7, TH * .55, '#94603f', null, TH * 1.1);
+    const c = up(P(x + .5, y + .5), TH * 1.65); g.fillStyle = '#8a5a3c'; g.beginPath(); g.moveTo(c[0] - TW * .09, c[1]); g.lineTo(c[0] + TW * .07, c[1]); g.lineTo(c[0] + TW * .02, c[1] - TH * .7); g.closePath(); g.fill();
+  } else if (id === 'singh' || id === 'suandok') {
+    viharn(g, x + .1, y + .2, x + .75, y + .8, TH * .55);
+    chedi(g, x + .82, y + .25, .3, id === 'suandok' ? '#f4f1e8' : '#e9c46a');
+    if (id === 'suandok') chedi(g, x + .25, y + .85, .22, '#f4f1e8');
+  } else if (id === 'suthep') {
+    const z = TH * 3.4; box(g, x, y, x + 1, y + 1, z, '#3f5d34', '#4c7040');
+    chedi(g, x + .5, y + .5, .55, '#e8b64c', z);
+  } else if (id === 'maya' || id === 'festival' || id === 'plaza') {
+    const w = id === 'maya' ? 1 : 2, h = TH * (id === 'maya' ? 2.2 : 1.8);
+    box(g, x + .08, y + .08, x + w - .08, y + w - .08, h, '#9fb8c8', '#dfe6ea');
+    const L = (t, k) => up(P(x + .08 + t * (w - .16), y + w - .08), k * h);
+    for (let k = .2; k < 1; k += .2) { g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(...L(0, k)); g.lineTo(...L(1, k)); g.stroke(); }
+    poly(g, [L(.1, .82), L(.9, .82), L(.9, .95), L(.1, .95)], id === 'maya' ? '#2d2d2d' : '#c0392b');
+  } else if (id === 'station') { // the Lanna-style railway station
+    box(g, x + .2, y + .3, x + 1.8, y + 1.1, TH * .9, '#eadfc6');
+    gable(g, x + .2, y + .3, x + 1.8, y + 1.1, TH * .9, TH * .55, '#9c3b2c');
+    box(g, x + .2, y + 1.3, x + 1.8, y + 1.7, TH * .2, '#b5ada0');
+  } else if (id === 'warorot') {
+    box(g, x + .05, y + .05, x + .95, y + .95, TH * .9, '#d8c9ad');
+    gable(g, x + .05, y + .05, x + .95, y + .95, TH * .9, TH * .5, '#6f7f8c');
+    const L = (t, k) => up(P(x + .05 + t * .9, y + .95), k * TH * .9);
+    for (let i = 0; i < 5; i++) poly(g, [L(i / 5, .55), L((i + 1) / 5, .55), L((i + 1) / 5, .8), L(i / 5, .8)], ['#c0392b', '#e8b64c', '#2e86c1', '#27ae60', '#e67e22'][i]);
+  } else if (id === 'zoo') {
+    tree(g, x + .3, y + .3, .7); tree(g, x + .75, y + .45, .3); tree(g, x + .4, y + .8, .5);
+    box(g, x + .55, y + .65, x + .9, y + .95, TH * .35, '#b08d5a'); gable(g, x + .55, y + .65, x + .9, y + .95, TH * .35, TH * .3, '#6b4f2c');
+  } else if (id === 'terminal') {
+    box(g, x + .05, y + .1, x + .95, y + .9, TH * .8, '#d6dde3', '#9aa7b3');
+    box(g, x + .7, y + .1, x + .9, y + .3, TH * 2.4, '#c9d1d8');
+    box(g, x + .64, y + .04, x + .96, y + .36, TH * .3, '#5d7f96', null, TH * 2.4);
+  }
+}
 function drawDecor(g, d) {
   const { x, y, r } = d;
+  if (d.kind === 'lm') return drawLandmark(g, d.id, x, y);
+  if (d.kind === 'hill') {
+    const h = TH * (.6 + Math.max(0, 4.2 - x) * .75 + r * .7 + (Math.abs(y - 6) < 3 ? .8 : 0));
+    box(g, x, y, x + 1, y + 1, h, '#3b5832', shade('#456b3a', .9 + r * .2));
+    if (r < .7) tree(g, x + .35, y + .4, r, h, .09); if (r > .3) tree(g, x + .7, y + .7, 1 - r, h, .09);
+    return;
+  }
+  if (d.kind === 'campus') { const h = TH * (.7 + r * .6); box(g, x + .18, y + .2, x + .82, y + .8, h, '#eee9de'); gable(g, x + .18, y + .2, x + .82, y + .8, h, TH * .35, '#8e3b2e'); return; }
+  if (d.kind === 'wat') return viharn(g, x + .15, y + .25, x + .85, y + .75, TH * .45);
   if (d.kind === 'shop') { const h = TH * (.6 + r * 1.3); box(g, x + .14, y + .14, x + .86, y + .86, h, WALLS[Math.floor(r * 5)], ROOFS[Math.floor(r * 7) % 5]); }
   else if (d.kind === 'house') { const h = TH * .45; box(g, x + .22, y + .25, x + .8, y + .78, h, WALLS[Math.floor(r * 5)]); gable(g, x + .22, y + .25, x + .8, y + .78, h, TH * .35, ROOFS[Math.floor(r * 5)]); }
-  else if (d.kind === 'tree') { const c = P(x + .5, y + .5), s = TW * (.13 + r * .06); g.strokeStyle = '#5a4430'; g.lineWidth = Math.max(1.5, TW / 30); g.beginPath(); g.moveTo(c[0], c[1]); g.lineTo(c[0], c[1] - s); g.stroke(); g.fillStyle = shade('#3f7a34', .85 + r * .3); g.beginPath(); g.arc(c[0], c[1] - s * 1.6, s, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.12)'; g.beginPath(); g.arc(c[0] - s * .3, c[1] - s * 1.9, s * .45, 0, 7); g.fill(); }
+  else if (d.kind === 'tree') tree(g, x + .5, y + .5, r);
   else if (d.kind === 'paddy') { const pts = [P(x + .1, y + .1), P(x + .9, y + .1), P(x + .9, y + .9), P(x + .1, y + .9)]; poly(g, pts, shade('#88b04b', .9 + r * .2)); g.strokeStyle = 'rgba(40,70,20,.35)'; g.lineWidth = 1; for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(...P(x + .1, y + .1 + i * .2)); g.lineTo(...P(x + .9, y + .1 + i * .2)); g.stroke(); } }
 }
 
@@ -805,27 +955,58 @@ function drawFirm(g, f) {
   return top;
 }
 
-let decorCache = null, decorKey = '';
-function drawMap() {
-  if (!MW) return;
-  const dpr = window.devicePixelRatio || 1, g = map.getContext('2d');
+// place names, drawn last so buildings never hide them
+const LABELS = [
+  ['คูเมือง', 17.5, 10.2, 1], ['นิมมานเหมินท์', 11.5, 9.6, 1], ['ไนท์บาซาร์', 22.5, 16.6, 1], ['มหาวิทยาลัยเชียงใหม่', 7, 13.6, 1],
+  ['ดอยสุเทพ', 1.5, 15, 1], ['สนามบินเชียงใหม่', 10.5, 25, 1], ['แม่น้ำปิง', 25.6, 22, 1], ['ซุปเปอร์ไฮเวย์', 31.5, 13, 1],
+  ['ประตูท่าแพ', 20.5, 13.5, 0], ['วัดเจดีย์หลวง', 18.5, 14.1, 0], ['วัดพระสิงห์', 15.5, 12.1, 0], ['วัดสวนดอก', 12.5, 15.1, 0],
+  ['วัดพระธาตุดอยสุเทพ', 2.5, 6.1, 0], ['เมญ่า', 11.5, 7.1, 0], ['เซ็นทรัลเฟสติวัล', 33, 8.1, 0], ['เซ็นทรัลแอร์พอร์ต', 16, 20.1, 0],
+  ['สถานีรถไฟ', 28, 15.1, 0], ['ตลาดวโรรส', 23.5, 12.1, 0], ['สวนสัตว์', 4.5, 6.4, 0], ['อ่างแก้ว', 7, 11.5, 0],
+  ['→ สันกำแพง', 38, 14.5, 2], ['↓ หางดง', 14.5, 29.4, 2], ['↑ แม่ริม', 17.5, .4, 2], ['↓ ลำพูน', 26.5, 29.4, 2], ['คลังนำเข้า', 30, 15.2, 0],
+];
+const LM_LIFT = { 'วัดพระธาตุดอยสุเทพ': 4.6, 'วัดเจดีย์หลวง': 2.6, 'เมญ่า': 2.6, 'เซ็นทรัลเฟสติวัล': 2.4, 'เซ็นทรัลแอร์พอร์ต': 2.4, 'สถานีรถไฟ': 1.8, 'ตลาดวโรรส': 1.8, 'คลังนำเข้า': 1.6, 'ประตูท่าแพ': 1.5 };
+function drawLabels(g) {
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const [txt, x, y, kind] of LABELS) {
+    if (kind === 0 && ui.zoom === 0) continue;
+    const [a, b0] = P(x, y), b = b0 - (LM_LIFT[txt] || (kind === 0 ? 1.4 : 0)) * TH;
+    const size = kind === 1 ? Math.max(11, TW * .25) : Math.max(10, TW * .2);
+    g.font = `${kind === 1 ? 700 : 600} ${size}px "IBM Plex Sans Thai", sans-serif`;
+    const w = g.measureText(txt).width + 10, h = size + 6;
+    g.fillStyle = kind === 1 ? 'rgba(20,26,33,.72)' : kind === 2 ? 'rgba(20,26,33,.5)' : 'rgba(250,246,232,.85)';
+    g.fillRect(a - w / 2, b - h / 2, w, h);
+    g.fillStyle = kind === 1 ? '#f3e2b0' : kind === 2 ? '#dfe6ee' : '#2a2219';
+    g.fillText(txt, a, b + 1);
+  }
+  g.textBaseline = 'alphabetic';
+}
+// Tha Phae Gate: brick piers either side of Tha Phae Road with a lintel over it
+function drawGate(g) {
+  const x = 20, y = 13;
+  box(g, x + .38, y + .02, x + .62, y + .24, TH * .85, '#9c5a3c');
+  box(g, x + .38, y + .76, x + .62, y + .98, TH * .85, '#9c5a3c');
+  box(g, x + .38, y + .02, x + .62, y + .98, TH * .22, '#a8653f', null, TH * .85);
+}
+
+// the scene (ground, city, firms, labels) is cached and only redrawn when something on it changes
+let scene = null, sceneKey = '', decorCache = null, decorKey = '';
+function sceneSig() {
+  return TW + '|' + state.firms.map(f => `${f.id},${f.x},${f.y},${f.owner},${f.type},${(f.units.find(u => u && u.type === 'grow') || {}).product || ''},${f.owner === 'you' && f.units.some(u => u && u.warn) ? 1 : 0}`).join(';');
+}
+function drawScene() {
+  const dpr = window.devicePixelRatio || 1;
   if (groundKey !== String(TW)) { buildGround(); groundKey = String(TW); }
-  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, map.width, map.height); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  scene = scene && scene.width === MW * dpr && scene.height === MH * dpr ? scene : document.createElement('canvas');
+  scene.width = MW * dpr; scene.height = MH * dpr;
+  const g = scene.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.drawImage(ground, 0, 0, MW, MH);
   const occ = new Set(); state.firms.forEach(f => [[0,0],[1,0],[0,1],[1,1]].forEach(([a, b]) => occ.add((f.x + a) + ',' + (f.y + b))));
   const key = [...occ].join('|');
   if (key !== decorKey) { decorCache = decor(occ); decorKey = key; }
-  // supply links between your firms, drawn on the ground
-  g.strokeStyle = css('--gold'); g.lineWidth = 2; g.setLineDash([6, 4]); g.globalAlpha = .8;
-  for (const f of state.firms) for (const u of f.units.filter(Boolean)) if (u.type === 'purchase' && u.src !== 'port') {
-    const s = state.firms.find(x => x.id === u.src); if (!s) continue;
-    g.beginPath(); g.moveTo(...P(s.x + 1, s.y + 1)); g.lineTo(...P(f.x + 1, f.y + 1)); g.stroke();
-  }
-  g.setLineDash([]); g.globalAlpha = 1;
-  if (ui.sel != null) { const f = selFirm(); if (f) { g.lineWidth = 2.5; poly(g, [P(f.x - .05, f.y - .05), P(f.x + 2.05, f.y - .05), P(f.x + 2.05, f.y + 2.05), P(f.x - .05, f.y + 2.05)], 'rgba(232,182,76,.25)', css('--gold')); } }
-  const items = decorCache.map(d => ({ k: d.k, d })).concat(state.firms.map(f => ({ k: f.x + f.y + 2.5, f })));
+  const items = decorCache.map(d => ({ k: d.k, d })).concat(state.firms.map(f => ({ k: f.x + f.y + 2.5, f })), [{ k: 33.5, gate: 1 }]);
   items.sort((a, b) => a.k - b.k);
   for (const it of items) {
+    if (it.gate) { drawGate(g); continue; }
     if (it.d) { drawDecor(g, it.d); continue; }
     const f = it.f, top = drawFirm(g, f);
     if (f.owner === 'you' && f.units.some(u => u && u.warn)) {
@@ -834,6 +1015,24 @@ function drawMap() {
       g.fillStyle = '#fff'; g.font = `700 ${TW * .18}px "IBM Plex Mono", monospace`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('!', p[0], p[1] + 1); g.textBaseline = 'alphabetic';
     }
   }
+  drawLabels(g);
+}
+function drawMap() {
+  if (!MW) return;
+  const dpr = window.devicePixelRatio || 1, g = map.getContext('2d');
+  const sig = sceneSig();
+  if (sig !== sceneKey || groundKey !== String(TW)) { drawScene(); sceneKey = sig; }
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, map.width, map.height);
+  g.drawImage(scene, 0, 0);
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // supply links between your firms
+  g.strokeStyle = css('--gold'); g.lineWidth = 2; g.setLineDash([6, 4]); g.globalAlpha = .85;
+  for (const f of state.firms) for (const u of f.units.filter(Boolean)) if (u.type === 'purchase' && u.src !== 'port') {
+    const s = state.firms.find(x => x.id === u.src); if (!s) continue;
+    g.beginPath(); g.moveTo(...P(s.x + 1, s.y + 1)); g.lineTo(...P(f.x + 1, f.y + 1)); g.stroke();
+  }
+  g.setLineDash([]); g.globalAlpha = 1;
+  if (ui.sel != null) { const f = selFirm(); if (f) { g.lineWidth = 2.5; poly(g, [P(f.x - .05, f.y - .05), P(f.x + 2.05, f.y - .05), P(f.x + 2.05, f.y + 2.05), P(f.x - .05, f.y + 2.05)], 'rgba(232,182,76,.22)', css('--gold')); } }
   if (ui.hover) {
     const { x, y } = ui.hover;
     if (ui.build) {
@@ -854,13 +1053,14 @@ function onHover(e) {
   if (ui.build) {
     const x = Math.min(t.x, Sim.W - 2), y = Math.min(t.y, Sim.H - 2), bad = Sim.canBuild(state, ui.build, x, y);
     ui.hover = { x, y };
-    status(bad ? `<b>สร้างไม่ได้</b> · ${bad}` : `<b>${Sim.FIRMS[ui.build].name}</b> · ราคารวมที่ดิน ${baht(Sim.buildCost(ui.build, x, y))} · ทำเล ${Math.round(Sim.firmValue({ x, y }) * 100)}% · คลิกเพื่อสร้าง`);
+    status(bad ? `<b>สร้างไม่ได้</b> · ${bad}` : `<b>${Sim.FIRMS[ui.build].name} ย่าน${Sim.TILES[y][x].area}</b> · ราคารวมที่ดิน ${baht(Sim.buildCost(ui.build, x, y))} · ทำเล ${Math.round(Sim.firmValue({ x, y }) * 100)}% · คลิกเพื่อสร้าง`);
   } else {
     ui.hover = t;
     const f = Sim.firmAt(state, t.x, t.y), tl = Sim.TILES[t.y][t.x];
     status(f ? (f.type === 'port' ? '<b>คลังนำเข้า</b> · ซื้อวัตถุดิบและสินค้าสำเร็จรูปได้ทุกชนิด ราคาคงที่ คุณภาพต่ำ'
         : `<b>${Sim.FIRMS[f.type].name} #${f.id}</b> · ${esc(Sim.comp(state, f.owner).name)} · ${f.units.filter(Boolean).map(u => Sim.UNITS[u.type].name + (u.product ? ' ' + Sim.P[u.product].name : '')).join(', ') || 'ยังไม่มีหน่วย'}`)
-      : tl.river ? '<b>แม่น้ำปิง</b>' : tl.road ? '<b>ถนน</b>' : `<b>ที่ดินว่าง</b> · ${{ core:'ใจกลางเมือง', sub:'ชานเมือง', rural:'ชนบท' }[tl.zone]} · ทำเล ${Math.round(tl.v * 100)}%`);
+      : tl.kind === 'landmark' ? `<b>${tl.name}</b> · ย่าน${tl.area}` : tl.kind !== 'land' ? `<b>${{ road:'ถนน', river:'แม่น้ำปิง', mountain:'ดอยสุเทพ–ปุย (อุทยานแห่งชาติ)', campus:'มหาวิทยาลัยเชียงใหม่', airport:'ท่าอากาศยานเชียงใหม่', runway:'ทางวิ่งสนามบิน', rail:'ทางรถไฟสายเหนือ', water:tl.name || 'แหล่งน้ำ' }[tl.kind]}</b>`
+        : `<b>ที่ดินว่าง ย่าน${tl.area}</b> · ${tl.old ? 'เขตเมืองเก่า (เฉพาะร้านค้า)' : { core:'ใจกลางเมือง', sub:'ชานเมือง', rural:'ชนบท' }[tl.zone]} · ทำเล ${Math.round(tl.v * 100)}%`);
   }
   drawMap();
 }
@@ -1065,6 +1265,7 @@ function winRank() {
 const winNews = () => `<ol id="news">${state.news.map(n => `<li class="${n.tone}"><time>${Sim.dateLabel(n.day)}</time><span>${esc(n.text)}</span></li>`).join('')}</ol>`;
 const winHelp = () => `<div class="help">
   <h3>เป้าหมาย</h3><p>สร้างมูลค่าบริษัทให้ถึง <b>฿${million(Sim.CFG.goal)}</b> ภายใน 3 ปี แข่งกับบริษัท AI สองราย</p>
+  <h3>เมืองเชียงใหม่</h3><p>แผนที่ย่อส่วนจากเมืองจริง (1 ช่อง ≈ 300 เมตร ทิศเหนือชี้ขึ้นขวา) คูเมืองและเมืองเก่าอยู่กลาง นิมมานกับ มช. ทางตะวันตกใต้เชิงดอยสุเทพ แม่น้ำปิงและไนท์บาซาร์ทางตะวันออก สนามบินทางตะวันตกเฉียงใต้ ทุ่งนาทางสันกำแพงและหางดงเหมาะกับฟาร์ม · ในคูเมืองสร้างได้เฉพาะร้านค้า ดอยสุเทพ มช. และสนามบินสร้างไม่ได้</p>
   <h3>การควบคุม</h3><ul><li>ลากแผนที่เพื่อเลื่อน ปุ่ม + − มุมซ้ายล่างเพื่อซูม</li><li>เลือกอาคารจากแถบเครื่องมือ แล้วคลิกที่ดินว่างเพื่อสร้าง</li><li>คลิกอาคารเพื่อเปิดหน้าจอจัดการแบบตาราง 3×3</li><li>ปุ่ม ❚❚ ▶ ▶▶ ▶▶▶ ด้านบนควบคุมเวลา</li></ul>
   <h3>อาคารและหน่วย</h3><ul><li><b>ร้านค้าปลีก</b>: จัดซื้อ → ขายปลีก, โฆษณา</li><li><b>โรงงาน</b>: จัดซื้อวัตถุดิบ → ผลิต (นอกใจกลางเมือง)</li><li><b>ฟาร์ม</b>: เพาะปลูก/เลี้ยงสัตว์ (เขตชนบท)</li><li><b>ศูนย์วิจัย</b>: เพิ่มเทคโนโลยีให้สินค้าคุณภาพสูงขึ้น</li></ul>
   <h3>เคล็ดลับ</h3><ul><li>ผลิตเองถูกกว่าซื้อสินค้าสำเร็จรูปนำเข้าเกือบครึ่ง</li><li>ฟาร์มของตัวเองทำให้ต้นทุนวัตถุดิบต่ำและคุณภาพสูงขึ้นเมื่ออัปเกรด</li><li>เครื่องหมาย ! สีแดงบนอาคารแปลว่ามีหน่วยต้องดูแล</li><li>เกมบันทึกอัตโนมัติในเบราว์เซอร์นี้</li></ul>
@@ -1118,7 +1319,7 @@ function showOver() {
     timeup:['ครบ 3 ปี', `มูลค่าบริษัทสุดท้าย ${baht(nw)} (${Math.round(nw / Sim.CFG.goal * 100)}% ของเป้า)`] }[state.over.kind];
   $('#ov-t').textContent = t; $('#ov-b').textContent = b; $('#overlay').hidden = false;
 }
-function newGame() { setSpeed(0); state = Sim.newGame(); ui.sel = null; ui.slot = null; ui.build = null; closeWin(); $('#overlay').hidden = true; changed(); centerOn(12.5, 8); toast('เริ่มเกมใหม่แล้ว'); }
+function newGame() { setSpeed(0); state = Sim.newGame(); ui.sel = null; ui.slot = null; ui.build = null; closeWin(); $('#overlay').hidden = true; changed(); centerOn(17.5, 13.5); toast('เริ่มเกมใหม่แล้ว'); }
 
 function init() {
   document.querySelector('.speed').onclick = e => { const b = e.target.closest('[data-speed]'); if (b) setSpeed(+b.dataset.speed); };
@@ -1166,7 +1367,7 @@ function init() {
   addEventListener('resize', () => { drawChart(); const f = selFirm(); if (f && ui.win === 'firm') drawLinks(f); });
   if (document.fonts) document.fonts.ready.then(() => { groundKey = ''; drawMap(); });
   if (innerWidth <= 760) ui.zoom = 0;
-  sizeMap(); renderAll(); centerOn(12.5, 8); showOver();
+  sizeMap(); renderAll(); centerOn(17.5, 13.5); showOver();
 }
 
 window.claude?.hot?.snapshot?.(() => ({ state, ui: { ...ui, speed:0 } }));
