@@ -4,195 +4,192 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
 <style>
-  /* Layout: ledger bar on top; city map with build toolbar on the left, firm / company panel on the right; report tabs below */
+  /* Layout: a classic business-sim frame — beveled steel toolbar on top, isometric city in the middle,
+     vertical tool dock on the right, status line at the bottom, floating windows over the city.
+     Deliberately a single dark "game chrome" look in every theme. */
   :root {
-    --bg:#e9ece6; --surface:#fafbf8; --surface-2:#f0f3ed; --ink:#171d19; --ink-2:#46514a; --muted:#77827b; --line:#d4dbd3;
-    --you:#1d7449; --you-tint:#1d74491f; --cheap:#b97a0c; --premium:#7d3d8f; --port:#3c5f7a;
-    --good:#1d7449; --bad:#b3261e;
-    --core:#d8d5cc; --sub:#dfe3d2; --rural:#cbdcb3; --road:#f6f5f0; --water:#9cc3d8; --moat:#7fb0c9; --grid:#00000010;
+    color-scheme: dark;
+    --desk:#11161c; --panel:#2f3a47; --panel-2:#26303b; --hi:#5b6b7e; --lo:#0e1318; --inset:#161d25;
+    --title-a:#41618a; --title-b:#22354d; --text:#e9eef3; --text-2:#aab6c3; --muted:#7f8c99;
+    --gold:#e8b64c; --lcd:#9fe0a8; --you:#3fbf7f; --cheap:#e6a52e; --premium:#b97bd8; --port:#5aa0d8;
+    --good:#62d595; --bad:#ff7d6e; --line:#3c4856;
+    --g-core:#a9a597; --g-sub:#93ab78; --g-rural:#6f9a4f; --g-road:#55585c; --g-water:#3f80b2; --g-mark:#d8d3a0;
     --display:"Chakra Petch","IBM Plex Sans Thai",system-ui,sans-serif;
     --body:"IBM Plex Sans Thai",system-ui,sans-serif;
     --mono:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg:#101411; --surface:#181d1a; --surface-2:#1f2622; --ink:#e5ebe6; --ink-2:#b0bbb3; --muted:#7c8880; --line:#2b332e;
-      --you:#4cc38a; --you-tint:#4cc38a24; --cheap:#e2a83a; --premium:#c58ad6; --port:#7fb0d6;
-      --good:#4cc38a; --bad:#ff8a80;
-      --core:#2c2e2b; --sub:#252b25; --rural:#1f2b1d; --road:#3a3d39; --water:#24485c; --moat:#2f5a70; --grid:#ffffff0d;
-      color-scheme: dark;
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg:#101411; --surface:#181d1a; --surface-2:#1f2622; --ink:#e5ebe6; --ink-2:#b0bbb3; --muted:#7c8880; --line:#2b332e;
-    --you:#4cc38a; --you-tint:#4cc38a24; --cheap:#e2a83a; --premium:#c58ad6; --port:#7fb0d6;
-    --good:#4cc38a; --bad:#ff8a80;
-    --core:#2c2e2b; --sub:#252b25; --rural:#1f2b1d; --road:#3a3d39; --water:#24485c; --moat:#2f5a70; --grid:#ffffff0d;
-    color-scheme: dark;
-  }
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
-  body { background:var(--bg); color:var(--ink); font:14px/1.5 var(--body); }
-  body::before { content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--surface); }
+  html, body { height:100%; }
+  body { background:var(--desk); color:var(--text); font:13px/1.45 var(--body); overflow:hidden; }
   button, select, input { font:inherit; color:inherit; }
   button { cursor:pointer; }
-  :focus-visible { outline:2px solid var(--you); outline-offset:2px; }
-  .num, .mono { font-family:var(--mono); font-variant-numeric:tabular-nums; }
-  .pos { color:var(--good); } .neg { color:var(--bad); }
-  .muted { color:var(--muted); }
+  :focus-visible { outline:2px solid var(--gold); outline-offset:1px; }
+  .num { font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .pos { color:var(--good); } .neg { color:var(--bad); } .muted { color:var(--muted); }
 
-  .top { position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--surface); border-bottom:1px solid var(--line);
-    padding-block:8px; padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); }
-  .top-in { max-width:1320px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:center; gap:8px 20px; }
-  .logo { font-family:var(--display); font-weight:700; font-size:1.35rem; line-height:1; }
-  .logo small { display:block; font:500 .68rem var(--body); color:var(--muted); letter-spacing:.06em; margin-top:3px; }
-  .stats { display:flex; flex-wrap:wrap; gap:4px 20px; flex:1; min-width:0; }
-  .stat { display:flex; flex-direction:column; min-width:0; }
-  .stat span { font-size:.68rem; color:var(--muted); letter-spacing:.05em; }
-  .stat b { font:600 .98rem var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .goalbar { display:block; height:4px; border-radius:2px; background:var(--surface-2); margin-top:3px; overflow:hidden; min-width:120px; }
-  .goalbar i { display:block; height:100%; background:var(--you); width:0; }
-  .speed { display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
-  .speed button { border:0; background:var(--surface); padding:8px 12px; font-family:var(--mono); font-weight:600; min-width:44px; }
-  .speed button + button { border-left:1px solid var(--line); }
-  .speed button[aria-pressed="true"] { background:var(--ink); color:var(--surface); }
-  @media (max-width:700px) {
-    .top { position:static; }
-    .stats { flex-basis:100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
-    .speed { position:fixed; z-index:6; right:max(16px,env(safe-area-inset-right,0px)); bottom:calc(16px + env(safe-area-inset-bottom,0px)); box-shadow:0 4px 14px rgb(0 0 0 / .25); }
-  }
+  /* bevels */
+  .bevel { background:var(--panel); border:1px solid; border-color:var(--hi) var(--lo) var(--lo) var(--hi); }
+  .inset { background:var(--inset); border:1px solid; border-color:var(--lo) var(--hi) var(--hi) var(--lo); }
+  .bt { background:linear-gradient(#3c4a5a,#2c3744); border:1px solid; border-color:var(--hi) var(--lo) var(--lo) var(--hi); border-radius:2px; padding:5px 10px; color:var(--text); }
+  .bt:hover:not(:disabled) { background:linear-gradient(#46566a,#323e4c); }
+  .bt:active:not(:disabled), .bt[aria-pressed="true"] { border-color:var(--lo) var(--hi) var(--hi) var(--lo); background:#1e2730; color:var(--gold); }
+  .bt:disabled { opacity:.45; cursor:not-allowed; }
+  .bt.go { color:var(--gold); font-weight:600; }
+  .bt.danger { color:var(--bad); }
 
-  .wrap { max-width:1320px; margin:0 auto; padding-block:14px 56px; padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); display:grid; gap:14px; }
-  .main { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:14px; align-items:start; }
-  @media (max-width:980px) { .main { grid-template-columns:minmax(0,1fr); } }
-  .panel { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; min-width:0; }
-  h2, h3 { font-family:var(--display); font-weight:600; margin:0; text-wrap:balance; }
-  h2 { font-size:1.08rem; } h3 { font-size:.95rem; }
-  .ph { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:6px 12px; margin-bottom:10px; }
-  .hint { font-size:.78rem; color:var(--muted); }
+  .game { height:100%; display:flex; flex-direction:column; gap:6px; padding-block:6px;
+    padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); }
 
-  .tools { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
-  .tool { display:flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:6px 10px; font-size:.85rem; }
-  .tool .glyph { display:inline-grid; place-items:center; width:20px; height:20px; border-radius:5px; background:var(--you); color:var(--surface); font:700 .75rem var(--display); }
-  .tool[aria-pressed="true"] { border-color:var(--you); box-shadow:0 0 0 2px var(--you-tint); }
-  .mapbox { position:relative; }
-  #map { display:block; width:100%; height:auto; border-radius:8px; touch-action:manipulation; cursor:pointer; }
-  .tip { position:absolute; pointer-events:none; background:var(--ink); color:var(--surface); font-size:.76rem; padding:5px 8px; border-radius:6px; white-space:nowrap; transform:translate(-50%,-110%); z-index:2; }
-  .legend { display:flex; flex-wrap:wrap; gap:4px 12px; font-size:.76rem; color:var(--ink-2); margin-top:8px; }
-  .legend span { display:inline-flex; align-items:center; gap:5px; }
-  .sw { display:inline-block; width:11px; height:11px; border-radius:3px; border:1px solid var(--line); }
+  /* top toolbar */
+  .bar { display:flex; flex-wrap:wrap; align-items:stretch; gap:6px; padding:5px; }
+  .brand { display:flex; flex-direction:column; justify-content:center; padding:0 10px 0 6px; border-right:1px solid var(--lo); box-shadow:1px 0 0 var(--hi); }
+  .brand b { font:700 1.15rem/1 var(--display); color:var(--gold); letter-spacing:.02em; text-shadow:0 1px 0 #000; }
+  .brand small { font-size:.66rem; color:var(--muted); letter-spacing:.08em; margin-top:2px; }
+  .lcd { display:flex; flex-direction:column; justify-content:center; padding:3px 10px; min-width:0; }
+  .lcd span { font-size:.64rem; color:var(--muted); letter-spacing:.06em; }
+  .lcd b { font:600 .95rem var(--mono); color:var(--lcd); white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .lcd b.neg { color:var(--bad); }
+  .goal i { display:block; height:4px; background:#0a0e12; margin-top:3px; }
+  .goal i i { height:100%; width:0; background:var(--gold); }
+  .speed { display:flex; gap:2px; margin-left:auto; align-items:center; }
+  .speed .bt { min-width:40px; font:600 .8rem var(--mono); padding:6px 8px; }
 
-  .grid9 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
-  .slot { min-height:74px; border:1px solid var(--line); background:var(--surface-2); border-radius:8px; padding:6px 7px; text-align:left; display:flex; flex-direction:column; gap:1px; min-width:0; font-size:.74rem; }
-  .slot b { font-family:var(--display); font-size:.86rem; font-weight:600; }
-  .slot .pn { color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .slot .lv { font-family:var(--mono); color:var(--muted); margin-top:auto; }
-  .slot.empty { align-items:center; justify-content:center; color:var(--muted); border-style:dashed; background:transparent; font-size:1.2rem; }
-  .slot.sel { border-color:var(--you); box-shadow:0 0 0 2px var(--you-tint); }
-  .slot.warn { border-color:var(--bad); }
-  .slot[data-u="purchase"] b { color:var(--port); } .slot[data-u="sales"] b, .slot[data-u="make"] b, .slot[data-u="grow"] b { color:var(--you); }
-  .slot[data-u="ad"] b { color:var(--cheap); } .slot[data-u="research"] b { color:var(--premium); }
+  /* stage */
+  .stage { position:relative; flex:1; min-height:0; display:flex; gap:6px; }
+  .view { position:relative; flex:1; min-width:0; overflow:hidden; }
+  .vp { position:absolute; inset:3px; overflow:auto; background:#1d2a1c; scrollbar-width:thin; scrollbar-color:var(--hi) var(--inset); }
+  #map { display:block; touch-action:none; cursor:grab; }
+  #map.building { cursor:crosshair; }
+  .zoom { position:absolute; left:10px; bottom:10px; display:flex; flex-direction:column; gap:2px; z-index:2; }
+  .zoom .bt { width:30px; height:30px; padding:0; font:700 1rem var(--mono); }
+  .dock { display:flex; flex-direction:column; gap:4px; padding:5px; width:76px; overflow-y:auto; }
+  .dock .bt { display:flex; flex-direction:column; align-items:center; gap:2px; padding:7px 2px 5px; font-size:.68rem; line-height:1.15; text-align:center; }
+  .dock .bt svg { width:24px; height:24px; }
+  .dock hr { border:0; border-top:1px solid var(--lo); border-bottom:1px solid var(--hi); margin:3px 0; width:100%; }
+  .status { padding:4px 10px; font-size:.78rem; color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-height:26px; }
+  .status b { color:var(--gold); font-weight:600; }
+  svg.ic { fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 
-  .cfg { margin-top:10px; padding-top:10px; border-top:1px solid var(--line); display:grid; gap:8px; }
-  .field { display:grid; gap:3px; }
-  .field label { font-size:.74rem; color:var(--muted); }
-  select, input[type=number] { width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); }
-  .row2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-  .actions { display:flex; flex-wrap:wrap; gap:6px; }
-  .btn { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:6px 11px; font-size:.84rem; }
-  .btn:hover:not(:disabled) { border-color:var(--ink-2); }
-  .btn.go { border-color:var(--you); color:var(--you); font-weight:600; }
-  .btn.danger { color:var(--bad); }
-  .btn:disabled { opacity:.45; cursor:not-allowed; }
-  .note { font-size:.78rem; color:var(--ink-2); background:var(--surface-2); border-radius:8px; padding:7px 9px; }
-  .note.bad { color:var(--bad); }
+  /* floating window */
+  .win { position:absolute; top:8px; right:8px; bottom:8px; width:min(780px, calc(100% - 16px)); display:flex; flex-direction:column; z-index:4; box-shadow:0 10px 30px rgb(0 0 0 / .55); }
+  .win.narrow { width:min(560px, calc(100% - 16px)); }
+  .win-t { display:flex; align-items:center; gap:8px; padding:4px 4px 4px 10px; background:linear-gradient(var(--title-a),var(--title-b)); border-bottom:1px solid var(--lo); }
+  .win-t h2 { flex:1; margin:0; font:600 .95rem var(--display); letter-spacing:.02em; text-shadow:0 1px 0 #000; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .win-t .bt { padding:1px 8px; font-weight:700; }
+  .win-b { flex:1; overflow:auto; padding:12px; min-height:0; }
+  h3 { font:600 .86rem var(--display); color:var(--gold); margin:0 0 6px; letter-spacing:.03em; text-wrap:balance; }
+  .sec + .sec { margin-top:14px; }
 
-  table { width:100%; border-collapse:collapse; font-size:.82rem; }
-  th, td { padding:5px 6px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--line); }
+  /* firm screen */
+  .firm { display:grid; grid-template-columns:minmax(0,320px) minmax(0,1fr); gap:14px; }
+  .facts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; margin-bottom:10px; }
+  .facts div { padding:4px 7px; min-width:0; }
+  .facts span { display:block; font-size:.64rem; color:var(--muted); }
+  .facts b { font:600 .82rem var(--mono); white-space:nowrap; }
+  .board { position:relative; padding:8px; }
+  .g9 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+  .links { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+  .u { position:relative; aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:5px 3px 4px; min-width:0; text-align:center; }
+  .u .ut { font:600 .66rem var(--display); letter-spacing:.04em; color:var(--text-2); }
+  .u svg.ic { width:32%; height:auto; }
+  .u .up { font-size:.66rem; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:3px; }
+  .pips { display:flex; gap:1px; }
+  .pips i { width:5px; height:5px; background:#0a0e12; }
+  .pips i.on { background:var(--gold); }
+  .u.empty { color:var(--muted); justify-content:center; font-size:1.3rem; }
+  .u.sel { outline:2px solid var(--gold); outline-offset:-2px; }
+  .u.warn::after { content:"!"; position:absolute; top:3px; right:4px; width:14px; height:14px; border-radius:50%; background:var(--bad); color:#fff; font:700 .66rem/14px var(--mono); }
+  .u[data-u="purchase"] svg { color:var(--port); } .u[data-u="sales"] svg { color:var(--gold); } .u[data-u="make"] svg { color:#d7dde3; }
+  .u[data-u="grow"] svg { color:var(--good); } .u[data-u="ad"] svg { color:#f08a5d; } .u[data-u="research"] svg { color:var(--premium); }
+  .chip { display:inline-block; width:9px; height:9px; border:1px solid #0008; flex:none; }
+  .detail { min-width:0; }
+  .dh { display:flex; align-items:center; gap:10px; padding:8px; margin-bottom:10px; }
+  .dh svg.ic { width:34px; height:34px; color:var(--gold); }
+  .dh b { font:600 1rem var(--display); display:block; }
+  .field { display:grid; gap:3px; margin-bottom:8px; }
+  .field label { font-size:.7rem; color:var(--muted); letter-spacing:.04em; }
+  select, input[type=number] { width:100%; padding:5px 7px; background:var(--inset); border:1px solid; border-color:var(--lo) var(--hi) var(--hi) var(--lo); border-radius:0; }
+  .meter { display:grid; grid-template-columns:96px minmax(0,1fr) 38px; align-items:center; gap:8px; font-size:.76rem; margin-bottom:4px; }
+  .meter .tr { height:10px; background:#0a0e12; border:1px solid var(--lo); position:relative; }
+  .meter .tr i { position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg,#c8902f,var(--gold)); }
+  .meter .tr em { position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--bad); }
+  .meter b { font-family:var(--mono); text-align:right; }
+  .msg { padding:6px 8px; font-size:.78rem; color:var(--text-2); margin-bottom:8px; }
+  .msg.bad { color:var(--bad); }
+  .row { display:flex; flex-wrap:wrap; gap:4px; }
+  table { width:100%; border-collapse:collapse; font-size:.78rem; }
+  th, td { padding:4px 6px; text-align:right; white-space:nowrap; }
   th:first-child, td:first-child { text-align:left; }
-  th { font-weight:600; color:var(--muted); font-size:.72rem; }
-  td.num, td .num { font-family:var(--mono); }
+  th { font-weight:600; color:var(--muted); font-size:.68rem; letter-spacing:.04em; background:var(--panel-2); }
+  tbody tr:nth-child(even) td { background:#ffffff06; }
+  td.num { font-family:var(--mono); }
   .tw { overflow-x:auto; }
-  .kv { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:6px; }
-  .kv div { background:var(--surface-2); border-radius:8px; padding:6px 9px; min-width:0; }
-  .kv span { display:block; font-size:.7rem; color:var(--muted); }
-  .kv b { font:600 .9rem var(--mono); }
-
-  .tabs { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:12px; border-bottom:1px solid var(--line); }
-  .tabs button { border:0; background:none; padding:8px 12px; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px; font-weight:500; }
-  .tabs button[aria-selected="true"] { color:var(--ink); border-color:var(--ink); }
-  .cols { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; }
-  @media (max-width:760px) { .cols { grid-template-columns:minmax(0,1fr); } }
-  canvas.chart { display:block; width:100%; height:210px; }
-  #news { list-style:none; margin:0; padding:0; display:grid; gap:6px; max-height:320px; overflow-y:auto; }
-  #news li { display:grid; grid-template-columns:auto minmax(0,1fr); gap:10px; font-size:.84rem; }
-  #news time { font:.7rem var(--mono); color:var(--muted); padding-top:2px; white-space:nowrap; }
+  .cols { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; }
+  canvas.chart { display:block; width:100%; height:220px; }
+  #news { list-style:none; margin:0; padding:0; display:grid; gap:5px; }
+  #news li { display:grid; grid-template-columns:auto minmax(0,1fr); gap:10px; font-size:.8rem; }
+  #news time { font:.68rem var(--mono); color:var(--muted); padding-top:2px; white-space:nowrap; }
   #news li.good span { color:var(--good); } #news li.bad span { color:var(--bad); }
-  .dotc { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:1px; }
+  .dotc { display:inline-block; width:9px; height:9px; margin-right:6px; vertical-align:0; border:1px solid #0008; }
+  .help p, .help li { color:var(--text-2); max-width:65ch; }
+  .help ul { padding-left:18px; margin:4px 0 10px; }
 
-  .toast { position:fixed; left:50%; bottom:calc(16px + env(safe-area-inset-bottom,0px)); transform:translate(-50%,20px); opacity:0; pointer-events:none;
-    background:var(--ink); color:var(--surface); padding:9px 15px; border-radius:10px; font-size:.88rem; max-width:calc(100% - 32px); transition:opacity .25s, transform .25s; z-index:20; }
+  .toast { position:fixed; left:50%; bottom:calc(40px + env(safe-area-inset-bottom,0px)); transform:translate(-50%,16px); opacity:0; pointer-events:none; z-index:20;
+    padding:7px 14px; font-size:.84rem; max-width:calc(100% - 32px); transition:opacity .25s, transform .25s; color:var(--gold); }
   .toast.show { opacity:1; transform:translate(-50%,0); }
-  .overlay { position:fixed; inset:0; background:rgb(0 0 0 / .45); display:grid; place-items:center; z-index:30; padding:16px; }
-  .modal { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:22px; max-width:460px; width:100%; display:grid; gap:12px; }
-  .modal h2 { font-size:1.5rem; }
+  .overlay { position:fixed; inset:0; background:rgb(0 0 0 / .55); display:grid; place-items:center; z-index:30; padding:16px; }
+  .modal { max-width:440px; width:100%; }
+  .modal .win-b p { color:var(--text-2); margin:0 0 12px; }
+
+  @media (max-width:760px) {
+    .bar { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .brand { grid-column:1 / -1; border:0; box-shadow:none; flex-direction:row; align-items:baseline; gap:8px; }
+    .speed { grid-column:1 / -1; margin:0; justify-content:stretch; } .speed .bt { flex:1; }
+    .stage { flex-direction:column; }
+    .dock { flex-direction:row; width:auto; overflow-x:auto; overflow-y:hidden; flex:none; }
+    .dock .bt { min-width:62px; } .dock hr { display:none; }
+    .win, .win.narrow { inset:0; width:auto; }
+    .firm, .cols { grid-template-columns:minmax(0,1fr); }
+  }
   @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
 </style>
 
-<header class="top">
-  <div class="top-in">
-    <div class="logo">เจ้าสัวเชียงใหม่<small>เกมจำลองธุรกิจแนว Capitalism</small></div>
-    <div class="stats">
-      <div class="stat"><span>วันที่</span><b id="s-date"></b></div>
-      <div class="stat"><span>เงินสด</span><b id="s-cash"></b></div>
-      <div class="stat"><span>กำไรเดือนนี้</span><b id="s-mtd"></b></div>
-      <div class="stat"><span id="s-goal-l">มูลค่าบริษัท</span><b id="s-nw"></b><i class="goalbar"><i id="s-goalbar"></i></i></div>
-    </div>
+<div class="game">
+  <header class="bar bevel">
+    <div class="brand"><b>เจ้าสัวเชียงใหม่</b><small>BUSINESS SIM · CHIANG MAI</small></div>
+    <div class="lcd inset"><span>วันที่</span><b id="s-date"></b></div>
+    <div class="lcd inset"><span>เงินสด</span><b id="s-cash"></b></div>
+    <div class="lcd inset"><span>กำไรเดือนนี้</span><b id="s-mtd"></b></div>
+    <div class="lcd inset goal"><span id="s-goal-l">มูลค่าบริษัท</span><b id="s-nw"></b><i><i id="s-goalbar"></i></i></div>
     <div class="speed" role="group" aria-label="ความเร็วเวลา">
-      <button data-speed="0" aria-label="หยุด">❚❚</button>
-      <button data-speed="1" aria-label="ความเร็ว 1 เท่า">▶</button>
-      <button data-speed="2" aria-label="ความเร็ว 2 เท่า">▶▶</button>
-      <button data-speed="3" aria-label="ความเร็ว 4 เท่า">▶▶▶</button>
+      <button class="bt" data-speed="0" aria-label="หยุด">❚❚</button>
+      <button class="bt" data-speed="1" aria-label="ความเร็ว 1 เท่า">▶</button>
+      <button class="bt" data-speed="2" aria-label="ความเร็ว 2 เท่า">▶▶</button>
+      <button class="bt" data-speed="3" aria-label="ความเร็ว 4 เท่า">▶▶▶</button>
     </div>
-  </div>
-</header>
+  </header>
 
-<div class="wrap">
-  <div class="main">
-    <section class="panel">
-      <div class="ph"><h2>แผนที่เมืองเชียงใหม่</h2><span class="hint" id="map-hint">คลิกอาคารเพื่อจัดการ หรือเลือกประเภทอาคารด้านล่างแล้วคลิกที่ดินว่าง</span></div>
-      <div class="tools" id="tools"></div>
-      <div class="mapbox"><canvas id="map" aria-label="แผนที่เมือง"></canvas><div class="tip" id="tip" hidden></div></div>
-      <div class="legend">
-        <span><i class="sw" style="background:var(--core)"></i>ใจกลางเมือง (ทำเลดี ที่ดินแพง)</span>
-        <span><i class="sw" style="background:var(--sub)"></i>ชานเมือง (สร้างโรงงานได้)</span>
-        <span><i class="sw" style="background:var(--rural)"></i>ชนบท (สร้างฟาร์มได้)</span>
-        <span><i class="dotc" style="background:var(--you)"></i>คุณ</span>
-        <span><i class="dotc" style="background:var(--cheap)"></i>ถูกดีกรุ๊ป</span>
-        <span><i class="dotc" style="background:var(--premium)"></i>ลูน่า คอร์ปอเรชั่น</span>
-        <span><i class="dotc" style="background:var(--port)"></i>คลังนำเข้า</span>
-      </div>
-    </section>
-    <section class="panel" id="side"></section>
+  <div class="stage">
+    <div class="view bevel">
+      <div class="vp inset" id="vp"><canvas id="map" aria-label="แผนที่เมืองเชียงใหม่แบบ isometric"></canvas></div>
+      <div class="zoom"><button class="bt" id="zin" aria-label="ซูมเข้า">+</button><button class="bt" id="zout" aria-label="ซูมออก">−</button></div>
+      <section class="win bevel" id="win" hidden aria-labelledby="win-title">
+        <div class="win-t"><h2 id="win-title"></h2><button class="bt" id="win-x" aria-label="ปิดหน้าต่าง">✕</button></div>
+        <div class="win-b" id="win-b"></div>
+      </section>
+    </div>
+    <nav class="dock bevel" id="dock" aria-label="เครื่องมือ"></nav>
   </div>
 
-  <section class="panel">
-    <div class="tabs" role="tablist" id="tabs">
-      <button role="tab" data-tab="fin" aria-selected="true">งบการเงิน</button>
-      <button role="tab" data-tab="mkt">ตลาดสินค้า</button>
-      <button role="tab" data-tab="rank">อันดับบริษัท</button>
-      <button role="tab" data-tab="news">ข่าว</button>
-      <button role="tab" data-tab="help">วิธีเล่น</button>
-    </div>
-    <div id="tab"></div>
-  </section>
+  <footer class="status inset" id="status" aria-live="off"></footer>
 </div>
 
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="toast bevel" id="toast" role="status" aria-live="polite"></div>
 <div class="overlay" id="overlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ov-t">
-    <h2 id="ov-t"></h2><p id="ov-b" style="margin:0;color:var(--ink-2)"></p>
-    <div class="actions"><button class="btn go" id="ov-new">เล่นใหม่</button><button class="btn" id="ov-close">ดูผลงาน</button></div>
+  <div class="modal bevel" role="dialog" aria-modal="true" aria-labelledby="ov-t">
+    <div class="win-t"><h2 id="ov-t"></h2></div>
+    <div class="win-b"><p id="ov-b"></p><div class="row"><button class="bt go" id="ov-new">เล่นใหม่</button><button class="bt" id="ov-close">ดูผลงาน</button></div></div>
   </div>
 </div>
 
@@ -621,8 +618,29 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '
 const SAVE = 'chao-sua-v2';
 const COLOR = { you:'--you', thukdee:'--cheap', luna:'--premium', port:'--port' };
 const SPEED_MS = [0, 700, 300, 90];
-let state, ui = { sel:null, slot:null, build:null, hover:null, tab:'fin', speed:0 }, timer = null;
+const PCOLOR = { coffee:'#6b4a33', thaitea:'#e07b2c', bread:'#d9a35b', beans:'#4a3326', tealeaf:'#4f8a3a', milk:'#e8eef2', sugar:'#f2efe6', wheat:'#d8b45a' };
+const chip = p => `<i class="chip" style="background:${PCOLOR[p]}"></i>`;
+const ICON = {
+  purchase:'<path d="M2 7h11v9H2zM13 10h4l3 3v3h-7z"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/>',
+  sales:'<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+  make:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+  grow:'<path d="M12 21v-9"/><path d="M12 12C12 7 8 5 4 5c0 4 3 7 8 7zM12 10c0-4 3-6 8-6 0 4-3 6-8 6z"/>',
+  ad:'<path d="M3 10v4h3l8 5V5L6 10z"/><path d="M17 9a4 4 0 0 1 0 6"/>',
+  research:'<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7.5 15h9"/>',
+  store:'<path d="M3 9l2-5h14l2 5M4 9v11h16V9M3 9h18"/><path d="M9 20v-6h6v6"/>',
+  factory:'<path d="M3 20V10l6 4v-4l6 4V5h4v15z"/>',
+  farm:'<path d="M3 20h18M5 20v-8l7-5 7 5v8"/><path d="M10 20v-5h4v5"/>',
+  lab:'<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7.5 15h9"/>',
+  fin:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  mkt:'<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  rank:'<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4a3 3 0 0 0 4 4M16 6h4a3 3 0 0 1-4 4M12 13v4M8 20h8"/>',
+  news:'<path d="M4 5h13v14H6a2 2 0 0 1-2-2zM17 9h3v8a2 2 0 0 1-2 2"/><path d="M7 9h7M7 12h7M7 15h4"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17h.01"/>',
+  mine:'<path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6M8 11h2M14 11h2"/>',
+};
+const svg = (k, cls = 'ic') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>`;
 
+let state, ui = { sel:null, slot:null, build:null, hover:null, win:null, speed:0, zoom:1 }, timer = null;
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const you = () => Sim.comp(state, 'you');
 const selFirm = () => state.firms.find(f => f.id === ui.sel);
@@ -635,274 +653,437 @@ function renderTop() {
   const net = m.sales - m.imports - m.staff - m.ads - m.rnd - m.interest;
   $('#s-date').textContent = Sim.dateLabel(state.day);
   $('#s-cash').textContent = baht(c.cash); $('#s-cash').className = c.cash < 0 ? 'neg' : '';
-  $('#s-mtd').textContent = signed(net); $('#s-mtd').className = net >= 0 ? 'pos' : 'neg';
-  $('#s-goal-l').textContent = `มูลค่าบริษัท · เป้า ฿${million(Sim.CFG.goal)} ใน 3 ปี`;
+  $('#s-mtd').textContent = signed(net); $('#s-mtd').className = net < 0 ? 'neg' : '';
+  $('#s-goal-l').textContent = `มูลค่าบริษัท · เป้า ฿${million(Sim.CFG.goal)}`;
   $('#s-nw').textContent = baht(nw);
   $('#s-goalbar').style.width = Math.max(0, Math.min(100, nw / Sim.CFG.goal * 100)) + '%';
-  document.querySelectorAll('.speed button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.speed === ui.speed));
+  document.querySelectorAll('.speed .bt').forEach(b => b.setAttribute('aria-pressed', +b.dataset.speed === ui.speed));
 }
 
-// ---- map ----
-const map = $('#map');
-let ts = 20;
-function sizeMap() {
-  const w = map.clientWidth || map.parentElement.clientWidth, dpr = window.devicePixelRatio || 1;
-  ts = w / Sim.W;
-  map.style.height = ts * Sim.H + 'px';
-  map.width = w * dpr; map.height = ts * Sim.H * dpr;
-  map.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+// ---- isometric city ----
+const map = $('#map'), vp = $('#vp');
+const ZOOMS = [36, 52, 72];
+let TW = 52, TH = 26, OX = 0, OY = 0, MW = 0, MH = 0, ground = null, groundKey = '';
+const P = (x, y) => [OX + (x - y) * TW / 2, OY + (x + y) * TH / 2];
+const hash = (x, y, k = 0) => { let h = (x * 73856093) ^ (y * 19349663) ^ (k * 83492791); h = Math.imul(h ^ h >>> 13, 1274126177); return ((h ^ h >>> 16) >>> 0) / 4294967296; };
+function shade(hex, k) {
+  const n = parseInt(hex.slice(1), 16), f = v => Math.max(0, Math.min(255, Math.round(v * k)));
+  return `rgb(${f(n >> 16)},${f(n >> 8 & 255)},${f(n & 255)})`;
 }
-function drawMap() {
-  const g = map.getContext('2d'), T = Sim.TILES;
-  const col = { core:css('--core'), sub:css('--sub'), rural:css('--rural'), road:css('--road'), water:css('--water'), moat:css('--moat'), grid:css('--grid') };
+function poly(g, pts, fill, stroke) { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.stroke(); } }
+const up = (p, h) => [p[0], p[1] - h];
+// extruded box on the ground rectangle (x0,y0)-(x1,y1), height h px; faces: top, left (y1 side), right (x1 side)
+function box(g, x0, y0, x1, y1, h, base, top) {
+  const A = P(x0, y0), B = P(x1, y0), C = P(x1, y1), D = P(x0, y1);
+  poly(g, [D, C, up(C, h), up(D, h)], shade(base, .78));
+  poly(g, [C, B, up(B, h), up(C, h)], shade(base, .98));
+  poly(g, [up(A, h), up(B, h), up(C, h), up(D, h)], top || shade(base, 1.12));
+  g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(...up(D, h)); g.lineTo(...up(C, h)); g.lineTo(...up(B, h)); g.moveTo(...up(C, h)); g.lineTo(...C); g.stroke();
+  return { A, B, C, D };
+}
+// gabled roof along x over the box top
+function gable(g, x0, y0, x1, y1, h, rh, color) {
+  const ym = (y0 + y1) / 2;
+  const a = up(P(x0, ym), h + rh), b = up(P(x1, ym), h + rh);
+  poly(g, [up(P(x0, y1), h), up(P(x1, y1), h), b, a], shade(color, .85));
+  poly(g, [up(P(x1, y0), h), up(P(x1, y1), h), b], shade(color, 1.05));
+  poly(g, [up(P(x0, y0), h), up(P(x1, y0), h), b, a], shade(color, 1.15));
+}
+
+function sizeMap() {
+  TW = ZOOMS[ui.zoom]; TH = TW / 2;
+  const pad = TW;
+  OX = Sim.H * TW / 2 + pad; OY = TW * 1.6;
+  MW = (Sim.W + Sim.H) * TW / 2 + pad * 2; MH = (Sim.W + Sim.H) * TH / 2 + OY + pad;
+  const dpr = window.devicePixelRatio || 1;
+  map.style.width = MW + 'px'; map.style.height = MH + 'px';
+  map.width = MW * dpr; map.height = MH * dpr;
+  groundKey = '';
+}
+function buildGround() {
+  const dpr = window.devicePixelRatio || 1;
+  ground = document.createElement('canvas'); ground.width = MW * dpr; ground.height = MH * dpr;
+  const g = ground.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const col = { core:css('--g-core'), sub:css('--g-sub'), rural:css('--g-rural') };
   for (let y = 0; y < Sim.H; y++) for (let x = 0; x < Sim.W; x++) {
-    const t = T[y][x];
-    g.fillStyle = t.river ? col.water : t.road ? col.road : col[t.zone];
-    g.fillRect(x * ts, y * ts, ts + .5, ts + .5);
+    const t = Sim.TILES[y][x], d = [P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)];
+    const base = t.river ? css('--g-water') : t.road ? css('--g-road') : col[t.zone];
+    poly(g, d, shade(base, .94 + hash(x, y) * .1));
+    if (!t.road && !t.river) { g.strokeStyle = 'rgba(0,0,0,.08)'; g.lineWidth = 1; poly(g, d, null, 'rgba(0,0,0,.08)'); }
+    if (t.road) {
+      g.strokeStyle = css('--g-mark'); g.lineWidth = Math.max(1, TW / 40); g.setLineDash([TW / 10, TW / 10]);
+      const v = x % 5 === 0, h = y % 5 === 0;
+      if (v && !h) { g.beginPath(); g.moveTo(...P(x + .5, y)); g.lineTo(...P(x + .5, y + 1)); g.stroke(); }
+      if (h && !v) { g.beginPath(); g.moveTo(...P(x, y + .5)); g.lineTo(...P(x + 1, y + .5)); g.stroke(); }
+      g.setLineDash([]);
+      if (x === 22) { g.strokeStyle = '#2b2b2b'; g.lineWidth = 2; g.beginPath(); g.moveTo(...P(22, y)); g.lineTo(...P(22, y + 1)); g.moveTo(...P(23, y)); g.lineTo(...P(23, y + 1)); g.stroke(); }
+    }
+    if (t.river) { g.strokeStyle = 'rgba(255,255,255,.25)'; g.lineWidth = 1; const c = P(x + .5, y + .5); g.beginPath(); g.moveTo(c[0] - TW * .15, c[1]); g.quadraticCurveTo(c[0], c[1] - 3, c[0] + TW * .15, c[1]); g.stroke(); }
   }
-  g.strokeStyle = col.grid; g.lineWidth = 1;
-  for (let x = 0; x <= Sim.W; x++) { g.beginPath(); g.moveTo(x * ts, 0); g.lineTo(x * ts, Sim.H * ts); g.stroke(); }
-  for (let y = 0; y <= Sim.H; y++) { g.beginPath(); g.moveTo(0, y * ts); g.lineTo(Sim.W * ts, y * ts); g.stroke(); }
-  // old-city moat (คูเมือง) around the central block
-  g.strokeStyle = col.moat; g.lineWidth = Math.max(2, ts * .18);
-  g.strokeRect(10.5 * ts, 5.5 * ts, 4 * ts, 4 * ts);
-  g.font = `600 ${Math.max(9, ts * .42)}px ${css('--body').split(',')[0]}`; g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillStyle = css('--muted');
-  g.fillText('แม่น้ำปิง', 22.5 * ts, 2.5 * ts - ts * .9);
-  // supply links between your firms
-  g.strokeStyle = css('--you'); g.lineWidth = 1.5; g.setLineDash([4, 3]); g.globalAlpha = .7;
+  // old-city moat
+  g.strokeStyle = css('--g-water'); g.lineWidth = Math.max(3, TH * .28); g.lineJoin = 'round';
+  poly(g, [P(10.5, 5.5), P(14.5, 5.5), P(14.5, 9.5), P(10.5, 9.5)], null, css('--g-water'));
+  const label = (txt, x, y) => { const [a, b] = P(x, y); g.font = `600 ${Math.max(10, TW * .22)}px "IBM Plex Sans Thai", sans-serif`; g.textAlign = 'center'; g.fillStyle = 'rgba(0,0,0,.55)'; g.fillText(txt, a + 1, b + 1); g.fillStyle = '#f3f0dc'; g.fillText(txt, a, b); };
+  label('แม่น้ำปิง', 22.5, 18.4); label('คูเมือง', 14.2, 5.2);
+}
+
+// decorative city fabric on free land: shophouses downtown, houses in the suburbs, trees in the country
+function decor(occupied) {
+  const out = [];
+  for (let y = 0; y < Sim.H; y++) for (let x = 0; x < Sim.W; x++) {
+    const t = Sim.TILES[y][x]; if (t.road || t.river || occupied.has(x + ',' + y)) continue;
+    const r = hash(x, y, 1);
+    if (t.zone === 'core' && r < .72) out.push({ k:x + y, kind:'shop', x, y, r: hash(x, y, 2) });
+    else if (t.zone === 'sub' && r < .38) out.push({ k:x + y, kind:'house', x, y, r: hash(x, y, 3) });
+    else if ((t.zone === 'sub' && r < .6) || (t.zone === 'rural' && r < .3)) out.push({ k:x + y, kind:'tree', x, y, r: hash(x, y, 4) });
+    else if (t.zone === 'rural' && r < .42) out.push({ k:x + y, kind:'paddy', x, y, r: hash(x, y, 5) });
+  }
+  return out;
+}
+const WALLS = ['#d9cfbf', '#cfc6b8', '#e3d9c5', '#c9bfae', '#bfc6c9'], ROOFS = ['#9b5b4a', '#7d8a96', '#a8826a', '#6f7c6a', '#8c4f3c'];
+function drawDecor(g, d) {
+  const { x, y, r } = d;
+  if (d.kind === 'shop') { const h = TH * (.6 + r * 1.3); box(g, x + .14, y + .14, x + .86, y + .86, h, WALLS[Math.floor(r * 5)], ROOFS[Math.floor(r * 7) % 5]); }
+  else if (d.kind === 'house') { const h = TH * .45; box(g, x + .22, y + .25, x + .8, y + .78, h, WALLS[Math.floor(r * 5)]); gable(g, x + .22, y + .25, x + .8, y + .78, h, TH * .35, ROOFS[Math.floor(r * 5)]); }
+  else if (d.kind === 'tree') { const c = P(x + .5, y + .5), s = TW * (.13 + r * .06); g.strokeStyle = '#5a4430'; g.lineWidth = Math.max(1.5, TW / 30); g.beginPath(); g.moveTo(c[0], c[1]); g.lineTo(c[0], c[1] - s); g.stroke(); g.fillStyle = shade('#3f7a34', .85 + r * .3); g.beginPath(); g.arc(c[0], c[1] - s * 1.6, s, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.12)'; g.beginPath(); g.arc(c[0] - s * .3, c[1] - s * 1.9, s * .45, 0, 7); g.fill(); }
+  else if (d.kind === 'paddy') { const pts = [P(x + .1, y + .1), P(x + .9, y + .1), P(x + .9, y + .9), P(x + .1, y + .9)]; poly(g, pts, shade('#88b04b', .9 + r * .2)); g.strokeStyle = 'rgba(40,70,20,.35)'; g.lineWidth = 1; for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(...P(x + .1, y + .1 + i * .2)); g.lineTo(...P(x + .9, y + .1 + i * .2)); g.stroke(); } }
+}
+
+function drawFirm(g, f) {
+  const c = f.owner === 'port' ? css('--port') : css(COLOR[f.owner]);
+  const x0 = f.x, y0 = f.y;
+  const toHex = s => s.startsWith('#') ? s : '#888888';
+  const oc = toHex(c);
+  let top = 0;
+  if (f.type === 'store') {
+    const h = TH * 1.25;
+    const b = box(g, x0 + .12, y0 + .12, x0 + 1.88, y0 + 1.88, h, '#e6dccb', oc);
+    // striped awning and shop windows on the street-facing (left) side
+    const L = (t, k) => { const p = P(x0 + .12 + t * 1.76, y0 + 1.88); return up(p, k * h); };
+    for (let i = 0; i < 6; i++) poly(g, [L(i / 6, .62), L((i + 1) / 6, .62), L((i + 1) / 6, .86), L(i / 6, .86)], i % 2 ? '#f4efe4' : oc);
+    for (let i = 0; i < 3; i++) poly(g, [L(.08 + i * .32, .08), L(.26 + i * .32, .08), L(.26 + i * .32, .52), L(.08 + i * .32, .52)], i === 1 ? '#3b2f25' : 'rgba(120,170,200,.85)');
+    top = h;
+  } else if (f.type === 'factory') {
+    const h = TH * 1.15;
+    box(g, x0 + .1, y0 + .1, x0 + 1.9, y0 + 1.9, h, '#b5b0a6', '#8a8d91');
+    for (let i = 0; i < 3; i++) { const yy = y0 + .2 + i * .58; poly(g, [up(P(x0 + .15, yy), h), up(P(x0 + 1.85, yy), h), up(P(x0 + 1.85, yy + .3), h + TH * .45), up(P(x0 + .15, yy + .3), h + TH * .45)], shade('#7e8288', 1.1)); poly(g, [up(P(x0 + .15, yy + .3), h + TH * .45), up(P(x0 + 1.85, yy + .3), h + TH * .45), up(P(x0 + 1.85, yy + .5), h), up(P(x0 + .15, yy + .5), h)], 'rgba(150,200,230,.8)'); }
+    box(g, x0 + .2, y0 + .2, x0 + .55, y0 + .55, TH * 3, '#9a4b3a');
+    const s = up(P(x0 + .37, y0 + .37), TH * 3.1);
+    g.fillStyle = 'rgba(220,220,220,.35)'; [0, 1, 2].forEach(i => { g.beginPath(); g.arc(s[0] + i * TW * .08, s[1] - i * TH * .45, TW * (.07 + i * .03), 0, 7); g.fill(); });
+    g.strokeStyle = oc; g.lineWidth = 3; g.beginPath(); g.moveTo(...up(P(x0 + .1, y0 + 1.9), h)); g.lineTo(...up(P(x0 + 1.9, y0 + 1.9), h)); g.lineTo(...up(P(x0 + 1.9, y0 + .1), h)); g.stroke();
+    top = TH * 3;
+  } else if (f.type === 'farm') {
+    const prod = (f.units.find(u => u && u.type === 'grow' && u.product) || {}).product;
+    const field = [P(x0 + .05, y0 + .05), P(x0 + 1.95, y0 + .05), P(x0 + 1.95, y0 + 1.95), P(x0 + .05, y0 + 1.95)];
+    poly(g, field, prod === 'milk' ? '#7fae4e' : prod ? '#8b6b43' : '#9b8560');
+    if (prod && prod !== 'milk') { g.strokeStyle = PCOLOR[prod] === '#4a3326' ? '#3e7a2f' : shade(PCOLOR[prod], .8); g.lineWidth = Math.max(2, TW / 18); for (let i = 1; i < 9; i++) { g.beginPath(); g.moveTo(...P(x0 + .1, y0 + i * .21)); g.lineTo(...P(x0 + 1.1, y0 + i * .21)); g.stroke(); } }
+    if (prod === 'milk') for (let i = 0; i < 4; i++) { const p = P(x0 + .3 + hash(f.id, i) * .7, y0 + .3 + hash(i, f.id) * 1.3); g.fillStyle = '#f5f5f0'; g.beginPath(); g.ellipse(p[0], p[1] - 3, TW * .07, TW * .04, 0, 0, 7); g.fill(); g.fillStyle = '#222'; g.beginPath(); g.arc(p[0] + TW * .03, p[1] - 4, TW * .015, 0, 7); g.fill(); }
+    poly(g, field, null, oc);
+    const h = TH * .9;
+    box(g, x0 + 1.15, y0 + 1.1, x0 + 1.85, y0 + 1.85, h, '#a8402f');
+    gable(g, x0 + 1.15, y0 + 1.1, x0 + 1.85, y0 + 1.85, h, TH * .55, oc);
+    top = h + TH * .55;
+  } else if (f.type === 'lab') {
+    const h = TH * 2.2;
+    box(g, x0 + .2, y0 + .2, x0 + 1.8, y0 + 1.8, h, '#cfe2ee', shade('#cfe2ee', 1.08));
+    const L = (t, k) => up(P(x0 + .2 + t * 1.6, y0 + 1.8), k * h), R = (t, k) => up(P(x0 + 1.8, y0 + 1.8 - t * 1.6), k * h);
+    g.strokeStyle = 'rgba(40,70,100,.35)'; g.lineWidth = 1;
+    for (let k = .2; k < 1; k += .2) { g.beginPath(); g.moveTo(...L(0, k)); g.lineTo(...L(1, k)); g.lineTo(...R(1, k)); g.stroke(); }
+    const c = up(P(x0 + 1, y0 + 1), h);
+    g.fillStyle = oc; g.beginPath(); g.ellipse(c[0], c[1], TW * .32, TH * .32, 0, Math.PI, 0); g.lineTo(c[0] + TW * .32, c[1]); g.ellipse(c[0], c[1], TW * .32, TH * .32, 0, 0, Math.PI); g.fill();
+    g.fillStyle = shade(oc, 1.2); g.beginPath(); g.ellipse(c[0], c[1] - TH * .2, TW * .26, TH * .55, 0, Math.PI, 0); g.fill();
+    top = h + TH * .7;
+  } else {
+    const h = TH * .9;
+    box(g, x0 + .1, y0 + .1, x0 + 1.9, y0 + 1.05, h, '#8d99a6', '#6e7c8a');
+    gable(g, x0 + .1, y0 + .1, x0 + 1.9, y0 + 1.05, h, TH * .4, '#5f6d7b');
+    const cc = ['#c0392b', '#2e86c1', '#d4ac0d', '#239b56'];
+    for (let i = 0; i < 4; i++) box(g, x0 + .15 + (i % 2) * .85, y0 + 1.2 + Math.floor(i / 2) * .35, x0 + .9 + (i % 2) * .85, y0 + 1.5 + Math.floor(i / 2) * .35, TH * .45, cc[i]);
+    top = h + TH * .4;
+  }
+  return top;
+}
+
+let decorCache = null, decorKey = '';
+function drawMap() {
+  if (!MW) return;
+  const dpr = window.devicePixelRatio || 1, g = map.getContext('2d');
+  if (groundKey !== String(TW)) { buildGround(); groundKey = String(TW); }
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, map.width, map.height); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.drawImage(ground, 0, 0, MW, MH);
+  const occ = new Set(); state.firms.forEach(f => [[0,0],[1,0],[0,1],[1,1]].forEach(([a, b]) => occ.add((f.x + a) + ',' + (f.y + b))));
+  const key = [...occ].join('|');
+  if (key !== decorKey) { decorCache = decor(occ); decorKey = key; }
+  // supply links between your firms, drawn on the ground
+  g.strokeStyle = css('--gold'); g.lineWidth = 2; g.setLineDash([6, 4]); g.globalAlpha = .8;
   for (const f of state.firms) for (const u of f.units.filter(Boolean)) if (u.type === 'purchase' && u.src !== 'port') {
     const s = state.firms.find(x => x.id === u.src); if (!s) continue;
-    g.beginPath(); g.moveTo((s.x + 1) * ts, (s.y + 1) * ts); g.lineTo((f.x + 1) * ts, (f.y + 1) * ts); g.stroke();
+    g.beginPath(); g.moveTo(...P(s.x + 1, s.y + 1)); g.lineTo(...P(f.x + 1, f.y + 1)); g.stroke();
   }
   g.setLineDash([]); g.globalAlpha = 1;
-  for (const f of state.firms) {
-    const x = f.x * ts + 2, y = f.y * ts + 2, s = ts * 2 - 4, c = css(COLOR[f.owner]);
-    g.fillStyle = '#00000022'; g.fillRect(x + 2, y + 3, s, s);
-    g.fillStyle = c; roundRect(g, x, y, s, s, ts * .25); g.fill();
-    g.fillStyle = css('--surface'); roundRect(g, x + s * .14, y + s * .14, s * .72, s * .72, ts * .18); g.fill();
-    g.fillStyle = c; g.font = `700 ${s * .42}px "Chakra Petch", sans-serif`;
-    g.fillText(f.type === 'port' ? 'น' : Sim.FIRMS[f.type].glyph, x + s / 2, y + s / 2 + 1);
-    if (f.owner === 'you' && f.units.some(u => u && u.warn)) { g.fillStyle = css('--bad'); g.beginPath(); g.arc(x + s - 3, y + 3, ts * .2, 0, 7); g.fill(); }
-    if (f.id === ui.sel) { g.strokeStyle = css('--ink'); g.lineWidth = 2.5; roundRect(g, x - 3, y - 3, s + 6, s + 6, ts * .3); g.stroke(); }
+  if (ui.sel != null) { const f = selFirm(); if (f) { g.lineWidth = 2.5; poly(g, [P(f.x - .05, f.y - .05), P(f.x + 2.05, f.y - .05), P(f.x + 2.05, f.y + 2.05), P(f.x - .05, f.y + 2.05)], 'rgba(232,182,76,.25)', css('--gold')); } }
+  const items = decorCache.map(d => ({ k: d.k, d })).concat(state.firms.map(f => ({ k: f.x + f.y + 2.5, f })));
+  items.sort((a, b) => a.k - b.k);
+  for (const it of items) {
+    if (it.d) { drawDecor(g, it.d); continue; }
+    const f = it.f, top = drawFirm(g, f);
+    if (f.owner === 'you' && f.units.some(u => u && u.warn)) {
+      const p = up(P(f.x + 1, f.y + 1), top + TH * .9);
+      g.fillStyle = css('--bad'); g.beginPath(); g.arc(p[0], p[1], TW * .13, 0, 7); g.fill();
+      g.fillStyle = '#fff'; g.font = `700 ${TW * .18}px "IBM Plex Mono", monospace`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('!', p[0], p[1] + 1); g.textBaseline = 'alphabetic';
+    }
   }
-  if (ui.build && ui.hover) {
-    const { x, y } = ui.hover, bad = Sim.canBuild(state, ui.build, x, y);
-    g.fillStyle = bad ? css('--bad') : css('--you'); g.globalAlpha = .45;
-    g.fillRect(x * ts, y * ts, ts * 2, ts * 2); g.globalAlpha = 1;
+  if (ui.hover) {
+    const { x, y } = ui.hover;
+    if (ui.build) {
+      const bad = Sim.canBuild(state, ui.build, x, y);
+      poly(g, [P(x, y), P(x + 2, y), P(x + 2, y + 2), P(x, y + 2)], bad ? 'rgba(255,90,70,.45)' : 'rgba(80,220,140,.4)', bad ? css('--bad') : css('--good'));
+    } else poly(g, [P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], 'rgba(255,255,255,.12)', 'rgba(255,255,255,.6)');
   }
 }
-function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
-function tileFrom(e) {
-  const r = map.getBoundingClientRect();
-  return { x: Math.floor((e.clientX - r.left) / ts), y: Math.floor((e.clientY - r.top) / ts), px: e.clientX - r.left, py: e.clientY - r.top };
+function tileAt(e) {
+  const r = map.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+  const a = (sx - OX) / (TW / 2), b = (sy - OY) / (TH / 2);
+  return { x: Math.floor((a + b) / 2), y: Math.floor((b - a) / 2) };
 }
-function showTip(e) {
-  const t = tileFrom(e), tip = $('#tip');
-  if (t.x < 0 || t.y < 0 || t.x >= Sim.W || t.y >= Sim.H) { tip.hidden = true; return; }
-  let txt;
+const inMap = t => t.x >= 0 && t.y >= 0 && t.x < Sim.W && t.y < Sim.H;
+function onHover(e) {
+  const t = tileAt(e);
+  if (!inMap(t)) { ui.hover = null; status(); drawMap(); return; }
   if (ui.build) {
-    const x = Math.min(t.x, Sim.W - 2), y = Math.min(t.y, Sim.H - 2);
+    const x = Math.min(t.x, Sim.W - 2), y = Math.min(t.y, Sim.H - 2), bad = Sim.canBuild(state, ui.build, x, y);
     ui.hover = { x, y };
-    const bad = Sim.canBuild(state, ui.build, x, y);
-    txt = bad ? bad : `${Sim.FIRMS[ui.build].name} ${baht(Sim.buildCost(ui.build, x, y))} · ทำเล ${Math.round(Sim.firmValue({ x, y }) * 100)}%`;
+    status(bad ? `<b>สร้างไม่ได้</b> · ${bad}` : `<b>${Sim.FIRMS[ui.build].name}</b> · ราคารวมที่ดิน ${baht(Sim.buildCost(ui.build, x, y))} · ทำเล ${Math.round(Sim.firmValue({ x, y }) * 100)}% · คลิกเพื่อสร้าง`);
   } else {
+    ui.hover = t;
     const f = Sim.firmAt(state, t.x, t.y), tl = Sim.TILES[t.y][t.x];
-    txt = f ? (f.type === 'port' ? 'คลังนำเข้า: ซื้อวัตถุดิบและสินค้านำเข้าได้ทุกชนิด' : `${Sim.FIRMS[f.type].name} #${f.id} · ${Sim.comp(state, f.owner).name}`)
-      : tl.river ? 'แม่น้ำปิง' : tl.road ? 'ถนน' : `ทำเล ${Math.round(tl.v * 100)}% · ${{ core:'ใจกลางเมือง', sub:'ชานเมือง', rural:'ชนบท' }[tl.zone]}`;
+    status(f ? (f.type === 'port' ? '<b>คลังนำเข้า</b> · ซื้อวัตถุดิบและสินค้าสำเร็จรูปได้ทุกชนิด ราคาคงที่ คุณภาพต่ำ'
+        : `<b>${Sim.FIRMS[f.type].name} #${f.id}</b> · ${esc(Sim.comp(state, f.owner).name)} · ${f.units.filter(Boolean).map(u => Sim.UNITS[u.type].name + (u.product ? ' ' + Sim.P[u.product].name : '')).join(', ') || 'ยังไม่มีหน่วย'}`)
+      : tl.river ? '<b>แม่น้ำปิง</b>' : tl.road ? '<b>ถนน</b>' : `<b>ที่ดินว่าง</b> · ${{ core:'ใจกลางเมือง', sub:'ชานเมือง', rural:'ชนบท' }[tl.zone]} · ทำเล ${Math.round(tl.v * 100)}%`);
   }
-  tip.textContent = txt; tip.hidden = false;
-  tip.style.left = Math.min(Math.max(t.px, 90), map.clientWidth - 90) + 'px'; tip.style.top = t.py + 'px';
-  if (ui.build) drawMap();
+  drawMap();
+}
+function onClick(e) {
+  const t = tileAt(e); if (!inMap(t)) return;
+  if (ui.build) {
+    const x = Math.min(t.x, Sim.W - 2), y = Math.min(t.y, Sim.H - 2), bad = Sim.canBuild(state, ui.build, x, y);
+    if (bad) return toast(bad);
+    const cost = Sim.buildCost(ui.build, x, y);
+    if (you().cash < cost) return toast(`เงินไม่พอ ต้องใช้ ${baht(cost)}`);
+    const f = Sim.build(state, ui.build, x, y);
+    ui.build = null; map.classList.remove('building'); renderDock();
+    openFirm(f.id); changed(); toast(`สร้าง${Sim.FIRMS[f.type].name}แล้ว ใช้ "ตั้งค่าด่วน" หรือคลิกช่อง 3×3 เพื่อวางหน่วย`);
+    return;
+  }
+  const f = Sim.firmAt(state, t.x, t.y);
+  if (f && f.type !== 'port') openFirm(f.id);
+  else if (f) toast('คลังนำเข้า: ตั้งหน่วยจัดซื้อในอาคารของคุณให้ซื้อจากที่นี่');
+  else { ui.sel = null; if (ui.win === 'firm') closeWin(); drawMap(); }
+}
+function centerOn(x, y) { const [a, b] = P(x, y); vp.scrollLeft = a - vp.clientWidth / 2; vp.scrollTop = b - vp.clientHeight / 2; }
+function setZoom(z) {
+  const cx = (vp.scrollLeft + vp.clientWidth / 2 - OX) / (TW / 2), cy = (vp.scrollTop + vp.clientHeight / 2 - OY) / (TH / 2);
+  ui.zoom = Math.max(0, Math.min(ZOOMS.length - 1, z)); sizeMap(); drawMap();
+  centerOn((cx + cy) / 2, (cy - cx) / 2);
 }
 
-// ---- tools ----
-function renderTools() {
-  $('#tools').innerHTML = Object.entries(Sim.FIRMS).map(([k, f]) =>
-    `<button class="tool" data-build="${k}" aria-pressed="${ui.build === k}"><span class="glyph">${f.glyph}</span>${f.name} <span class="muted num">฿${fmt(f.cost / 1000)}k+</span></button>`).join('')
-    + (ui.build ? '<button class="tool" data-build="">ยกเลิก</button>' : '');
-  $('#map-hint').textContent = ui.build ? `คลิกที่ดินว่างเพื่อสร้าง${Sim.FIRMS[ui.build].name} (ราคารวมค่าที่ดิน)` : 'คลิกอาคารเพื่อจัดการ หรือเลือกประเภทอาคารแล้วคลิกที่ดินว่าง';
+// ---- dock & status ----
+function renderDock() {
+  const b = (k, label, act) => `<button class="bt" data-${act}="${k}" aria-pressed="${act === 'build' ? ui.build === k : ui.win === k}">${svg(k)}${label}</button>`;
+  $('#dock').innerHTML = Object.entries(Sim.FIRMS).map(([k, f]) => b(k, f.name, 'build')).join('') + '<hr>'
+    + [['mine', 'บริษัท'], ['fin', 'การเงิน'], ['mkt', 'ตลาด'], ['rank', 'อันดับ'], ['news', 'ข่าว'], ['help', 'วิธีเล่น']].map(([k, l]) => b(k, l, 'open')).join('');
+}
+let statusLock = null;
+function status(html) {
+  if (html) { $('#status').innerHTML = html; return; }
+  const c = you(), warn = state.firms.filter(f => f.owner === 'you' && f.units.some(u => u && u.warn)).length;
+  $('#status').innerHTML = ui.build ? `<b>โหมดก่อสร้าง ${Sim.FIRMS[ui.build].name}</b> · ชี้ที่ดินว่างแล้วคลิก · Esc เพื่อยกเลิก`
+    : `${esc(state.news[0]?.text || '')}${warn ? ` · <b>${warn} อาคารต้องดูแล</b> (มีเครื่องหมาย !)` : ''}`;
 }
 
-// ---- side panel: firm detail with 3×3 units ----
-function renderSide() {
-  const f = selFirm();
-  if (!f || f.type === 'port') return renderOverview(f);
-  const owner = Sim.comp(state, f.owner), mine = f.owner === 'you';
-  const F = Sim.FIRMS[f.type];
-  const slots = f.units.map((u, i) => u
-    ? `<button class="slot${i === ui.slot ? ' sel' : ''}${mine && u.warn ? ' warn' : ''}" data-slot="${i}" data-u="${u.type}">
-        <b>${Sim.UNITS[u.type].name}</b><span class="pn">${u.product ? Sim.P[u.product].name : '—'}</span>
-        <span class="lv">ระดับ ${u.level}${u.type === 'sales' ? ` · ฿${u.price}` : ''}${'cap' in Sim.UNITS[u.type] ? ` · ${fmt(u.last)}/วัน` : ''}</span></button>`
-    : `<button class="slot empty${i === ui.slot ? ' sel' : ''}" data-slot="${i}" ${mine ? '' : 'disabled'} aria-label="ช่องว่าง">+</button>`).join('');
+// ---- windows ----
+const TITLES = { firm:'', mine:'บริษัทของคุณ', fin:'รายงานการเงิน', mkt:'ภาพรวมตลาดสินค้า', rank:'อันดับบริษัท', news:'ข่าวธุรกิจ', help:'วิธีเล่น' };
+function openWin(k) { ui.win = k; if (k !== 'firm') { ui.sel = null; ui.slot = null; } $('#win').hidden = false; renderWin(); renderDock(); drawMap(); }
+function openFirm(id) { ui.sel = id; ui.slot = null; openWin('firm'); }
+function closeWin() { ui.win = null; ui.sel = null; ui.slot = null; $('#win').hidden = true; renderDock(); drawMap(); }
+function renderWin() {
+  if (!ui.win) return;
+  const w = $('#win');
+  w.classList.toggle('narrow', !['firm', 'fin', 'mkt'].includes(ui.win));
+  if (ui.win === 'firm') { const f = selFirm(); if (!f) return closeWin(); $('#win-title').textContent = `${Sim.FIRMS[f.type].name} #${f.id} · ${Sim.comp(state, f.owner).name}`; $('#win-b').innerHTML = winFirm(f); drawLinks(f); return; }
+  $('#win-title').textContent = TITLES[ui.win];
+  $('#win-b').innerHTML = ({ mine:winMine, fin:winFin, mkt:winMkt, rank:winRank, news:winNews, help:winHelp })[ui.win]();
+  if (ui.win === 'fin') drawChart();
+}
+
+function unitLinks(f) {
+  const L = [];
+  f.units.forEach((u, i) => {
+    if (!u || !u.product) return;
+    if (u.type === 'purchase') f.units.forEach((v, j) => { if (v && v.product && ((v.type === 'sales' && v.product === u.product) || (v.type === 'make' && Sim.P[v.product].recipe && Sim.P[v.product].recipe[u.product]))) L.push([i, j]); });
+    if (u.type === 'ad') f.units.forEach((v, j) => { if (v && v.type === 'sales' && v.product === u.product) L.push([i, j]); });
+  });
+  return L;
+}
+function drawLinks(f) {
+  const el = $('#links'); if (!el) return;
+  const box = el.parentElement.getBoundingClientRect(), tiles = el.parentElement.querySelectorAll('.u');
+  const c = i => { const r = tiles[i].getBoundingClientRect(); return [r.left - box.left + r.width / 2, r.top - box.top + r.height / 2]; };
+  const rad = tiles[0] ? tiles[0].getBoundingClientRect().width * .42 : 40;
+  el.innerHTML = `<defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#e8b64c"/></marker></defs>`
+    + unitLinks(f).map(([a, b]) => { const [x1, y1] = c(a), [x2, y2] = c(b), d = Math.hypot(x2 - x1, y2 - y1), k = rad / d;
+      return `<line x1="${x1 + (x2 - x1) * k}" y1="${y1 + (y2 - y1) * k}" x2="${x2 - (x2 - x1) * k}" y2="${y2 - (y2 - y1) * k}" stroke="#e8b64c" stroke-width="3" stroke-opacity=".9" marker-end="url(#ar)"/>`; }).join('');
+}
+
+function winFirm(f) {
+  const mine = f.owner === 'you', last = f.last ? f.last.rev - f.last.cost : null;
+  const tiles = f.units.map((u, i) => u
+    ? `<button class="u bevel${i === ui.slot ? ' sel' : ''}${mine && u.warn ? ' warn' : ''}" data-slot="${i}" data-u="${u.type}" title="${esc(u.warn || '')}">
+        <span class="ut">${Sim.UNITS[u.type].name}</span>${svg(u.type)}
+        <span class="up">${u.product ? chip(u.product) + Sim.P[u.product].name : 'ยังไม่เลือก'}</span>
+        <span class="pips">${Array.from({ length: 9 }, (_, k) => `<i class="${k < u.level ? 'on' : ''}"></i>`).join('')}</span></button>`
+    : `<button class="u empty inset${i === ui.slot ? ' sel' : ''}" data-slot="${i}" ${mine ? '' : 'disabled'} aria-label="ช่องว่าง">+</button>`).join('');
   const inv = Object.entries(f.inv).filter(([, v]) => v.qty >= 1);
-  const last = f.last ? f.last.rev - f.last.cost : null;
-  $('#side').innerHTML = `
-    <div class="ph"><h2><span class="dotc" style="background:var(${COLOR[f.owner]})"></span>${F.name} #${f.id}</h2><span class="hint">${esc(owner.name)} · ทำเล ${Math.round(Sim.firmValue(f) * 100)}%</span></div>
-    <div class="kv" style="margin-bottom:10px">
-      <div><span>รายได้เดือนนี้</span><b>${baht(f.mtd.rev)}</b></div>
-      <div><span>ค่าใช้จ่ายเดือนนี้</span><b>${baht(f.mtd.cost)}</b></div>
-      <div><span>กำไรเดือนก่อน</span><b class="${last == null ? '' : last >= 0 ? 'pos' : 'neg'}">${last == null ? '—' : signed(last)}</b></div>
+  return `<div class="firm">
+    <div>
+      <div class="facts">
+        <div class="inset"><span>รายได้เดือนนี้</span><b>${baht(f.mtd.rev)}</b></div>
+        <div class="inset"><span>ค่าใช้จ่าย</span><b>${baht(f.mtd.cost)}</b></div>
+        <div class="inset"><span>กำไรเดือนก่อน</span><b class="${last == null ? '' : last >= 0 ? 'pos' : 'neg'}">${last == null ? '—' : signed(last)}</b></div>
+      </div>
+      <div class="board inset"><div class="g9">${tiles}</div><svg class="links" id="links"></svg></div>
+      <div class="sec" style="margin-top:10px"><h3>คลังสินค้า</h3>${inv.length ? `<div class="tw inset"><table><thead><tr><th>สินค้า</th><th>จำนวน</th><th>คุณภาพ</th></tr></thead><tbody>
+        ${inv.map(([p, v]) => `<tr><td>${chip(p)} ${Sim.P[p].name}</td><td class="num">${fmt(v.qty)}</td><td class="num">${Math.round(v.q)}</td></tr>`).join('')}</tbody></table></div>` : '<div class="msg inset">ว่างเปล่า</div>'}</div>
     </div>
-    <div class="grid9">${slots}</div>
-    ${mine ? renderCfg(f) : '<div class="note" style="margin-top:10px">อาคารของคู่แข่ง ดูได้แต่จัดการไม่ได้</div>'}
-    ${inv.length ? `<div class="tw" style="margin-top:10px"><table><thead><tr><th>สินค้าในคลัง</th><th>จำนวน</th><th>คุณภาพ</th></tr></thead><tbody>
-      ${inv.map(([p, v]) => `<tr><td>${Sim.P[p].name}</td><td class="num">${fmt(v.qty)}</td><td class="num">${Math.round(v.q)}</td></tr>`).join('')}</tbody></table></div>` : ''}
-    ${mine ? `<div class="actions" style="margin-top:10px"><button class="btn danger" data-act="sell">ขายอาคารนี้ +${baht(f.invested * Sim.CFG.sellBack)}</button><button class="btn" data-act="deselect">ปิด</button></div>` : '<div class="actions" style="margin-top:10px"><button class="btn" data-act="deselect">ปิด</button></div>'}`;
+    <div class="detail">${mine ? unitDetail(f) : '<div class="msg inset">อาคารของคู่แข่ง ดูได้แต่สั่งการไม่ได้ เส้นสีทองแสดงการเชื่อมต่อระหว่างหน่วย</div>'}
+      ${mine ? `<div class="row" style="margin-top:12px"><button class="bt danger" data-act="sell">ขายอาคารนี้ +${baht(f.invested * Sim.CFG.sellBack)}</button></div>` : ''}</div>
+  </div>`;
 }
 
 function quickSetups(f) {
   const opts = {
     store: Sim.CONSUMER.map(p => [`sell:${p}`, `ขาย${Sim.P[p].name}`]).concat(Sim.CONSUMER.map(p => [`ad:${p}`, `โฆษณา${Sim.P[p].name}`])),
     factory: Sim.CONSUMER.map(p => [`make:${p}`, `ผลิต${Sim.P[p].name}`]),
-    farm: Sim.RAW.map(p => [`grow:${p}`, `${p === 'milk' ? 'เลี้ยงโคนม' : 'ปลูก' + Sim.P[p].name}`]),
+    farm: Sim.RAW.map(p => [`grow:${p}`, p === 'milk' ? 'เลี้ยงโคนม' : 'ปลูก' + Sim.P[p].name]),
     lab: Sim.CONSUMER.map(p => [`research:${p}`, `วิจัย${Sim.P[p].name}`]),
   }[f.type];
-  return `<div class="field"><label>ตั้งค่าด่วน (เติมหน่วยในช่องว่างให้อัตโนมัติ ช่องละ ฿${fmt(Sim.CFG.unitSetup)})</label>
-    <div class="actions">${opts.map(([k, l]) => `<button class="btn" data-tpl="${k}">${l}</button>`).join('')}</div></div>`;
+  return `<div class="sec"><h3>ตั้งค่าด่วน</h3><div class="msg inset">วางหน่วยและเชื่อมให้อัตโนมัติในช่องว่าง ช่องละ ${baht(Sim.CFG.unitSetup)}</div>
+    <div class="row">${opts.map(([k, l]) => `<button class="bt" data-tpl="${k}">${l}</button>`).join('')}</div></div>`;
 }
+const meter = (label, v, mark) => `<div class="meter"><span>${label}</span><span class="tr"><i style="width:${Math.max(0, Math.min(100, v))}%"></i>${mark != null ? `<em style="left:${Math.max(0, Math.min(100, mark))}%" title="คู่แข่งที่ดีที่สุด"></em>` : ''}</span><b>${Math.round(v)}</b></div>`;
 
-function renderCfg(f) {
-  const i = ui.slot, u = i == null ? null : f.units[i];
-  const c = you();
-  if (i == null) return `<div class="cfg">${quickSetups(f)}<div class="hint">หรือคลิกช่องในตาราง 3×3 เพื่อเพิ่มและตั้งค่าหน่วยทีละช่อง</div></div>`;
-  if (!u) return `<div class="cfg"><h3>เพิ่มหน่วยในช่อง ${i + 1}</h3>
-    <div class="actions">${Sim.FIRMS[f.type].units.map(t => `<button class="btn go" data-add="${t}" ${c.cash < Sim.CFG.unitSetup ? 'disabled' : ''}>${Sim.UNITS[t].name} ฿${fmt(Sim.CFG.unitSetup)}</button>`).join('')}</div>
-    ${quickSetups(f)}</div>`;
+function unitDetail(f) {
+  const i = ui.slot, u = i == null ? null : f.units[i], c = you();
+  if (i == null) return `<div class="msg inset">คลิกช่องในตาราง 3×3 เพื่อวางหรือตั้งค่าหน่วย เส้นสีทองคือการส่งสินค้าระหว่างหน่วย</div>${quickSetups(f)}`;
+  if (!u) return `<div class="dh bevel"><div><b>ช่องว่าง ${i + 1}</b><span class="muted">เลือกหน่วยที่จะวาง</span></div></div>
+    <div class="row">${Sim.FIRMS[f.type].units.map(t => `<button class="bt go" data-add="${t}" ${c.cash < Sim.CFG.unitSetup ? 'disabled' : ''}>${Sim.UNITS[t].name} ${baht(Sim.CFG.unitSetup)}</button>`).join('')}</div>${quickSetups(f)}`;
   const prods = Sim.UNITS[u.type].products();
-  let extra = '';
+  let body = '';
   if (u.type === 'purchase' && u.product) {
     const srcs = Sim.sourcesFor(state, 'you', u.product).filter(s => s.id !== f.id);
-    extra = `<div class="field"><label for="u-src">ซื้อจาก</label><select id="u-src">
-      <option value="port" ${u.src === 'port' ? 'selected' : ''}>คลังนำเข้า · ฿${Sim.portPrice(state, u.product, c).toFixed(1)} · คุณภาพ ${Sim.portQ(u.product, c)}</option>
-      ${srcs.map(s => `<option value="${s.id}" ${u.src === s.id ? 'selected' : ''}>${Sim.FIRMS[s.type].name} #${s.id} ของคุณ (ไม่มีค่าซื้อ) · คุณภาพ ${Math.round(s.inv[u.product]?.q || 0)}</option>`).join('')}
+    body += `<div class="field"><label for="u-src">แหล่งสินค้า</label><select id="u-src">
+      <option value="port" ${u.src === 'port' ? 'selected' : ''}>คลังนำเข้า · ฿${Sim.portPrice(state, u.product, c).toFixed(1)}/หน่วย · คุณภาพ ${Sim.portQ(u.product, c)}</option>
+      ${srcs.map(s => `<option value="${s.id}" ${u.src === s.id ? 'selected' : ''}>${Sim.FIRMS[s.type].name} #${s.id} ของคุณ · ไม่มีค่าซื้อ · คุณภาพ ${Math.round(s.inv[u.product]?.q || 0)}</option>`).join('')}
     </select></div>`;
   }
   if (u.type === 'sales' && u.product) {
-    const p = u.product, r = Sim.rating(state, f, u, p), inv = f.inv[p];
+    const p = u.product, inv = f.inv[p];
     const rivals = state.firms.filter(g => g.owner !== 'you' && g.type === 'store').flatMap(g => g.units.filter(x => x && x.type === 'sales' && x.product === p).map(x => ({ g, x })));
     const best = rivals.sort((a, b) => Sim.rating(state, b.g, b.x, p) - Sim.rating(state, a.g, a.x, p))[0];
-    extra = `<div class="row2"><div class="field"><label for="u-price">ราคาขาย (อ้างอิงตลาด ฿${Sim.P[p].ref})</label><input type="number" id="u-price" min="1" step="1" value="${u.price}"></div>
-      <div class="field"><label>คะแนนรวมของสินค้า</label><b class="num" style="font-size:1.1rem;padding-top:4px">${Math.round(r)}/100</b></div></div>
-      <div class="note">คุณภาพ ${Math.round(inv?.q || 0)} · แบรนด์ ${Math.round(c.brand[p])} · ความคุ้มราคา ${Math.round(Sim.priceScore(p, u.price))}
-      ${best ? `<br>คู่แข่งที่ดีที่สุด: ${esc(Sim.comp(state, best.g.owner).name)} ฿${best.x.price} คะแนน ${Math.round(Sim.rating(state, best.g, best.x, p))}` : ''}</div>`;
+    const bc = best && Sim.comp(state, best.g.owner);
+    body += `<div class="field"><label for="u-price">ราคาขาย · ราคาอ้างอิงตลาด ฿${Sim.P[p].ref}</label><input type="number" id="u-price" min="1" step="1" value="${u.price}"></div>
+      <div class="inset" style="padding:8px;margin-bottom:8px">
+        ${meter('คุณภาพ', inv?.q || 0, best && best.g.inv[p]?.q)}
+        ${meter('แบรนด์', c.brand[p], bc && bc.brand[p])}
+        ${meter('ความคุ้มราคา', Sim.priceScore(p, u.price), best && Sim.priceScore(p, best.x.price))}
+        ${meter('คะแนนรวม', Sim.rating(state, f, u, p), best && Sim.rating(state, best.g, best.x, p))}
+        ${best ? `<div class="muted" style="font-size:.72rem">ขีดแดง = ${esc(bc.name)} ราคา ฿${best.x.price}</div>` : ''}
+      </div>`;
   }
-  if (u.type === 'make' && u.product) extra = `<div class="note">สูตร: ${Object.entries(Sim.P[u.product].recipe).map(([k, n]) => `${Sim.P[k].name} ×${n}`).join(' + ')} → ${Sim.P[u.product].name} ×1<br>คุณภาพ = ครึ่งหนึ่งจากวัตถุดิบ + ครึ่งหนึ่งจากเทคโนโลยี (ตอนนี้ ${Math.round(c.tech[u.product])})</div>`;
-  if ((u.type === 'make' || u.type === 'grow') && u.product) extra += `<div class="actions"><button class="btn go" data-act="link">ให้${u.type === 'make' ? 'ร้านค้าปลีก' : 'โรงงานและร้าน'}ทุกแห่งที่ซื้อ${Sim.P[u.product].name} มาซื้อจากที่นี่</button></div>`;
-  if (u.type === 'grow') extra = `<div class="note">ผลผลิตคุณภาพ ${30 + 5 * u.level} (สูงขึ้นตามระดับ)</div>` + extra;
-  if (u.type === 'ad' && u.product) extra = `<div class="note">ใช้งบ ${baht(Sim.unitDaily(u))}/วัน · แบรนด์${Sim.P[u.product].name}ของคุณ ${Math.round(c.brand[u.product])}/100</div>`;
-  if (u.type === 'research' && u.product) extra = `<div class="note">ใช้งบ ${baht(Sim.unitDaily(u))}/วัน · เทคโนโลยี${Sim.P[u.product].name} ${c.tech[u.product].toFixed(1)}/100</div>`;
-  const upCost = Sim.CFG.upgrade * u.level;
-  return `<div class="cfg">
-    <div class="ph" style="margin:0"><h3>หน่วย${Sim.UNITS[u.type].name} · ระดับ ${u.level}</h3><span class="hint">${'cap' in Sim.UNITS[u.type] ? `กำลัง ${fmt(Sim.unitCap(u))}/วัน · ` : ''}ค่าใช้จ่าย ${baht(Sim.unitDaily(u))}/วัน</span></div>
+  if (u.type === 'make' && u.product) body += `<div class="msg inset">สูตร: ${Object.entries(Sim.P[u.product].recipe).map(([k, n]) => `${chip(k)} ${Sim.P[k].name} ×${n}`).join(' + ')} → ${chip(u.product)} ${Sim.P[u.product].name}<br>คุณภาพ = ½ วัตถุดิบ + ½ เทคโนโลยี (ตอนนี้ ${Math.round(c.tech[u.product])})</div>`;
+  if (u.type === 'grow') body += `<div class="msg inset">ผลผลิตคุณภาพ ${30 + 5 * u.level} · สูงขึ้นเมื่ออัปเกรด</div>`;
+  if ((u.type === 'make' || u.type === 'grow') && u.product) body += `<div class="row" style="margin-bottom:8px"><button class="bt go" data-act="link">ให้${u.type === 'make' ? 'ร้านค้าปลีก' : 'โรงงานและร้าน'}ทุกแห่งมาซื้อ${Sim.P[u.product].name}จากที่นี่</button></div>`;
+  if (u.type === 'ad' && u.product) body += `<div class="inset" style="padding:8px;margin-bottom:8px">${meter('แบรนด์' + Sim.P[u.product].name, c.brand[u.product])}</div><div class="msg inset">งบโฆษณา ${baht(Sim.unitDaily(u))}/วัน</div>`;
+  if (u.type === 'research' && u.product) body += `<div class="inset" style="padding:8px;margin-bottom:8px">${meter('เทคโนโลยี', c.tech[u.product])}</div><div class="msg inset">งบวิจัย ${baht(Sim.unitDaily(u))}/วัน</div>`;
+  const upCost = Sim.CFG.upgrade * u.level, hasCap = 'cap' in Sim.UNITS[u.type];
+  return `<div class="dh bevel">${svg(u.type)}<div><b>หน่วย${Sim.UNITS[u.type].name} · ระดับ ${u.level}</b><span class="muted">${hasCap ? `ทำได้ ${fmt(u.last)} จาก ${fmt(Sim.unitCap(u))}/วัน · ` : ''}ค่าใช้จ่าย ${baht(Sim.unitDaily(u))}/วัน</span></div></div>
     <div class="field"><label for="u-prod">สินค้า</label><select id="u-prod"><option value="">— เลือกสินค้า —</option>${prods.map(p => `<option value="${p}" ${u.product === p ? 'selected' : ''}>${Sim.P[p].name}</option>`).join('')}</select></div>
-    ${extra}
-    ${u.warn ? `<div class="note bad">${u.warn}</div>` : ''}
-    <div class="actions"><button class="btn go" data-act="up" ${u.level >= Sim.CFG.maxLevel || c.cash < upCost ? 'disabled' : ''}>อัปเกรดเป็นระดับ ${u.level + 1} ${baht(upCost)}</button><button class="btn danger" data-act="rm">ลบหน่วย</button></div>
-  </div>`;
+    ${body}
+    ${u.warn ? `<div class="msg inset bad">${esc(u.warn)}</div>` : ''}
+    <div class="row"><button class="bt go" data-act="up" ${u.level >= Sim.CFG.maxLevel || c.cash < upCost ? 'disabled' : ''}>ฝึกอบรม → ระดับ ${u.level + 1} ${baht(upCost)}</button><button class="bt danger" data-act="rm">ยุบหน่วย</button></div>`;
 }
 
-function renderOverview(f) {
-  const c = you();
-  const mine = state.firms.filter(g => g.owner === 'you');
-  const warn = mine.flatMap(g => g.units.map((u, i) => u && u.warn ? { g, u, i } : null).filter(Boolean)).slice(0, 6);
-  $('#side').innerHTML = `
-    ${f ? '<div class="note" style="margin-bottom:10px">คลังนำเข้า: ซื้อวัตถุดิบและสินค้าสำเร็จรูปได้ทุกชนิด ราคาคงที่แต่คุณภาพต่ำ</div>' : ''}
-    <div class="ph"><h2>บริษัทของคุณ</h2><span class="hint">${mine.length} อาคาร</span></div>
-    <div class="kv">
-      <div><span>เงินสด</span><b>${baht(c.cash)}</b></div>
-      <div><span>หนี้ธนาคาร</span><b>${baht(c.loan)}</b></div>
-      <div><span>มูลค่าบริษัท</span><b>${baht(Sim.netWorth(state, c))}</b></div>
+function winMine() {
+  const c = you(), mine = state.firms.filter(g => g.owner === 'you');
+  return `<div class="facts">
+      <div class="inset"><span>เงินสด</span><b>${baht(c.cash)}</b></div>
+      <div class="inset"><span>หนี้ธนาคาร</span><b>${baht(c.loan)}</b></div>
+      <div class="inset"><span>มูลค่าบริษัท</span><b>${baht(Sim.netWorth(state, c))}</b></div>
     </div>
-    <h3 style="margin:14px 0 6px">อาคารของคุณ</h3>
-    <div class="tw"><table><thead><tr><th>อาคาร</th><th>หน่วย</th><th>กำไรเดือนก่อน</th></tr></thead><tbody>
-      ${mine.map(g => { const l = g.last ? g.last.rev - g.last.cost : null; return `<tr><td><button class="btn" data-pick="${g.id}">${Sim.FIRMS[g.type].name} #${g.id}</button></td><td class="num">${g.units.filter(Boolean).length}/9</td><td class="num ${l == null ? '' : l >= 0 ? 'pos' : 'neg'}">${l == null ? '—' : signed(l)}</td></tr>`; }).join('')}
+    <div class="sec"><h3>อาคารทั้งหมด</h3><div class="tw inset"><table><thead><tr><th>อาคาร</th><th>หน่วย</th><th>กำไรเดือนก่อน</th><th>สถานะ</th></tr></thead><tbody>
+    ${mine.map(g => { const l = g.last ? g.last.rev - g.last.cost : null, w = g.units.filter(u => u && u.warn).length;
+      return `<tr><td><button class="bt" data-pick="${g.id}">${Sim.FIRMS[g.type].name} #${g.id}</button></td><td class="num">${g.units.filter(Boolean).length}/9</td><td class="num ${l == null ? '' : l >= 0 ? 'pos' : 'neg'}">${l == null ? '—' : signed(l)}</td><td class="${w ? 'neg' : 'muted'}">${w ? `ต้องดูแล ${w} หน่วย` : 'ปกติ'}</td></tr>`; }).join('')}
+    </tbody></table></div></div>
+    <div class="sec"><h3>ห่วงโซ่อุปทาน</h3><div class="msg inset">ฟาร์ม → โรงงาน (จัดซื้อ → ผลิต) → ร้านค้าปลีก (จัดซื้อ → ขาย + โฆษณา) · ศูนย์วิจัยเพิ่มเทคโนโลยี</div></div>`;
+}
+function winFin() {
+  const c = you(), m = c.mtd, L = c.last || {}, has = !!c.last;
+  const net = x => x.sales - x.imports - x.staff - x.ads - x.rnd - x.interest;
+  const row = (l, a, b, neg) => `<tr><td>${l}</td><td class="num">${(neg && a ? '−' : '') + fmt(a)}</td><td class="num">${has ? (neg && b ? '−' : '') + fmt(b) : '—'}</td></tr>`;
+  return `<div class="cols"><div>
+    <h3>งบกำไรขาดทุน</h3><div class="tw inset"><table><thead><tr><th>บาท</th><th>เดือนนี้</th><th>เดือนก่อน</th></tr></thead><tbody>
+      ${row('รายได้จากการขาย', m.sales, L.sales)}${row('ซื้อสินค้านำเข้า', m.imports, L.imports, 1)}${row('ค่าจ้างและดำเนินงาน', m.staff, L.staff, 1)}
+      ${row('ค่าโฆษณา', m.ads, L.ads, 1)}${row('ค่าวิจัยและพัฒนา', m.rnd, L.rnd, 1)}${row('ดอกเบี้ย', m.interest, L.interest, 1)}
+      <tr><td><b>กำไรสุทธิ</b></td><td class="num ${net(m) >= 0 ? 'pos' : 'neg'}"><b>${signed(net(m))}</b></td><td class="num ${has ? (L.net >= 0 ? 'pos' : 'neg') : ''}"><b>${has ? signed(L.net) : '—'}</b></td></tr>
+      <tr><td class="muted">ลงทุนอาคารและหน่วย</td><td class="num muted">${fmt(m.capex)}</td><td class="num muted">${has ? fmt(L.capex) : '—'}</td></tr>
     </tbody></table></div>
-    ${warn.length ? `<h3 style="margin:14px 0 6px">ต้องดูแล</h3>${warn.map(w => `<div class="note bad" style="margin-bottom:4px">${Sim.FIRMS[w.g.type].name} #${w.g.id} · ${Sim.UNITS[w.u.type].name}: ${w.u.warn}</div>`).join('')}` : ''}
-    <h3 style="margin:14px 0 6px">ห่วงโซ่อุปทานแบบ Capitalism</h3>
-    <div class="note">ฟาร์ม (ปลูก/เลี้ยง) → โรงงาน (จัดซื้อวัตถุดิบ → ผลิต) → ร้านค้าปลีก (จัดซื้อ → ขาย + โฆษณา) · ศูนย์วิจัยเพิ่มเทคโนโลยีให้สินค้าคุณภาพดีขึ้น</div>`;
+    <div class="sec"><h3>ธนาคาร</h3><div class="msg inset">ดอกเบี้ย 0.6%/เดือน · วงเงิน ฿10 ล้าน · หนี้ตอนนี้ ${baht(c.loan)}</div>
+    <div class="row"><button class="bt" data-act="borrow">กู้ ฿1,000,000</button><button class="bt" data-act="repay" ${c.loan <= 0 ? 'disabled' : ''}>คืนหนี้ ฿1,000,000</button></div></div>
+  </div><div><h3>มูลค่าบริษัทรายเดือน</h3><div class="inset" style="padding:6px"><canvas class="chart" id="chart"></canvas></div>
+    <div class="row" style="margin-top:6px;font-size:.74rem">${state.companies.map(x => `<span><i class="dotc" style="background:var(${COLOR[x.id]})"></i>${esc(x.name)}</span>`).join(' ')}</div></div></div>`;
 }
-
-// ---- bottom tabs ----
-function renderTab() {
-  document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === ui.tab));
-  const el = $('#tab'), c = you();
-  if (ui.tab === 'fin') {
-    const row = (l, a, b, neg) => `<tr><td>${l}</td><td class="num">${a == null ? '—' : (neg && a ? '−' : '') + fmt(a)}</td><td class="num">${b == null ? '—' : (neg && b ? '−' : '') + fmt(b)}</td></tr>`;
-    const m = c.mtd, L = c.last || {};
-    const net = x => x.sales - x.imports - x.staff - x.ads - x.rnd - x.interest;
-    el.innerHTML = `<div class="cols">
-      <div><div class="ph"><h3>งบกำไรขาดทุน</h3><span class="hint">บาท</span></div><div class="tw"><table>
-        <thead><tr><th></th><th>เดือนนี้ (ถึงวันนี้)</th><th>เดือนก่อน</th></tr></thead><tbody>
-        ${row('รายได้จากการขาย', m.sales, c.last ? L.sales : null)}
-        ${row('ซื้อสินค้านำเข้า', m.imports, c.last ? L.imports : null, 1)}
-        ${row('ค่าจ้างและค่าดำเนินงาน', m.staff, c.last ? L.staff : null, 1)}
-        ${row('ค่าโฆษณา', m.ads, c.last ? L.ads : null, 1)}
-        ${row('ค่าวิจัยและพัฒนา', m.rnd, c.last ? L.rnd : null, 1)}
-        ${row('ดอกเบี้ย', m.interest, c.last ? L.interest : null, 1)}
-        <tr><td><b>กำไรสุทธิ</b></td><td class="num ${net(m) >= 0 ? 'pos' : 'neg'}"><b>${signed(net(m))}</b></td><td class="num ${c.last ? (L.net >= 0 ? 'pos' : 'neg') : ''}"><b>${c.last ? signed(L.net) : '—'}</b></td></tr>
-        <tr><td class="muted">เงินลงทุนสร้างอาคาร/หน่วย</td><td class="num muted">${fmt(m.capex)}</td><td class="num muted">${c.last ? fmt(L.capex) : '—'}</td></tr>
-        </tbody></table></div>
-        <div class="ph" style="margin-top:12px"><h3>ธนาคาร</h3><span class="hint">ดอกเบี้ย 0.6%/เดือน · วงเงิน ฿10 ล้าน · หนี้ตอนนี้ ${baht(c.loan)}</span></div>
-        <div class="actions"><button class="btn" data-act="borrow">กู้ ฿1,000,000</button><button class="btn" data-act="repay" ${c.loan <= 0 ? 'disabled' : ''}>คืนหนี้ ฿1,000,000</button></div>
-      </div>
-      <div><div class="ph"><h3>มูลค่าบริษัทรายเดือน</h3><span class="hint">เทียบคู่แข่ง</span></div><canvas class="chart" id="chart"></canvas></div>
-    </div>`;
-    drawChart();
-  } else if (ui.tab === 'mkt') {
-    const ML = state.marketLast, MM = state.market;
-    el.innerHTML = `<div class="tw"><table><thead><tr><th>สินค้า</th><th>ความต้องการ/วัน</th><th>ราคาอ้างอิง</th><th>ส่วนแบ่งคุณ</th>${state.companies.slice(1).map(x => `<th>${esc(x.name)}</th>`).join('')}<th>เทคโนโลยีคุณ</th><th>แบรนด์คุณ</th></tr></thead><tbody>
-      ${Sim.CONSUMER.map(p => {
-        const src = ML[p].sold ? { m:ML[p], key:'soldLast' } : { m:MM[p], key:'sold' };
-        const sh = id => src.m.sold ? `${Math.round((Sim.comp(state, id)[src.key][p] || 0) / src.m.sold * 100)}%` : '—';
-        return `<tr><td>${Sim.P[p].name}</td><td class="num">${fmt(Sim.demand(state, p))}</td><td class="num">฿${Sim.P[p].ref}</td><td class="num"><b>${sh('you')}</b></td>${state.companies.slice(1).map(x => `<td class="num">${sh(x.id)}</td>`).join('')}<td class="num">${Math.round(c.tech[p])}</td><td class="num">${Math.round(c.brand[p])}</td></tr>`;
-      }).join('')}</tbody></table></div>
-      <p class="hint" style="margin:10px 0 0">ส่วนแบ่งคิดจากยอดขายเดือนก่อน (หรือเดือนนี้ถ้ายังไม่ครบเดือน) · ลูกค้าเลือกร้านจากคะแนนรวม = คุณภาพ + แบรนด์ + ความคุ้มราคา และทำเลของร้าน</p>
-      <div class="ph" style="margin-top:14px"><h3>ราคาวัตถุดิบที่คลังนำเข้า</h3></div>
-      <div class="tw"><table><thead><tr><th>สินค้า</th><th>ราคา</th><th>คุณภาพ</th><th>ใช้ผลิต</th></tr></thead><tbody>
-      ${[...Sim.RAW, ...Sim.CONSUMER].map(p => `<tr><td>${Sim.P[p].name}</td><td class="num">฿${Sim.portPrice(state, p, c).toFixed(2)}</td><td class="num">${Sim.P[p].q}</td><td>${Sim.CONSUMER.filter(x => Sim.P[x].recipe[p]).map(x => Sim.P[x].name).join(', ') || (Sim.P[p].kind === 'consumer' ? 'สินค้าสำเร็จรูป' : '')}</td></tr>`).join('')}
-      </tbody></table></div>`;
-  } else if (ui.tab === 'rank') {
-    const rows = state.companies.map(x => ({ x, nw: Sim.netWorth(state, x), n: state.firms.filter(f => f.owner === x.id).length })).sort((a, b) => b.nw - a.nw);
-    el.innerHTML = `<div class="tw"><table><thead><tr><th>อันดับ</th><th>บริษัท</th><th>มูลค่าบริษัท</th><th>เงินสด</th><th>อาคาร</th><th>กำไรเดือนก่อน</th></tr></thead><tbody>
-      ${rows.map((r, i) => `<tr><td class="num">${i + 1}</td><td style="text-align:left"><span class="dotc" style="background:var(${COLOR[r.x.id]})"></span>${esc(r.x.name)}</td><td class="num">${baht(r.nw)}</td><td class="num">${baht(r.x.cash)}</td><td class="num">${r.n}</td><td class="num ${r.x.last ? (r.x.last.net >= 0 ? 'pos' : 'neg') : ''}">${r.x.last ? signed(r.x.last.net) : '—'}</td></tr>`).join('')}
-      </tbody></table></div>
-      <p class="hint" style="margin:10px 0 0">ถูกดีกรุ๊ปขายถูกและจะตัดราคาเมื่อคุณแย่งลูกค้าได้มาก · ลูน่า คอร์ปอเรชั่นนำเข้าสินค้าพรีเมียม คุณภาพสูง ราคาแพง แบรนด์แข็ง</p>`;
-  } else if (ui.tab === 'news') {
-    el.innerHTML = `<ol id="news">${state.news.map(n => `<li class="${n.tone}"><time>${Sim.dateLabel(n.day)}</time><span>${esc(n.text)}</span></li>`).join('')}</ol>`;
-  } else {
-    el.innerHTML = `<div class="cols"><div>
-      <h3>เป้าหมาย</h3><p>สร้างมูลค่าบริษัทให้ถึง <b>฿${million(Sim.CFG.goal)}</b> ภายใน 3 ปี โดยแข่งกับบริษัท AI สองราย</p>
-      <h3>หลักการแบบ Capitalism</h3>
-      <p>ทุกอาคารมีช่อง <b>3×3</b> สำหรับวาง "หน่วย" แต่ละหน่วยทำงานอย่างเดียว และอัปเกรดได้ถึงระดับ 9 ยิ่งระดับสูง กำลังผลิตหรือขายยิ่งมาก</p>
-      <ul><li><b>ร้านค้าปลีก</b>: จัดซื้อ → ขายปลีก, โฆษณา</li><li><b>โรงงาน</b>: จัดซื้อวัตถุดิบ → ผลิต (ต้องอยู่นอกใจกลางเมือง)</li><li><b>ฟาร์ม</b>: ปลูกพืช/เลี้ยงสัตว์ (เฉพาะเขตชนบท)</li><li><b>ศูนย์วิจัย</b>: เพิ่มเทคโนโลยี ทำให้สินค้าที่ผลิตเองมีคุณภาพสูงขึ้น</li></ul>
-    </div><div>
-      <h3>เคล็ดลับ</h3>
-      <ul><li>เริ่มจากซื้อของนำเข้ามาขาย กำไรน้อยแต่ปลอดภัย</li><li>สร้างโรงงานผลิตเอง ต้นทุนจะถูกกว่าซื้อสินค้าสำเร็จรูปเกือบครึ่ง</li><li>สร้างฟาร์มส่งวัตถุดิบให้โรงงาน ต้นทุนต่ำลงอีกและคุมคุณภาพได้</li><li>หน่วยที่มีจุดแดงบนแผนที่ต้องดูแล เช่น วัตถุดิบไม่พอหรือขายเต็มกำลัง</li><li>ร้านในทำเลดี (ใจกลางเมือง) ดึงลูกค้าได้มากกว่า</li><li>เกมบันทึกอัตโนมัติในเบราว์เซอร์นี้</li></ul>
-      <div class="actions"><button class="btn danger" data-act="newgame">เริ่มเกมใหม่</button></div>
-    </div></div>`;
-  }
+function winMkt() {
+  const c = you(), ML = state.marketLast, MM = state.market;
+  return `<h3>สินค้าอุปโภคบริโภค</h3><div class="tw inset"><table><thead><tr><th>สินค้า</th><th>ความต้องการ/วัน</th><th>ราคาอ้างอิง</th><th>ส่วนแบ่งคุณ</th>${state.companies.slice(1).map(x => `<th>${esc(x.name)}</th>`).join('')}<th>เทคโนฯ</th><th>แบรนด์</th></tr></thead><tbody>
+    ${Sim.CONSUMER.map(p => {
+      const src = ML[p].sold ? { m:ML[p], key:'soldLast' } : { m:MM[p], key:'sold' };
+      const sh = id => src.m.sold ? `${Math.round((Sim.comp(state, id)[src.key][p] || 0) / src.m.sold * 100)}%` : '—';
+      return `<tr><td>${chip(p)} ${Sim.P[p].name}</td><td class="num">${fmt(Sim.demand(state, p))}</td><td class="num">฿${Sim.P[p].ref}</td><td class="num"><b>${sh('you')}</b></td>${state.companies.slice(1).map(x => `<td class="num">${sh(x.id)}</td>`).join('')}<td class="num">${Math.round(c.tech[p])}</td><td class="num">${Math.round(c.brand[p])}</td></tr>`;
+    }).join('')}</tbody></table></div>
+    <div class="sec"><h3>ราคาที่คลังนำเข้า</h3><div class="tw inset"><table><thead><tr><th>สินค้า</th><th>ราคา</th><th>คุณภาพ</th><th>ใช้ผลิต</th></tr></thead><tbody>
+    ${[...Sim.RAW, ...Sim.CONSUMER].map(p => `<tr><td>${chip(p)} ${Sim.P[p].name}</td><td class="num">฿${Sim.portPrice(state, p, c).toFixed(2)}</td><td class="num">${Sim.P[p].q}</td><td>${Sim.CONSUMER.filter(x => Sim.P[x].recipe[p]).map(x => Sim.P[x].name).join(', ') || (Sim.P[p].kind === 'consumer' ? 'สินค้าสำเร็จรูป' : '')}</td></tr>`).join('')}
+    </tbody></table></div></div>`;
 }
+function winRank() {
+  const rows = state.companies.map(x => ({ x, nw: Sim.netWorth(state, x), n: state.firms.filter(f => f.owner === x.id).length })).sort((a, b) => b.nw - a.nw);
+  return `<div class="tw inset"><table><thead><tr><th>#</th><th style="text-align:left">บริษัท</th><th>มูลค่า</th><th>เงินสด</th><th>อาคาร</th><th>กำไรเดือนก่อน</th></tr></thead><tbody>
+    ${rows.map((r, i) => `<tr><td class="num">${i + 1}</td><td style="text-align:left"><i class="dotc" style="background:var(${COLOR[r.x.id]})"></i>${esc(r.x.name)}</td><td class="num">${baht(r.nw)}</td><td class="num">${baht(r.x.cash)}</td><td class="num">${r.n}</td><td class="num ${r.x.last ? (r.x.last.net >= 0 ? 'pos' : 'neg') : ''}">${r.x.last ? signed(r.x.last.net) : '—'}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="sec"><div class="msg inset">ถูกดีกรุ๊ปขายถูกและตัดราคาเมื่อคุณแย่งลูกค้าได้มาก · ลูน่า คอร์ปอเรชั่นนำเข้าสินค้าพรีเมียม คุณภาพสูง แบรนด์แข็ง</div></div>`;
+}
+const winNews = () => `<ol id="news">${state.news.map(n => `<li class="${n.tone}"><time>${Sim.dateLabel(n.day)}</time><span>${esc(n.text)}</span></li>`).join('')}</ol>`;
+const winHelp = () => `<div class="help">
+  <h3>เป้าหมาย</h3><p>สร้างมูลค่าบริษัทให้ถึง <b>฿${million(Sim.CFG.goal)}</b> ภายใน 3 ปี แข่งกับบริษัท AI สองราย</p>
+  <h3>การควบคุม</h3><ul><li>ลากแผนที่เพื่อเลื่อน ปุ่ม + − มุมซ้ายล่างเพื่อซูม</li><li>เลือกอาคารจากแถบเครื่องมือ แล้วคลิกที่ดินว่างเพื่อสร้าง</li><li>คลิกอาคารเพื่อเปิดหน้าจอจัดการแบบตาราง 3×3</li><li>ปุ่ม ❚❚ ▶ ▶▶ ▶▶▶ ด้านบนควบคุมเวลา</li></ul>
+  <h3>อาคารและหน่วย</h3><ul><li><b>ร้านค้าปลีก</b>: จัดซื้อ → ขายปลีก, โฆษณา</li><li><b>โรงงาน</b>: จัดซื้อวัตถุดิบ → ผลิต (นอกใจกลางเมือง)</li><li><b>ฟาร์ม</b>: เพาะปลูก/เลี้ยงสัตว์ (เขตชนบท)</li><li><b>ศูนย์วิจัย</b>: เพิ่มเทคโนโลยีให้สินค้าคุณภาพสูงขึ้น</li></ul>
+  <h3>เคล็ดลับ</h3><ul><li>ผลิตเองถูกกว่าซื้อสินค้าสำเร็จรูปนำเข้าเกือบครึ่ง</li><li>ฟาร์มของตัวเองทำให้ต้นทุนวัตถุดิบต่ำและคุณภาพสูงขึ้นเมื่ออัปเกรด</li><li>เครื่องหมาย ! สีแดงบนอาคารแปลว่ามีหน่วยต้องดูแล</li><li>เกมบันทึกอัตโนมัติในเบราว์เซอร์นี้</li></ul>
+  <div class="row"><button class="bt danger" data-act="newgame">เริ่มเกมใหม่</button></div></div>`;
 
 function drawChart() {
   const c = $('#chart'); if (!c) return;
   const w = c.clientWidth, h = c.clientHeight, dpr = window.devicePixelRatio || 1; if (!w) return;
   c.width = w * dpr; c.height = h * dpr;
   const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const Hs = state.history, N = Sim.CFG.days, G = Sim.CFG.goal;
-  const vals = Hs.flatMap(p => p.nw);
+  const Hs = state.history, N = Sim.CFG.days, G = Sim.CFG.goal, vals = Hs.flatMap(p => p.nw);
   const lo = Math.min(0, ...vals), hi = Math.max(G, ...vals) * 1.05;
   const st = [2e6, 5e6, 1e7, 2e7, 5e7].find(s => (hi - lo) / s <= 6) || 1e8;
-  const L = 40, R = 8, T = 10, B = 22;
-  const x = d => L + (w - L - R) * d / N, y = v => T + (h - T - B) * (1 - (v - lo) / (hi - lo));
+  const L = 38, R = 8, T = 8, B = 20, x = d => L + (w - L - R) * d / N, y = v => T + (h - T - B) * (1 - (v - lo) / (hi - lo));
   g.font = '11px "IBM Plex Mono", monospace'; g.textBaseline = 'middle';
-  for (let v = Math.ceil(lo / st) * st; v <= hi; v += st) {
-    g.strokeStyle = css('--line'); g.lineWidth = 1; g.beginPath(); g.moveTo(L, y(v)); g.lineTo(w - R, y(v)); g.stroke();
-    g.fillStyle = css('--muted'); g.textAlign = 'right'; g.fillText(v / 1e6 + 'M', L - 5, y(v));
-  }
+  for (let v = Math.ceil(lo / st) * st; v <= hi; v += st) { g.strokeStyle = css('--line'); g.beginPath(); g.moveTo(L, y(v)); g.lineTo(w - R, y(v)); g.stroke(); g.fillStyle = css('--muted'); g.textAlign = 'right'; g.fillText(v / 1e6 + 'M', L - 5, y(v)); }
   g.textAlign = 'center';
-  for (let yr = 0; yr <= 3; yr++) g.fillText(yr < 3 ? `${String(Sim.CFG.startYear + 543 + yr).slice(2)}` : 'จบ', Math.min(Math.max(x(yr * 365), L + 10), w - R - 12), h - 9);
-  g.setLineDash([4, 4]); g.strokeStyle = css('--you'); g.globalAlpha = .5; g.beginPath(); g.moveTo(L, y(G)); g.lineTo(w - R, y(G)); g.stroke(); g.setLineDash([]); g.globalAlpha = 1;
+  for (let yr = 0; yr <= 3; yr++) g.fillText(yr < 3 ? String(Sim.CFG.startYear + 543 + yr) : 'จบ', Math.min(Math.max(x(yr * 365), L + 14), w - R - 14), h - 8);
+  g.setLineDash([4, 4]); g.strokeStyle = css('--gold'); g.beginPath(); g.moveTo(L, y(G)); g.lineTo(w - R, y(G)); g.stroke(); g.setLineDash([]);
   state.companies.forEach((co, i) => {
     g.strokeStyle = css(COLOR[co.id]); g.lineWidth = co.id === 'you' ? 2.5 : 1.5; g.beginPath();
     Hs.forEach((p, k) => k ? g.lineTo(x(p.day), y(p.nw[i])) : g.moveTo(x(p.day), y(p.nw[i]))); g.stroke();
@@ -911,8 +1092,8 @@ function drawChart() {
 }
 
 // ---- loop ----
-function panelBusy() { const a = document.activeElement; return a && (a.tagName === 'SELECT' || a.tagName === 'INPUT') && a.closest('#side, #tab'); }
-function renderAll() { renderTop(); renderTools(); drawMap(); renderSide(); renderTab(); }
+function winBusy() { const a = document.activeElement; return a && (a.tagName === 'SELECT' || a.tagName === 'INPUT') && a.closest('#win'); }
+function renderAll() { renderTop(); renderDock(); drawMap(); renderWin(); status(); }
 function changed() { renderAll(); save(); }
 function setSpeed(s) {
   ui.speed = state.over ? 0 : s; clearInterval(timer); timer = null;
@@ -920,9 +1101,10 @@ function setSpeed(s) {
     const before = state.day;
     Sim.tick(state);
     renderTop(); drawMap();
-    const monthTurned = Sim.dateOf(state.day).getUTCDate() === 1;
-    if (!panelBusy() && (monthTurned || state.day % 3 === 0)) { renderSide(); if (ui.tab !== 'help') renderTab(); }
-    if (monthTurned) { save(); const l = you().last; if (l) toast(`ปิดงบ ${Sim.monthLabel(before)}: ${l.net >= 0 ? 'กำไร' : 'ขาดทุน'} ${signed(l.net)}`); }
+    const turned = Sim.dateOf(state.day).getUTCDate() === 1;
+    if (!winBusy() && ui.win && ui.win !== 'help' && (turned || state.day % 3 === 0)) renderWin();
+    if (state.day % 5 === 0 || turned) status();
+    if (turned) { save(); const l = you().last; if (l) toast(`ปิดงบ ${Sim.monthLabel(before)}: ${l.net >= 0 ? 'กำไร' : 'ขาดทุน'} ${signed(l.net)}`); }
     if (state.over) { setSpeed(0); save(); showOver(); renderAll(); }
   }, SPEED_MS[ui.speed]);
   renderTop();
@@ -936,67 +1118,55 @@ function showOver() {
     timeup:['ครบ 3 ปี', `มูลค่าบริษัทสุดท้าย ${baht(nw)} (${Math.round(nw / Sim.CFG.goal * 100)}% ของเป้า)`] }[state.over.kind];
   $('#ov-t').textContent = t; $('#ov-b').textContent = b; $('#overlay').hidden = false;
 }
-function newGame() { setSpeed(0); state = Sim.newGame(); ui.sel = null; ui.slot = null; ui.build = null; $('#overlay').hidden = true; changed(); toast('เริ่มเกมใหม่แล้ว'); }
+function newGame() { setSpeed(0); state = Sim.newGame(); ui.sel = null; ui.slot = null; ui.build = null; closeWin(); $('#overlay').hidden = true; changed(); centerOn(12.5, 8); toast('เริ่มเกมใหม่แล้ว'); }
 
 function init() {
-  document.querySelector('.speed').onclick = e => { const b = e.target.closest('button'); if (b) setSpeed(+b.dataset.speed); };
-  $('#tools').onclick = e => { const b = e.target.closest('[data-build]'); if (!b) return; ui.build = b.dataset.build || null; ui.hover = null; renderTools(); drawMap(); };
-  map.addEventListener('mousemove', showTip);
-  map.addEventListener('mouseleave', () => { $('#tip').hidden = true; ui.hover = null; drawMap(); });
-  map.addEventListener('click', e => {
-    const t = tileFrom(e);
-    if (ui.build) {
-      const x = Math.min(t.x, Sim.W - 2), y = Math.min(t.y, Sim.H - 2);
-      const bad = Sim.canBuild(state, ui.build, x, y);
-      if (bad) return toast(bad);
-      const cost = Sim.buildCost(ui.build, x, y);
-      if (you().cash < cost) return toast(`เงินไม่พอ ต้องใช้ ${baht(cost)}`);
-      const f = Sim.build(state, ui.build, x, y);
-      ui.build = null; ui.sel = f.id; ui.slot = null; changed(); toast(`สร้าง${Sim.FIRMS[f.type].name}แล้ว เลือก "ตั้งค่าด่วน" หรือเพิ่มหน่วยในช่อง 3×3`);
-      return;
-    }
-    const f = Sim.firmAt(state, t.x, t.y);
-    ui.sel = f ? f.id : null; ui.slot = null; renderSide(); drawMap();
+  document.querySelector('.speed').onclick = e => { const b = e.target.closest('[data-speed]'); if (b) setSpeed(+b.dataset.speed); };
+  $('#dock').onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.build) { ui.build = ui.build === b.dataset.build ? null : b.dataset.build; ui.hover = null; map.classList.toggle('building', !!ui.build); if (ui.build && innerWidth <= 760) closeWin(); renderDock(); status(); drawMap(); return; }
+    if (b.dataset.open) { if (ui.win === b.dataset.open) closeWin(); else openWin(b.dataset.open); }
+  };
+  // drag to pan, click to act
+  let drag = null;
+  map.addEventListener('pointerdown', e => { drag = { x:e.clientX, y:e.clientY, sl:vp.scrollLeft, st:vp.scrollTop, moved:false }; map.setPointerCapture(e.pointerId); });
+  map.addEventListener('pointermove', e => {
+    if (drag) { const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 5) drag.moved = true; if (drag.moved) { vp.scrollLeft = drag.sl - dx; vp.scrollTop = drag.st - dy; return; } }
+    if (e.pointerType === 'mouse') onHover(e);
   });
-  addEventListener('keydown', e => { if (e.key === 'Escape' && ui.build) { ui.build = null; renderTools(); drawMap(); } });
-  $('#side').addEventListener('click', e => {
+  map.addEventListener('pointerup', e => { const d = drag; drag = null; if (d && !d.moved) { if (e.pointerType !== 'mouse') onHover(e); onClick(e); } });
+  map.addEventListener('pointerleave', () => { if (!drag) { ui.hover = null; status(); drawMap(); } });
+  $('#zin').onclick = () => setZoom(ui.zoom + 1); $('#zout').onclick = () => setZoom(ui.zoom - 1);
+  $('#win-x').onclick = closeWin;
+  addEventListener('keydown', e => { if (e.key === 'Escape') { if (ui.build) { ui.build = null; map.classList.remove('building'); renderDock(); status(); drawMap(); } else if (ui.win) closeWin(); } });
+  $('#win-b').addEventListener('click', e => {
     const f = selFirm(), b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.pick) { ui.sel = +b.dataset.pick; ui.slot = null; renderSide(); drawMap(); return; }
-    if (b.dataset.slot != null) { ui.slot = ui.slot === +b.dataset.slot ? null : +b.dataset.slot; renderSide(); return; }
+    if (b.dataset.pick) return openFirm(+b.dataset.pick);
+    if (b.dataset.slot != null) { ui.slot = ui.slot === +b.dataset.slot ? null : +b.dataset.slot; renderWin(); return; }
     if (b.dataset.add) { if (Sim.addUnit(state, f, ui.slot, b.dataset.add)) changed(); return; }
     if (b.dataset.tpl) { const [k, p] = b.dataset.tpl.split(':'); const err = Sim.template(state, f, k, p); if (err) toast(err); else { ui.slot = null; changed(); } return; }
     const act = b.dataset.act;
     if (act === 'up' && Sim.upgradeUnit(state, f, ui.slot)) changed();
-    if (act === 'rm' && Sim.removeUnit(state, f, ui.slot)) changed();
+    if (act === 'rm' && Sim.removeUnit(state, f, ui.slot)) { ui.slot = null; changed(); }
     if (act === 'link') { const n = Sim.linkStores(state, f, f.units[ui.slot].product); toast(n ? `เปลี่ยนแหล่งซื้อแล้ว ${n} หน่วย` : 'ยังไม่มีหน่วยจัดซื้อสินค้านี้ในอาคารอื่น'); changed(); }
-    if (act === 'deselect') { ui.sel = null; ui.slot = null; renderSide(); drawMap(); }
-    if (act === 'sell') {
-      if (b.dataset.armed) { Sim.sellFirm(state, f.id); ui.sel = null; ui.slot = null; changed(); }
-      else { b.dataset.armed = 1; b.textContent = 'กดอีกครั้งเพื่อยืนยันการขาย'; }
-    }
+    if (act === 'sell') { if (b.dataset.armed) { Sim.sellFirm(state, f.id); closeWin(); changed(); } else { b.dataset.armed = 1; b.textContent = 'กดอีกครั้งเพื่อยืนยันการขาย'; } }
+    if (act === 'borrow' && Sim.borrow(state, 1e6)) changed();
+    if (act === 'repay' && Sim.repay(state, 1e6)) changed();
+    if (act === 'newgame') { if (b.dataset.armed) newGame(); else { b.dataset.armed = 1; b.textContent = 'กดอีกครั้งเพื่อยืนยัน'; } }
   });
-  $('#side').addEventListener('change', e => {
+  $('#win-b').addEventListener('change', e => {
     const f = selFirm(), u = f && f.units[ui.slot]; if (!u) return;
     if (e.target.id === 'u-prod') { u.product = e.target.value || null; if (u.type === 'sales' && u.product) u.price = Sim.P[u.product].ref; u.src = 'port'; }
     if (e.target.id === 'u-src') u.src = e.target.value === 'port' ? 'port' : +e.target.value;
     if (e.target.id === 'u-price') u.price = Math.max(1, Math.round(+e.target.value || 1));
     e.target.blur(); changed();
   });
-  $('#tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { ui.tab = b.dataset.tab; renderTab(); } };
-  $('#tab').addEventListener('click', e => {
-    const b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.act === 'borrow' && Sim.borrow(state, 1e6)) changed();
-    if (b.dataset.act === 'repay' && Sim.repay(state, 1e6)) changed();
-    if (b.dataset.act === 'newgame') { if (b.dataset.armed) newGame(); else { b.dataset.armed = 1; b.textContent = 'กดอีกครั้งเพื่อยืนยัน'; } }
-  });
   $('#ov-new').onclick = newGame;
   $('#ov-close').onclick = () => { $('#overlay').hidden = true; };
-  const redraw = () => { sizeMap(); drawMap(); drawChart(); };
-  addEventListener('resize', redraw);
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw);
-  new MutationObserver(redraw).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
-  if (document.fonts) document.fonts.ready.then(redraw);
-  sizeMap(); renderAll(); showOver();
+  addEventListener('resize', () => { drawChart(); const f = selFirm(); if (f && ui.win === 'firm') drawLinks(f); });
+  if (document.fonts) document.fonts.ready.then(() => { groundKey = ''; drawMap(); });
+  if (innerWidth <= 760) ui.zoom = 0;
+  sizeMap(); renderAll(); centerOn(12.5, 8); showOver();
 }
 
 window.claude?.hot?.snapshot?.(() => ({ state, ui: { ...ui, speed:0 } }));
@@ -1004,6 +1174,7 @@ const start = data => {
   state = data?.state || load() || Sim.newGame();
   if (data?.ui) ui = { ...ui, ...data.ui, speed:0 };
   init();
+  if (ui.win) { $('#win').hidden = false; renderWin(); }
 };
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
 </script>
